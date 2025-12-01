@@ -360,8 +360,16 @@ export const Sports: React.FC = () => {
   const [balance, setBalance] = useState<any | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errorMsg, setErrorMsg] = useState('');
-  const [selectedStatus, setSelectedStatus] = useState<'live' | 'upcoming' | 'trending'>('live');
+  const [activeTab, setActiveTab] = useState<'open' | 'live' | 'completed' | 'cancelled' | 'exited'>('live');
   const [selectedSport, setSelectedSport] = useState<string | null>(null);
+
+  const tabs = [
+    { id: 'open', label: 'Open' },
+    { id: 'live', label: 'Live' },
+    { id: 'completed', label: 'Completed' },
+    { id: 'cancelled', label: 'Cancelled' },
+    { id: 'exited', label: 'Exited' },
+  ] as const;
 
   const formatPercent = (val: any) => {
     const raw = typeof val === 'string' ? val.replace('%', '').trim() : val;
@@ -419,24 +427,23 @@ export const Sports: React.FC = () => {
     fetchEvents();
   }, []);
 
-  // Filter events based on selected status and sport
   const filteredEvents = events.filter((event) => {
     let matchesStatus = true;
     let matchesSport = true;
 
-    // Simple status filter based on event timing
-    if (selectedStatus === 'live') {
-      const eventTime = event.startDate * 1000;
-      const now = Date.now();
-      // Event is "live" if it started within the last hour or starts within next 30 minutes
+    const eventTime = event.startDate * 1000;
+    const now = Date.now();
+
+    if (activeTab === 'live') {
       matchesStatus = now - eventTime < 3600000 && eventTime - now < 1800000;
-    } else if (selectedStatus === 'upcoming') {
-      const eventTime = event.startDate * 1000;
-      const now = Date.now();
+    } else if (activeTab === 'open') {
       matchesStatus = eventTime > now;
-    } else if (selectedStatus === 'trending') {
-      // For demo, trending events are high probability matches
-      matchesStatus = true;
+    } else if (activeTab === 'completed') {
+      matchesStatus = now - eventTime >= 3600000;
+    } else if (activeTab === 'cancelled') {
+      matchesStatus = event.status === 'EVENT_STATUS_CANCELLED' || event.eventStatus === 'CANCELLED';
+    } else if (activeTab === 'exited') {
+      matchesStatus = event.status === 'EVENT_STATUS_EXITED' || event.eventStatus === 'EXITED';
     }
 
     if (selectedSport) {
@@ -527,140 +534,58 @@ export const Sports: React.FC = () => {
       />
 
       <div className="px-4 sm:px-6 lg:px-8 pb-10">
-        <div className="max-w-[1400px] mx-auto flex flex-col lg:flex-row gap-8">
-          {/* Left Sidebar - Filters */}
-          <aside className="w-full lg:w-64 lg:flex-shrink-0">
-            <div className="rounded-2xl border border-white/10 bg-white/5 p-4 sticky top-24">
-              <h3 className="text-sm font-semibold text-white mb-4">Status Filters</h3>
-              <div className="space-y-2 mb-6">
-                <button
-                  onClick={() => setSelectedStatus('live')}
-                  className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg font-medium transition-all ${
-                    selectedStatus === 'live'
-                      ? 'bg-primary/20 text-primary'
-                      : 'text-gray-text hover:bg-white/5'
-                  }`}
-                >
-                  <span className="text-lg">●</span> Live
-                </button>
-                <button
-                  onClick={() => setSelectedStatus('upcoming')}
-                  className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg font-medium transition-all ${
-                    selectedStatus === 'upcoming'
-                      ? 'bg-primary/20 text-primary'
-                      : 'text-gray-text hover:bg-white/5'
-                  }`}
-                >
-                  Upcoming
-                </button>
-                <button
-                  onClick={() => setSelectedStatus('trending')}
-                  className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg font-medium transition-all ${
-                    selectedStatus === 'trending'
-                      ? 'bg-primary/20 text-primary'
-                      : 'text-gray-text hover:bg-white/5'
-                  }`}
-                >
-                  Trending
-                </button>
+        <div className="max-w-[1400px] mx-auto">
+          <div className="flex flex-col lg:flex-row gap-8">
+            {/* Main Content */}
+            <main className="flex-1">
+              {/* Horizontal Tabs */}
+              <div className="mb-8 overflow-x-auto">
+                <div className="flex gap-2 border-b border-white/10 pb-0">
+                  {tabs.map((tab) => (
+                    <button
+                      key={tab.id}
+                      onClick={() => setActiveTab(tab.id)}
+                      className={`px-6 py-3 text-sm font-semibold whitespace-nowrap transition-all border-b-2 ${
+                        activeTab === tab.id
+                          ? 'text-primary border-b-primary'
+                          : 'text-gray-text border-b-transparent hover:text-white'
+                      }`}
+                    >
+                      {tab.label}
+                    </button>
+                  ))}
+                </div>
               </div>
 
-              <h3 className="text-sm font-semibold text-white mb-3">Sports</h3>
-              <ul className="space-y-2">
-                <li
-                  onClick={() => setSelectedSport(null)}
-                  className={`flex items-center justify-between px-3 py-2 rounded-lg transition-all cursor-pointer ${
-                    selectedSport === null
-                      ? 'bg-primary/20 text-primary'
-                      : 'text-gray-text hover:bg-white/5'
-                  }`}
-                >
-                  <div className="flex items-center gap-3">
-                    <span className="text-xl">🎯</span>
-                    <span className="text-sm">All Sports</span>
-                  </div>
-                  <span className="text-xs bg-dark-card px-2 py-0.5 rounded text-white">{events.length}</span>
-                </li>
-                {[
-                  { name: 'Football', emoji: '🏈', count: 24 },
-                  { name: 'Basketball', emoji: '🏀', count: 18 },
-                  { name: 'Cricket', emoji: '🏏', count: 12 },
-                  { name: 'Soccer', emoji: '⚽', count: 32 },
-                  { name: 'Tennis', emoji: '🎾', count: 15 },
-                ].map((sport) => (
-                  <li
-                    key={sport.name}
-                    onClick={() => setSelectedSport(sport.name)}
-                    className={`flex items-center justify-between px-3 py-2 rounded-lg transition-all cursor-pointer ${
-                      selectedSport === sport.name
-                        ? 'bg-primary/20 text-primary'
-                        : 'text-gray-text hover:bg-white/5'
-                    }`}
-                  >
-                    <div className="flex items-center gap-3">
-                      <span className="text-xl">{sport.emoji}</span>
-                      <span className="text-sm">{sport.name}</span>
-                    </div>
-                    <span className="text-xs bg-dark-card px-2 py-0.5 rounded text-white">{sport.count}</span>
-                  </li>
-                ))}
-              </ul>
-            </div>
-          </aside>
-
-          {/* Main Content */}
-          <main className="flex-1">
-            {isLoading ? (
-              <div className="text-center py-12">
-                <p className="text-gray-text">Loading events...</p>
-              </div>
-            ) : filteredEvents.length === 0 ? (
-              <div className="text-center py-12">
-                <p className="text-gray-text">
-                  {events.length === 0
-                    ? 'No events available'
-                    : `No ${selectedStatus} events${selectedSport ? ` for ${selectedSport}` : ''}`}
-                </p>
-              </div>
-            ) : (
-              <div className="space-y-6">
-                {filteredEvents.map((event, i) => (
-                  <div key={i} className="space-y-3">
-                    <EventCard
-                      event={event}
-                      onViewQuestions={() => {
-                        const id = String(event.id ?? event.eventId ?? '');
-                        setSelectedEventId(id);
-                        setSelectedQuestion(null);
-                        setSelectedOutcome(null);
-                        setConfidenceOverride(null);
-                        setAmount('');
-                      }}
-                      onQuickPredict={(question, eventId) => {
-                        const id = String(event.id ?? event.eventId ?? eventId ?? '');
-                        setSelectedEventId(id);
-                        setSelectedQuestion(question);
-                        setSelectedOutcome(null);
-                        setConfidenceOverride(null);
-                        setAmount('');
-                        setErrorMsg('');
-                        fetchBalance();
-                      }}
-                    />
-                    {selectedEventId === String(event.id ?? event.eventId ?? '') && (
-                      <EventDetails
-                        eventId={String(event.id ?? event.eventId ?? '')}
-                        onBack={() => {
-                          setSelectedEventId(null);
+              {isLoading ? (
+                <div className="text-center py-12">
+                  <p className="text-gray-text">Loading events...</p>
+                </div>
+              ) : filteredEvents.length === 0 ? (
+                <div className="text-center py-12">
+                  <p className="text-gray-text">
+                    {events.length === 0
+                      ? 'No events available'
+                      : `No ${activeTab} events${selectedSport ? ` for ${selectedSport}` : ''}`}
+                  </p>
+                </div>
+              ) : (
+                <div className="space-y-6">
+                  {filteredEvents.map((event, i) => (
+                    <div key={i} className="space-y-3">
+                      <EventCard
+                        event={event}
+                        onViewQuestions={() => {
+                          const id = String(event.id ?? event.eventId ?? '');
+                          setSelectedEventId(id);
                           setSelectedQuestion(null);
                           setSelectedOutcome(null);
                           setConfidenceOverride(null);
                           setAmount('');
-                          setSelectedTeams(null);
-                          setBalance(null);
-                          setErrorMsg('');
                         }}
-                        onPredict={(question, eventId) => {
+                        onQuickPredict={(question, eventId) => {
+                          const id = String(event.id ?? event.eventId ?? eventId ?? '');
+                          setSelectedEventId(id);
                           setSelectedQuestion(question);
                           setSelectedOutcome(null);
                           setConfidenceOverride(null);
@@ -669,188 +594,211 @@ export const Sports: React.FC = () => {
                           fetchBalance();
                         }}
                       />
-                    )}
-                  </div>
-                ))}
-              </div>
-            )}
-          </main>
-
-          {/* Right Sidebar - Prediction Panel */}
-          <aside className="w-96 flex-shrink-0 hidden lg:block">
-            <div className="rounded-2xl border border-white/10 bg-white/5 p-6 sticky top-24">
-              <h3 className="text-sm text-gray-text mb-1">Make Your Prediction</h3>
-              <p className="text-xs text-gray-muted mb-4">Own your call. Trade with confidence.</p>
-
-              {selectedQuestion ? (
-                <div className="space-y-4">
-                  <div className="bg-dark-card border border-white/10 p-4 rounded-lg">
-                    <div className="text-sm text-white font-semibold mb-1">{selectedQuestion.name}</div>
-                    {selectedQuestion.category && (
-                      <div className="text-xs text-gray-text">{selectedQuestion.category}</div>
-                    )}
-                  </div>
-
-                  {balance && (
-                    <div className="bg-primary/10 border border-primary/30 rounded-lg p-3">
-                      <div className="flex items-center justify-between">
-                        <span className="text-sm text-white">Available Balance</span>
-                        <span className="text-primary font-semibold">{formatCurrency(getAvailableBalance(balance))}</span>
-                      </div>
+                      {selectedEventId === String(event.id ?? event.eventId ?? '') && (
+                        <EventDetails
+                          eventId={String(event.id ?? event.eventId ?? '')}
+                          onBack={() => {
+                            setSelectedEventId(null);
+                            setSelectedQuestion(null);
+                            setSelectedOutcome(null);
+                            setConfidenceOverride(null);
+                            setAmount('');
+                            setSelectedTeams(null);
+                            setBalance(null);
+                            setErrorMsg('');
+                          }}
+                          onPredict={(question, eventId) => {
+                            setSelectedQuestion(question);
+                            setSelectedOutcome(null);
+                            setConfidenceOverride(null);
+                            setAmount('');
+                            setErrorMsg('');
+                            fetchBalance();
+                          }}
+                        />
+                      )}
                     </div>
-                  )}
+                  ))}
+                </div>
+              )}
+            </main>
 
-                  <div className="grid grid-cols-2 gap-2">
-                    {selectedQuestion.activity?.marketDataDetails?.map((option: any, idx: number) => (
-                      <button
-                        key={idx}
-                        onClick={() => {
-                          setSelectedOutcome(option);
-                          setConfidenceOverride(null);
-                        }}
-                        className={`p-3 rounded-lg border transition-all text-sm font-medium ${
-                          selectedOutcome?.outcome === option.outcome
-                            ? 'border-primary bg-primary/10 text-primary'
-                            : 'border-white/10 bg-dark-card text-white hover:border-primary/30'
-                        }`}
-                      >
-                        {option.outcome}
-                        <div className="text-xs text-gray-text mt-1">
-                          {Number.parseFloat(String(option.impliedProbability || '0')).toFixed(1)}%
+            {/* Right Sidebar - Prediction Panel */}
+            <aside className="w-96 flex-shrink-0 hidden lg:block">
+              <div className="rounded-2xl border border-white/10 bg-white/5 p-6 sticky top-24">
+                <h3 className="text-sm text-gray-text mb-1">Make Your Prediction</h3>
+                <p className="text-xs text-gray-muted mb-4">Own your call. Trade with confidence.</p>
+
+                {selectedQuestion ? (
+                  <div className="space-y-4">
+                    <div className="bg-dark-card border border-white/10 p-4 rounded-lg">
+                      <div className="text-sm text-white font-semibold mb-1">{selectedQuestion.name}</div>
+                      {selectedQuestion.category && (
+                        <div className="text-xs text-gray-text">{selectedQuestion.category}</div>
+                      )}
+                    </div>
+
+                    {balance && (
+                      <div className="bg-primary/10 border border-primary/30 rounded-lg p-3">
+                        <div className="flex items-center justify-between">
+                          <span className="text-sm text-white">Available Balance</span>
+                          <span className="text-primary font-semibold">{formatCurrency(getAvailableBalance(balance))}</span>
                         </div>
-                      </button>
-                    ))}
-                  </div>
-
-                  <div>
-                    <div className="flex items-center justify-between mb-2">
-                      <span className="text-xs text-gray-text">Confidence</span>
-                      <span className="text-xs text-white font-semibold">
-                        {formatPercent(
-                          confidenceOverride ??
-                            (selectedOutcome
-                              ? Number.parseFloat(String(selectedOutcome?.impliedProbability || '0'))
-                              : 0)
-                        )}
-                      </span>
-                    </div>
-                    <input
-                      type="range"
-                      min={0}
-                      max={100}
-                      value={
-                        confidenceOverride ??
-                        (selectedOutcome
-                          ? Number.parseFloat(String(selectedOutcome?.impliedProbability || '0'))
-                          : 0)
-                      }
-                      onChange={(e) => setConfidenceOverride(Number(e.target.value))}
-                      className="w-full"
-                    />
-                  </div>
-
-                  {errorMsg && (
-                    <div className="bg-red-500/10 border border-red-500/30 text-red-300 px-3 py-2 rounded flex items-start text-sm gap-2">
-                      <AlertCircle className="w-4 h-4 flex-shrink-0 mt-0.5" />
-                      <span>{errorMsg}</span>
-                    </div>
-                  )}
-
-                  <div>
-                    <label className="block text-xs text-gray-text mb-2">Amount</label>
-                    <input
-                      className="w-full rounded-lg bg-dark-card border border-white/10 p-3 text-white placeholder:text-gray-muted focus:outline-none focus:border-primary/30 focus:ring-1 focus:ring-primary/20 transition-all"
-                      type="number"
-                      step="0.01"
-                      min="0"
-                      value={amount}
-                      onChange={(e) => setAmount(e.target.value)}
-                      placeholder="$100"
-                    />
-                    {balance && amount && Number(amount) > 0 && (
-                      <div className="mt-2 text-xs text-gray-text">
-                        Remaining: {formatCurrency(Math.max(0, getAvailableBalance(balance) - Number(amount)))}
                       </div>
                     )}
-                    <div className="mt-3 grid grid-cols-4 gap-2">
-                      {(['10', '50', '100', '500'] as const).map((v) => (
+
+                    <div className="grid grid-cols-2 gap-2">
+                      {selectedQuestion.activity?.marketDataDetails?.map((option: any, idx: number) => (
                         <button
-                          key={v}
-                          onClick={() => setAmount(v)}
-                          className="py-2 rounded-lg bg-dark-card border border-white/10 text-sm text-white hover:border-primary/30 transition-all"
+                          key={idx}
+                          onClick={() => {
+                            setSelectedOutcome(option);
+                            setConfidenceOverride(null);
+                          }}
+                          className={`p-3 rounded-lg border transition-all text-sm font-medium ${
+                            selectedOutcome?.outcome === option.outcome
+                              ? 'border-primary bg-primary/10 text-primary'
+                              : 'border-white/10 bg-dark-card text-white hover:border-primary/30'
+                          }`}
                         >
-                          ${v}
+                          {option.outcome}
+                          <div className="text-xs text-gray-text mt-1">
+                            {Number.parseFloat(String(option.impliedProbability || '0')).toFixed(1)}%
+                          </div>
                         </button>
                       ))}
                     </div>
-                  </div>
 
-                  {selectedOutcome && amount && Number(amount) > 0 && (
-                    <div className="bg-dark-card border border-white/10 rounded-lg p-3">
-                      <h4 className="text-sm text-white font-semibold mb-3">Potential Returns</h4>
-                      {(() => {
-                        const impliedPct = Math.max(
-                          0,
-                          Math.min(100, Number.parseFloat(String(selectedOutcome?.impliedProbability || '0')) || 0)
-                        );
-                        const confPct = confidenceOverride ?? impliedPct;
-                        const amt = Number(amount);
-                        const profit = (amt * confPct) / 100;
-                        const totalReturn = amt + profit;
-
-                        return (
-                          <div className="space-y-2 text-xs">
-                            <div className="flex justify-between">
-                              <span className="text-gray-text">Investment</span>
-                              <span className="text-white font-medium">{formatCurrency(amt)}</span>
-                            </div>
-                            <div className="flex justify-between">
-                              <span className="text-gray-text">Prediction</span>
-                              <span className="text-white font-medium">{formatPercent(confPct)}</span>
-                            </div>
-                            <div className="flex justify-between">
-                              <span className="text-gray-text">Potential Profit</span>
-                              <span className="text-primary font-semibold">+{formatCurrency(profit)}</span>
-                            </div>
-                            <div className="flex justify-between pt-2 border-t border-white/10">
-                              <span className="text-white">Total Return</span>
-                              <span className="text-white font-semibold">{formatCurrency(totalReturn)}</span>
-                            </div>
-                          </div>
-                        );
-                      })()}
+                    <div>
+                      <div className="flex items-center justify-between mb-2">
+                        <span className="text-xs text-gray-text">Confidence</span>
+                        <span className="text-xs text-white font-semibold">
+                          {formatPercent(
+                            confidenceOverride ??
+                              (selectedOutcome
+                                ? Number.parseFloat(String(selectedOutcome?.impliedProbability || '0'))
+                                : 0)
+                          )}
+                        </span>
+                      </div>
+                      <input
+                        type="range"
+                        min={0}
+                        max={100}
+                        value={
+                          confidenceOverride ??
+                          (selectedOutcome
+                            ? Number.parseFloat(String(selectedOutcome?.impliedProbability || '0'))
+                            : 0)
+                        }
+                        onChange={(e) => setConfidenceOverride(Number(e.target.value))}
+                        className="w-full"
+                      />
                     </div>
-                  )}
 
-                  <button
-                    onClick={handleMakePrediction}
-                    disabled={!selectedOutcome || !amount || Number(amount) <= 0 || isSubmitting}
-                    className={`w-full py-3 rounded-lg font-semibold transition-all flex items-center justify-center gap-2 ${
-                      !selectedOutcome || !amount || Number(amount) <= 0 || isSubmitting
-                        ? 'bg-gray-muted text-gray-text cursor-not-allowed opacity-50'
-                        : 'bg-primary text-dark-bg hover:bg-primary/90 cursor-pointer'
-                    }`}
-                  >
-                    {isSubmitting && <Loader2 className="w-4 h-4 animate-spin" />}
-                    {isSubmitting ? (
-                      'Submitting...'
-                    ) : !selectedOutcome ? (
-                      'Select an outcome'
-                    ) : !amount || Number(amount) <= 0 ? (
-                      'Enter amount'
-                    ) : (
-                      'Make Prediction'
+                    {errorMsg && (
+                      <div className="bg-red-500/10 border border-red-500/30 text-red-300 px-3 py-2 rounded flex items-start text-sm gap-2">
+                        <AlertCircle className="w-4 h-4 flex-shrink-0 mt-0.5" />
+                        <span>{errorMsg}</span>
+                      </div>
                     )}
-                  </button>
-                </div>
-              ) : (
-                <div className="text-gray-text text-sm text-center py-8">
-                  <TrendingUp className="w-8 h-8 mx-auto mb-2 opacity-50" />
-                  <p>Select a question from the events to start your prediction.</p>
-                </div>
-              )}
-            </div>
-          </aside>
+
+                    <div>
+                      <label className="block text-xs text-gray-text mb-2">Amount</label>
+                      <input
+                        className="w-full rounded-lg bg-dark-card border border-white/10 p-3 text-white placeholder:text-gray-muted focus:outline-none focus:border-primary/30 focus:ring-1 focus:ring-primary/20 transition-all"
+                        type="number"
+                        step="0.01"
+                        min="0"
+                        value={amount}
+                        onChange={(e) => setAmount(e.target.value)}
+                        placeholder="$100"
+                      />
+                      {balance && amount && Number(amount) > 0 && (
+                        <div className="mt-2 text-xs text-gray-text">
+                          Remaining: {formatCurrency(Math.max(0, getAvailableBalance(balance) - Number(amount)))}
+                        </div>
+                      )}
+                      <div className="mt-3 grid grid-cols-4 gap-2">
+                        {(['10', '50', '100', '500'] as const).map((v) => (
+                          <button
+                            key={v}
+                            onClick={() => setAmount(v)}
+                            className="py-2 rounded-lg bg-dark-card border border-white/10 text-sm text-white hover:border-primary/30 transition-all"
+                          >
+                            ${v}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+
+                    {selectedOutcome && amount && Number(amount) > 0 && (
+                      <div className="bg-dark-card border border-white/10 rounded-lg p-3">
+                        <h4 className="text-sm text-white font-semibold mb-3">Potential Returns</h4>
+                        {(() => {
+                          const impliedPct = Math.max(
+                            0,
+                            Math.min(100, Number.parseFloat(String(selectedOutcome?.impliedProbability || '0')) || 0)
+                          );
+                          const confPct = confidenceOverride ?? impliedPct;
+                          const amt = Number(amount);
+                          const profit = (amt * confPct) / 100;
+                          const totalReturn = amt + profit;
+
+                          return (
+                            <div className="space-y-2 text-xs">
+                              <div className="flex justify-between">
+                                <span className="text-gray-text">Investment</span>
+                                <span className="text-white font-medium">{formatCurrency(amt)}</span>
+                              </div>
+                              <div className="flex justify-between">
+                                <span className="text-gray-text">Prediction</span>
+                                <span className="text-white font-medium">{formatPercent(confPct)}</span>
+                              </div>
+                              <div className="flex justify-between">
+                                <span className="text-gray-text">Potential Profit</span>
+                                <span className="text-primary font-semibold">+{formatCurrency(profit)}</span>
+                              </div>
+                              <div className="flex justify-between pt-2 border-t border-white/10">
+                                <span className="text-white">Total Return</span>
+                                <span className="text-white font-semibold">{formatCurrency(totalReturn)}</span>
+                              </div>
+                            </div>
+                          );
+                        })()}
+                      </div>
+                    )}
+
+                    <button
+                      onClick={handleMakePrediction}
+                      disabled={!selectedOutcome || !amount || Number(amount) <= 0 || isSubmitting}
+                      className={`w-full py-3 rounded-lg font-semibold transition-all flex items-center justify-center gap-2 ${
+                        !selectedOutcome || !amount || Number(amount) <= 0 || isSubmitting
+                          ? 'bg-gray-muted text-gray-text cursor-not-allowed opacity-50'
+                          : 'bg-primary text-dark-bg hover:bg-primary/90 cursor-pointer'
+                      }`}
+                    >
+                      {isSubmitting && <Loader2 className="w-4 h-4 animate-spin" />}
+                      {isSubmitting ? (
+                        'Submitting...'
+                      ) : !selectedOutcome ? (
+                        'Select an outcome'
+                      ) : !amount || Number(amount) <= 0 ? (
+                        'Enter amount'
+                      ) : (
+                        'Make Prediction'
+                      )}
+                    </button>
+                  </div>
+                ) : (
+                  <div className="text-gray-text text-sm text-center py-8">
+                    <TrendingUp className="w-8 h-8 mx-auto mb-2 opacity-50" />
+                    <p>Select a question from the events to start your prediction.</p>
+                  </div>
+                )}
+              </div>
+            </aside>
+          </div>
         </div>
       </div>
 

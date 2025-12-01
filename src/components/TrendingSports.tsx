@@ -1,5 +1,7 @@
 import { Button } from './ui/Button';
 import trendingImg from '../assets/trending.png';
+import { useState } from 'react';
+import { motion } from 'framer-motion';
 
 const sports = [
   {
@@ -111,6 +113,140 @@ const sports = [
   },
 ];
 
+const flippedCardData = {
+  title: 'Will the S&P 500 close above 6,000 by March 2025?',
+  description: 'Based on recent political activity and media coverage',
+  amount: 100,
+  confidence: 50,
+  confidenceLabel: 'Predicting Yes with 50% confidence',
+  yesRange: '$100 - $222',
+  noRange: '$100 - $182',
+  volume: '$3.7K',
+};
+
+const SportsCard = ({ sport }: { sport: typeof sports[0] }) => {
+  const [isFlipped, setIsFlipped] = useState(false);
+
+  const handlePredictClick = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    setIsFlipped(!isFlipped);
+  };
+
+
+  return (
+    <div
+      className="w-full"
+      style={{
+        perspective: '1000px',
+      }}
+    >
+      <motion.div
+        style={{
+          transformStyle: 'preserve-3d',
+        }}
+        animate={{ rotateY: isFlipped ? 180 : 0 }}
+        transition={{ duration: 0.6, ease: 'easeInOut' }}
+      >
+        {/* Front of card */}
+        <div
+          style={{
+            backfaceVisibility: 'hidden',
+            display: isFlipped ? 'none' : 'flex',
+          }}
+          className="group relative bg-dark-card border border-white/5 rounded-2xl p-6 hover:border-primary/30 transition-all duration-300 flex flex-col items-center text-center justify-between w-full min-h-[220px]"
+        >
+          <div className="flex flex-col items-center w-full pt-4">
+            <div className="w-16 h-16 rounded-full flex items-center justify-center mb-6 group-hover:scale-110 transition-transform text-white" style={{ background: 'rgba(0, 255, 115, 0.1)' }}>
+              {sport.icon}
+            </div>
+
+            <h3 className="text-[20px] font-bold text-white mb-2">{sport.name}</h3>
+            <p className="text-sm font-normal text-[#99A1AF] mb-8"><span className="font-bold text-[#FEDE39]">{sport.matches}</span> Active Matches</p>
+          </div>
+
+          <Button
+            variant="glass"
+            size="sm"
+            onClick={handlePredictClick}
+            className="w-full text-xs bg-primary/10 text-primary border-primary/30 hover:bg-primary hover:text-black font-medium"
+          >
+            Predict Now
+          </Button>
+        </div>
+
+        {/* Back of card */}
+        <div
+          style={{
+            transform: 'rotateY(180deg)',
+            backfaceVisibility: 'hidden',
+            display: isFlipped ? 'flex' : 'none',
+            flexDirection: 'column',
+          }}
+          className="group relative bg-dark-card border border-white/5 rounded-2xl p-6 hover:border-primary/30 transition-all duration-300 w-full"
+        >
+          <div className="flex flex-col w-full flex-1">
+            <h3 className="text-[16px] font-bold text-white mb-3 line-clamp-3 text-left">{flippedCardData.title}</h3>
+
+            <div className="mb-4">
+              <p className="text-[12px] text-[#99A1AF] mb-2 text-left">Amount ($)</p>
+              <input
+                type="number"
+                defaultValue={flippedCardData.amount}
+                className="w-full bg-dark-bg border border-white/10 rounded-lg px-3 py-2 text-white text-[14px] focus:outline-none focus:border-primary/50"
+              />
+            </div>
+
+            <div className="mb-4">
+              <div className="flex justify-between items-center mb-2">
+                <p className="text-[12px] text-[#99A1AF]">Confidence</p>
+                <span className="text-[12px] font-bold text-primary">{flippedCardData.confidence}%</span>
+              </div>
+              <div className="h-1 bg-dark-bg rounded-full overflow-hidden">
+                <div
+                  className="h-full bg-primary"
+                  style={{ width: `${flippedCardData.confidence}%` }}
+                />
+              </div>
+            </div>
+
+            <p className="text-[11px] text-[#99A1AF] mb-4 italic">{flippedCardData.confidenceLabel}</p>
+
+            <div className="grid grid-cols-2 gap-3">
+              <div className="bg-dark-bg rounded-lg p-3">
+                <p className="text-[10px] text-[#99A1AF] mb-1">Yes</p>
+                <p className="text-[12px] font-bold text-primary">{flippedCardData.yesRange}</p>
+              </div>
+              <div className="bg-dark-bg rounded-lg p-3">
+                <p className="text-[10px] text-[#99A1AF] mb-1">No</p>
+                <p className="text-[12px] font-bold text-red-400">{flippedCardData.noRange}</p>
+              </div>
+            </div>
+          </div>
+
+          <div className="flex gap-2 w-full mt-6">
+            <Button
+              variant="glass"
+              size="sm"
+              onClick={handlePredictClick}
+              className="flex-1 text-xs bg-primary text-black border-primary hover:bg-primary/90 font-medium"
+            >
+              Predict
+            </Button>
+            <Button
+              variant="glass"
+              size="sm"
+              onClick={handlePredictClick}
+              className="flex-1 text-xs bg-dark-bg text-white border-white/10 hover:border-primary/30 font-medium"
+            >
+              Cancel
+            </Button>
+          </div>
+        </div>
+      </motion.div>
+    </div>
+  );
+};
+
 export const TrendingSports = () => {
   return (
     <section className="relative py-24 bg-dark-bg">
@@ -127,29 +263,7 @@ export const TrendingSports = () => {
 
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-6">
           {sports.map((sport) => (
-            <div 
-              key={sport.name}
-              className="group relative bg-dark-card border border-white/5 rounded-2xl p-6 hover:border-primary/30 transition-all duration-300"
-            >
-              <div className="flex flex-col items-center text-center h-full justify-between min-h-[220px]">
-                <div className="flex flex-col items-center w-full pt-4">
-                  <div className="w-16 h-16 rounded-full flex items-center justify-center mb-6 group-hover:scale-110 transition-transform text-white" style={{ background: 'rgba(0, 255, 115, 0.1)' }}>
-                        {sport.icon}
-                    </div>
-                    
-                  <h3 className="text-[20px] font-bold text-white mb-2">{sport.name}</h3>
-                  <p className="text-sm font-normal text-[#99A1AF] mb-8"><span className="font-bold text-[#FEDE39]">{sport.matches}</span> Active Matches</p>
-                </div>
-                
-                <Button 
-                  variant="glass" 
-                  size="sm" 
-                  className="w-full text-xs bg-primary/10 text-primary border-primary/30 hover:bg-primary hover:text-black font-medium"
-                >
-                  Predict Now
-                </Button>
-              </div>
-            </div>
+            <SportsCard key={sport.name} sport={sport} />
           ))}
         </div>
       </div>
