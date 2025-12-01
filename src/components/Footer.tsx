@@ -1,7 +1,18 @@
 import { Twitter, Facebook, Instagram, Youtube, Github } from 'lucide-react';
 import logoImg from '../assets/juspredict-logo.svg';
 
-export const Footer = () => {
+interface FooterProps {
+  onNavigate?: (page: 'home' | 'portfolio' | 'clan' | 'clanDetail' | 'sports' | 'about' | 'faq' | 'contact') => void;
+}
+
+export const Footer = ({ onNavigate }: FooterProps) => {
+  const handleLinkClick = (e: React.MouseEvent, page?: string) => {
+    if (page && onNavigate) {
+      e.preventDefault();
+      onNavigate(page as any);
+    }
+  };
+
   return (
     <footer className="bg-dark-bg border-t border-white/5 pt-20 pb-10">
       <div className="max-w-[1400px] mx-auto px-4 sm:px-6 lg:px-8">
@@ -50,13 +61,24 @@ export const Footer = () => {
             <div key={idx}>
               <h4 className="text-white font-bold mb-6">{column.title}</h4>
               <ul className="space-y-4">
-                {column.links.map((link) => (
-                  <li key={link}>
-                    <a href="#" className="text-gray-text hover:text-primary text-sm transition-colors">
-                      {link}
-                    </a>
-                  </li>
-                ))}
+                {column.links.map((link) => {
+                  let pageLink: string | undefined;
+                  if (link === 'Contact') pageLink = 'contact';
+                  else if (link === 'FAQ') pageLink = 'faq';
+                  else if (link === 'About Us') pageLink = 'about';
+
+                  return (
+                    <li key={link}>
+                      <a
+                        href="#"
+                        onClick={(e) => handleLinkClick(e, pageLink)}
+                        className="text-gray-text hover:text-primary text-sm transition-colors"
+                      >
+                        {link}
+                      </a>
+                    </li>
+                  );
+                })}
               </ul>
             </div>
           ))}

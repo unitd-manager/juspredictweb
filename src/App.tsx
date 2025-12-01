@@ -5,11 +5,14 @@ import Portfolio from './pages/Portfolio';
 import Clan from './pages/Clan';
 import ClanDetail from './pages/ClanDetail';
 import Sports from './pages/Sports';
+import About from './pages/About';
+import Faq from './pages/Faq';
+import Contact from './pages/Contact';
 import { Footer } from './components/Footer';
 import { Toaster } from './components/ui/Toast';
 
 function App() {
-  const [currentPage, setCurrentPage] = useState<'home' | 'portfolio' | 'clan' | 'clanDetail' | 'sports'>('home');
+  const [currentPage, setCurrentPage] = useState<'home' | 'portfolio' | 'clan' | 'clanDetail' | 'sports' | 'about' | 'faq' | 'contact'>('home');
   const [selectedClanId, setSelectedClanId] = useState<string | undefined>();
 
   const handleNavigateToClanDetail = (clanId: string) => {
@@ -34,11 +37,17 @@ function App() {
           <Clan onSelectClan={handleNavigateToClanDetail} />
         ) : currentPage === 'clanDetail' ? (
           <ClanDetail groupId={selectedClanId} onBack={handleBackFromClanDetail} />
+        ) : currentPage === 'about' ? (
+          <About />
+        ) : currentPage === 'faq' ? (
+          <Faq />
+        ) : currentPage === 'contact' ? (
+          <Contact />
         ) : (
           <Sports />
         )}
       </main>
-      {!['clan', 'clanDetail', 'sports'].includes(currentPage) && <Footer />}
+      {!['clan', 'clanDetail', 'sports'].includes(currentPage) && <Footer onNavigate={setCurrentPage} />}
       <Toaster />
     </div>
   );

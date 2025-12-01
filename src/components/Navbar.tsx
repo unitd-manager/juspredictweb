@@ -4,8 +4,8 @@ import { Menu, X } from 'lucide-react';
 import logoImg from '../assets/juspredict-logo.svg';
 
 interface NavbarProps {
-  onNavigate: (page: 'home' | 'portfolio' | 'clan' | 'clanDetail' | 'sports') => void;
-  currentPage: 'home' | 'portfolio' | 'clan' | 'clanDetail' | 'sports';
+  onNavigate: (page: 'home' | 'portfolio' | 'clan' | 'clanDetail' | 'sports' | 'about' | 'faq' | 'contact') => void;
+  currentPage: 'home' | 'portfolio' | 'clan' | 'clanDetail' | 'sports' | 'about' | 'faq' | 'contact';
 }
 
 export const Navbar = ({ onNavigate, currentPage }: NavbarProps) => {
@@ -13,17 +13,17 @@ export const Navbar = ({ onNavigate, currentPage }: NavbarProps) => {
 
   const navLinks = [
     { name: 'Home', href: '#', page: 'home' as const },
-    { name: 'FAQ', href: '#', page: undefined },
+    { name: 'FAQ', href: '#', page: 'faq' as const },
     { name: 'Portfolio', href: '#', page: 'portfolio' as const },
     { name: 'Clan', href: '#', page: 'clan' as const },
     { name: 'Sports', href: '#', page: 'sports' as const },
     { name: 'Events', href: '#', page: undefined },
     { name: 'Leaderboard', href: '#', page: undefined },
-    { name: 'About', href: '#', page: undefined },
+    { name: 'About', href: '#', page: 'about' as const },
     { name: 'API Docs', href: '#', page: undefined },
   ];
 
-  const handleLinkClick = (e: React.MouseEvent, page?: 'home' | 'portfolio' | 'clan' | 'clanDetail' | 'sports') => {
+  const handleLinkClick = (e: React.MouseEvent, page?: 'home' | 'portfolio' | 'clan' | 'clanDetail' | 'sports' | 'about' | 'faq' | 'contact') => {
     if (page) {
       e.preventDefault();
       onNavigate(page);
