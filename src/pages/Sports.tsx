@@ -4,7 +4,6 @@ import { PageHeader } from '../components/PageHeader';
 import { Footer2 } from '../components/Footer2';
 import { Button } from '../components/ui/Button';
 import { api } from '../api/client';
-import { toast } from '../components/ui/Toast';
 
 // Team Row Component
 const TeamRow = ({ team, probability }: { team: any; probability: number }) => {
@@ -357,6 +356,7 @@ export const Sports: React.FC = () => {
     a: { name: string; prob: number };
     b: { name: string; prob: number };
   } | null>(null);
+  console.log(selectedTeams);
   const [balance, setBalance] = useState<any | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errorMsg, setErrorMsg] = useState('');
@@ -654,7 +654,7 @@ export const Sports: React.FC = () => {
                             setBalance(null);
                             setErrorMsg('');
                           }}
-                          onPredict={(question, eventId) => {
+                          onPredict={(question) => {
                             setSelectedQuestion(question);
                             setSelectedOutcome(null);
                             setConfidenceOverride(null);
