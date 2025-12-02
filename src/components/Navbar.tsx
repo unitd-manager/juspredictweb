@@ -20,6 +20,7 @@ export const Navbar = ({ onNavigate, currentPage }: NavbarProps) => {
     // { name: 'Events', href: '#', page: undefined },
     // { name: 'Leaderboard', href: '#', page: undefined },
     { name: 'About', href: '#', page: 'about' as const },
+    { name: 'Contact', href: '#', page: 'contact' as const },
     // { name: 'API Docs', href: '#', page: undefined },
   ];
 
