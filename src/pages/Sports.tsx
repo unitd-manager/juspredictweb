@@ -360,11 +360,13 @@ export const Sports: React.FC = () => {
   const [balance, setBalance] = useState<any | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errorMsg, setErrorMsg] = useState('');
-  const [activeTab, setActiveTab] = useState<'open' | 'live' | 'completed' | 'cancelled' | 'exited'>('live');
+  const [activeTab, setActiveTab] = useState<'all'|'open' | 'live' | 'completed' | 'cancelled' | 'exited'>('live');
   const [selectedSport, setSelectedSport] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
 
   const tabs = [
+    
+    { id: 'all', label: 'All' },
     { id: 'open', label: 'Open' },
     { id: 'live', label: 'Live' },
     { id: 'completed', label: 'Completed' },
@@ -437,6 +439,8 @@ export const Sports: React.FC = () => {
 
     if (activeTab === 'live') {
       matchesStatus = now - eventTime < 3600000 && eventTime - now < 1800000;
+    }else if (activeTab === 'all') {
+      matchesStatus = eventTime == eventTime;
     } else if (activeTab === 'open') {
       matchesStatus = eventTime > now;
     } else if (activeTab === 'completed') {
