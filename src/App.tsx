@@ -8,6 +8,7 @@ import Sports from './pages/Sports';
 import About from './pages/About';
 import Faq from './pages/Faq';
 import Contact from './pages/Contact';
+import { Login } from './pages/Login';
 import { Footer } from './components/Footer';
 import { Toaster } from './components/ui/Toast';
 
@@ -20,10 +21,11 @@ const pageTitles: Record<string, string> = {
   about: 'About Us - JusPredict',
   faq: 'FAQ - JusPredict',
   contact: 'Contact Us - JusPredict',
+  login: 'Login - JusPredict',
 };
 
 function App() {
-  const [currentPage, setCurrentPage] = useState<'home' | 'portfolio' | 'clan' | 'clanDetail' | 'sports' | 'about' | 'faq' | 'contact'>('home');
+  const [currentPage, setCurrentPage] = useState<'home' | 'portfolio' | 'clan' | 'clanDetail' | 'sports' | 'about' | 'faq' | 'contact' | 'login'>('home');
   const [selectedClanId, setSelectedClanId] = useState<string | undefined>();
 
   useEffect(() => {
@@ -59,6 +61,8 @@ function App() {
           <Faq />
         ) : currentPage === 'contact' ? (
           <Contact />
+        ) : currentPage === 'login' ? (
+          <Login onNavigate={setCurrentPage} />
         ) : (
           <Sports />
         )}

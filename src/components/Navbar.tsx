@@ -4,8 +4,8 @@ import { Menu, X } from 'lucide-react';
 import logoImg from '../assets/juspredict-logo.svg';
 
 interface NavbarProps {
-  onNavigate: (page: 'home' | 'portfolio' | 'clan' | 'clanDetail' | 'sports' | 'about' | 'faq' | 'contact') => void;
-  currentPage: 'home' | 'portfolio' | 'clan' | 'clanDetail' | 'sports' | 'about' | 'faq' | 'contact';
+  onNavigate: (page: 'home' | 'portfolio' | 'clan' | 'clanDetail' | 'sports' | 'about' | 'faq' | 'contact' | 'login') => void;
+  currentPage: 'home' | 'portfolio' | 'clan' | 'clanDetail' | 'sports' | 'about' | 'faq' | 'contact' | 'login';
 }
 
 export const Navbar = ({ onNavigate, currentPage }: NavbarProps) => {
@@ -17,10 +17,10 @@ export const Navbar = ({ onNavigate, currentPage }: NavbarProps) => {
     { name: 'Portfolio', href: '#', page: 'portfolio' as const },
     { name: 'Clan', href: '#', page: 'clan' as const },
     { name: 'Sports', href: '#', page: 'sports' as const },
-    { name: 'Events', href: '#', page: undefined },
-    { name: 'Leaderboard', href: '#', page: undefined },
+    // { name: 'Events', href: '#', page: undefined },
+    // { name: 'Leaderboard', href: '#', page: undefined },
     { name: 'About', href: '#', page: 'about' as const },
-    { name: 'API Docs', href: '#', page: undefined },
+    // { name: 'API Docs', href: '#', page: undefined },
   ];
 
   const handleLinkClick = (e: React.MouseEvent, page?: 'home' | 'portfolio' | 'clan' | 'clanDetail' | 'sports' | 'about' | 'faq' | 'contact') => {
@@ -63,7 +63,7 @@ export const Navbar = ({ onNavigate, currentPage }: NavbarProps) => {
 
           {/* Auth Buttons */}
           <div className="hidden md:flex items-center gap-4">
-            <Button variant="ghost" size="sm" className="text-gray-light hover:text-white">Login</Button>
+            <Button variant="ghost" size="sm" className="text-gray-light hover:text-white" onClick={() => onNavigate('login')}>Login</Button>
             <Button size="sm" className="bg-primary text-black hover:bg-primary/90 font-bold px-6">Sign Up</Button>
           </div>
 
@@ -101,7 +101,7 @@ export const Navbar = ({ onNavigate, currentPage }: NavbarProps) => {
               );
             })}
             <div className="pt-4 flex flex-col gap-3">
-              <Button variant="ghost" className="w-full text-white">Login</Button>
+              <Button variant="ghost" className="w-full text-white" onClick={() => onNavigate('login')}>Login</Button>
               <Button className="w-full bg-primary text-black font-bold">Sign Up</Button>
             </div>
           </div>
