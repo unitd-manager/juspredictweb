@@ -344,7 +344,7 @@ const EventDetails: React.FC<{
 };
 
 // Main Sports Page
-export const Sports: React.FC = () => {
+export const Sports: React.FC<{ selectedSport?: string | null }> = ({ selectedSport: propSelectedSport }) => {
   const [events, setEvents] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [selectedEventId, setSelectedEventId] = useState<string | null>(null);
@@ -361,7 +361,13 @@ export const Sports: React.FC = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errorMsg, setErrorMsg] = useState('');
   const [activeTab, setActiveTab] = useState<'all'|'open' | 'live' | 'completed' | 'cancelled' | 'exited'>('live');
-  const [selectedSport, setSelectedSport] = useState<string | null>(null);
+  const [selectedSport, setSelectedSport] = useState<string | null>(propSelectedSport || null);
+
+  useEffect(() => {
+    if (propSelectedSport) {
+      setSelectedSport(propSelectedSport);
+    }
+  }, [propSelectedSport]);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
 
   const tabs = [

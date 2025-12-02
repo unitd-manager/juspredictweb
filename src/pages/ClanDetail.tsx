@@ -2,7 +2,7 @@ import React, { useMemo, useState, useEffect } from 'react';
 import { format } from '../lib/dateUtils';
 import { ArrowLeft, CheckCircle2, Users, Loader2, MapPin, CalendarDays, Target, Crown, Shield, X } from 'lucide-react';
 import { Footer2 } from '../components/Footer2';
-import { Card, CardContent } from '../components/ui/Card';
+import { Card } from '../components/ui/Card';
 import { Button } from '../components/ui/Button';
 import { Badge } from '../components/ui/Badge';
 import { Skeleton } from '../components/ui/Skeleton';
@@ -121,7 +121,7 @@ export const ClanDetail: React.FC<ClanDetailProps> = ({ groupId, onBack }) => {
   const [error, setError] = useState<Error | null>(null);
   const [removeTarget, setRemoveTarget] = useState<string | null>(null);
   const [isRemoving, setIsRemoving] = useState(false);
-
+console.log('isremoving',isRemoving);
   useEffect(() => {
     const fetchData = async () => {
       if (!groupId) {
@@ -268,7 +268,8 @@ export const ClanDetail: React.FC<ClanDetailProps> = ({ groupId, onBack }) => {
                         </TableRow>
                       </TableHeader>
                       <TableBody>
-                        {leaderboard.map((row: LeaderboardRow, index) => (
+                        {leaderboard.map((row: LeaderboardRow, index:any) => (
+
                           <TableRow key={row.userInfo?.userId ?? index} className="border-white/5">
                             <TableCell className="flex flex-col">
                               <span className="font-semibold text-white">{getMemberName(row.userInfo)}</span>
@@ -302,7 +303,7 @@ export const ClanDetail: React.FC<ClanDetailProps> = ({ groupId, onBack }) => {
                 ) : (
                   <ScrollArea className="max-h-72 pr-4">
                     <div className="space-y-3">
-                      {members.map((member) => (
+                      {members.map((member: GroupMember) => (
                         <div
                           key={member.userId ?? member.userEmail ?? member.userName}
                           className="flex items-center justify-between rounded-2xl border border-white/5 bg-white/5 p-3"
@@ -352,7 +353,7 @@ export const ClanDetail: React.FC<ClanDetailProps> = ({ groupId, onBack }) => {
                   <Skeleton className="h-48 rounded-2xl bg-white/10" />
                 ) : activities.length ? (
                   <div className="space-y-4">
-                    {activities.slice(0, 4).map((activity) => (
+                    {activities.slice(0, 4).map((activity: any) => (
                       <ActivityCard key={activity.entityId ?? activity.eventName} activity={activity} />
                     ))}
                   </div>

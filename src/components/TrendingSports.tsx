@@ -124,7 +124,7 @@ const flippedCardData = {
   volume: '$3.7K',
 };
 
-const SportsCard = ({ sport }: { sport: typeof sports[0] }) => {
+const SportsCard = ({ sport,onNavigate }: { sport: typeof sports[0],onNavigate: (Page:string)=>void; }) => {
   const [isFlipped, setIsFlipped] = useState(false);
 
   const handlePredictClick = (e: React.MouseEvent) => {
@@ -169,7 +169,7 @@ const SportsCard = ({ sport }: { sport: typeof sports[0] }) => {
             size="sm"
             // onClick={handlePredictClick}
             className="w-full text-xs bg-primary/10 text-primary border-primary/30 hover:bg-primary hover:text-black font-medium"
-          >
+          onClick={()=>onNavigate("sports")} >
             Predict Now
           </Button>
         </div>
@@ -247,7 +247,11 @@ const SportsCard = ({ sport }: { sport: typeof sports[0] }) => {
   );
 };
 
-export const TrendingSports = () => {
+interface TrendingSportsProps {
+  onNavigate: (page: string) => void;
+}
+
+export const TrendingSports: React.FC<TrendingSportsProps> = ({ onNavigate }) => {
   return (
     <section className="relative py-24 bg-dark-bg">
       <div className="absolute pointer-events-none z-0" style={{ right: '-40px', top: '70px' }}>
@@ -263,7 +267,7 @@ export const TrendingSports = () => {
 
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-6">
           {sports.map((sport) => (
-            <SportsCard key={sport.name} sport={sport} />
+            <SportsCard key={sport.name} sport={sport} onNavigate={onNavigate} />
           ))}
         </div>
       </div>

@@ -25,8 +25,12 @@ const pageTitles: Record<string, string> = {
 };
 
 function App() {
-  const [currentPage, setCurrentPage] = useState<'home' | 'portfolio' | 'clan' | 'clanDetail' | 'sports' | 'about' | 'faq' | 'contact' | 'login'>('home');
+  type Page= keyof typeof pageTitles;
+  const [currentPage, setCurrentPage] = useState<Page>('home');
   const [selectedClanId, setSelectedClanId] = useState<string | undefined>();
+ const handleNavigate = (page: Page) => {
+    setCurrentPage(page);
+  };
 
   useEffect(() => {
     const title = pageTitles[currentPage] || 'JusPredict';
@@ -45,10 +49,10 @@ function App() {
 
   return (
     <div className="min-h-screen bg-dark-bg text-white selection:bg-primary/30 selection:text-primary">
-      <Navbar onNavigate={setCurrentPage} currentPage={currentPage} />
+      <Navbar onNavigate={handleNavigate} currentPage={currentPage} />
       <main>
         {currentPage === 'home' ? (
-          <Home />
+          <Home onNavigate={handleNavigate}/>
         ) : currentPage === 'portfolio' ? (
           <Portfolio />
         ) : currentPage === 'clan' ? (
@@ -62,12 +66,12 @@ function App() {
         ) : currentPage === 'contact' ? (
           <Contact />
         ) : currentPage === 'login' ? (
-          <Login onNavigate={setCurrentPage} />
-        ) : (
+          <Login onNavigate={handleNavigate} />
+        ) :currentPage === 'sports' ?(
           <Sports />
-        )}
+        ):<Home onNavigate={handleNavigate} />}
       </main>
-      {!['clan', 'clanDetail', 'sports'].includes(currentPage) && <Footer onNavigate={setCurrentPage} />}
+      {!['clan', 'clanDetail', 'sports'].includes(currentPage) && <Footer onNavigate={handleNavigate} />}
       <Toaster />
     </div>
   );

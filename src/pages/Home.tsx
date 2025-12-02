@@ -6,12 +6,16 @@ import { HowItWorks } from '../components/HowItWorks';
 import { StatsCTA } from '../components/StatsCTA';
 import { Features } from '../components/Features';
 
-export const Home: React.FC = () => {
+interface HomeProps {
+  onNavigate: (page: string) => void;
+}
+
+export const Home: React.FC<HomeProps> = ({ onNavigate }) => {
   return (
     <>
       <Hero />
-      <TrendingSports />
-      <LivePredictions />
+      <TrendingSports onNavigate={onNavigate} />
+      <LivePredictions onNavigate={onNavigate} />
       <UpcomingEvents />
       <HowItWorks />
       <StatsCTA />

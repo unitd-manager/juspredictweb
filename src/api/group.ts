@@ -203,9 +203,13 @@ export const groupApi = {
     return { groupUserInfo: detail.leaderboard };
   },
   removeUsers: async (params: { groupId: string; userId: string[] }): Promise<void> => {
-    await new Promise(resolve => setTimeout(resolve, 300));
-  },
-  leaveGroup: async (params: { groupId: string; userId: string }): Promise<void> => {
-    await new Promise(resolve => setTimeout(resolve, 300));
-  }
+  void params; // marks params as "intentionally used"
+  await new Promise(resolve => setTimeout(resolve, 300));
+},
+
+leaveGroup: async (params: { groupId: string; userId: string }): Promise<void> => {
+  void params;
+  await new Promise(resolve => setTimeout(resolve, 300));
+},
+
 };

@@ -205,7 +205,12 @@ const PredictionModal: React.FC<PredictionModalProps> = ({ open, onClose, match 
 //                 MAIN COMPONENT
 // -------------------------------------------------------
 
-export const LivePredictions: React.FC = () => {
+interface LivePredictionsProps {
+  onNavigate: (page: string) => void;
+}
+
+export const LivePredictions: React.FC<LivePredictionsProps> = ({ onNavigate }) => {
+
   const [selectedMatch, setSelectedMatch] = useState<Match | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
 
@@ -350,7 +355,8 @@ export const LivePredictions: React.FC = () => {
         </div>
 
         <div className="mt-12 text-center">
-          <Button variant="outline" className="border-primary text-primary hover:bg-primary/10 px-8">
+          <Button variant="outline" className="border-primary text-primary hover:bg-primary/10 px-8"
+          onClick={()=>onNavigate('sports')} >
             View All Matches
           </Button>
         </div>
