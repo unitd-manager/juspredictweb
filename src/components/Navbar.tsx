@@ -41,7 +41,7 @@ export const Navbar = ({ onNavigate, currentPage }: NavbarProps) => {
           </div>
 
           {/* Desktop Nav */}
-          <div className="hidden md:flex items-center gap-8">
+          <div className="hidden lg:flex items-center gap-8">
             {navLinks.map((link) => {
               const isActive = link.page && currentPage === link.page;
               return (
@@ -62,16 +62,16 @@ export const Navbar = ({ onNavigate, currentPage }: NavbarProps) => {
           </div>
 
           {/* Auth Buttons */}
-          <div className="hidden md:flex items-center gap-4">
+          <div className="hidden lg:flex items-center gap-4">
             <Button variant="ghost" size="sm" className="text-gray-light hover:text-white">Login</Button>
             <Button size="sm" className="bg-primary text-black hover:bg-primary/90 font-bold px-6">Sign Up</Button>
           </div>
 
           {/* Mobile Menu Button */}
-          <div className="md:hidden">
+          <div className="lg:hidden flex-shrink-0 -mr-4 sm:-mr-6 lg:-mr-8">
             <button
               onClick={() => setIsOpen(!isOpen)}
-              className="text-gray-text hover:text-white"
+              className="text-gray-text hover:text-white p-4 sm:p-6 lg:p-8"
             >
               {isOpen ? <X size={24} /> : <Menu size={24} />}
             </button>
@@ -81,7 +81,7 @@ export const Navbar = ({ onNavigate, currentPage }: NavbarProps) => {
 
       {/* Mobile Menu */}
       {isOpen && (
-        <div className="md:hidden bg-dark-bg border-b border-white/5">
+        <div className="lg:hidden bg-dark-bg border-b border-white/5">
           <div className="px-4 pt-2 pb-6 space-y-2">
             {navLinks.map((link) => {
               const isActive = link.page && currentPage === link.page;
