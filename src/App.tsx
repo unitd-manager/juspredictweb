@@ -27,6 +27,7 @@ const pageTitles: Record<string, string> = {
 function App() {
   type Page= keyof typeof pageTitles;
   const [currentPage, setCurrentPage] = useState<Page>('home');
+  const [selectedSport, setSelectedSport] = useState<string | undefined>();
   const [selectedClanId, setSelectedClanId] = useState<string | undefined>();
  const handleNavigate = (page: Page) => {
     setCurrentPage(page);
@@ -52,7 +53,7 @@ function App() {
       <Navbar onNavigate={handleNavigate} currentPage={currentPage} />
       <main>
         {currentPage === 'home' ? (
-          <Home onNavigate={handleNavigate}/>
+          <Home onNavigate={handleNavigate} setSelectedSport={setSelectedSport}/>
         ) : currentPage === 'portfolio' ? (
           <Portfolio />
         ) : currentPage === 'clan' ? (
@@ -68,7 +69,7 @@ function App() {
         ) : currentPage === 'login' ? (
           <Login onNavigate={handleNavigate} />
         ) :currentPage === 'sports' ?(
-          <Sports />
+          <Sports selectedSport={selectedSport}/>
         ):<Home onNavigate={handleNavigate} />}
       </main>
       {!['clan', 'clanDetail', 'sports'].includes(currentPage) && <Footer onNavigate={handleNavigate} />}

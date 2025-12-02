@@ -8,13 +8,14 @@ import { Features } from '../components/Features';
 
 interface HomeProps {
   onNavigate: (page: string) => void;
+  setSelectedSport:(sport:string)=>void;
 }
 
-export const Home: React.FC<HomeProps> = ({ onNavigate }) => {
+export const Home: React.FC<HomeProps> = ({ onNavigate ,setSelectedSport}) => {
   return (
     <>
       <Hero />
-      <TrendingSports onNavigate={onNavigate} />
+      <TrendingSports onNavigate={onNavigate} setSelectedSport={setSelectedSport} />
       <LivePredictions onNavigate={onNavigate} />
       <UpcomingEvents />
       <HowItWorks />
