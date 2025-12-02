@@ -4,7 +4,7 @@ import { PageHeader } from '../components/PageHeader';
 import { Footer2 } from '../components/Footer2';
 import { Button } from '../components/ui/Button';
 import { api } from '../api/client';
-import { toast } from '../components/ui/Toast';
+//import { toast } from '../components/ui/Toast';
 
 // Team Row Component
 const TeamRow = ({ team, probability }: { team: any; probability: number }) => {

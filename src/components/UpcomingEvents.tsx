@@ -21,7 +21,7 @@ const events = [
     time: '20:00',
     venue: 'Santiago Bernabéu',
     timer: 'In Progress',
-    status: 'live'
+    status: 'trending'
   },
   {
     id: 3,
@@ -82,10 +82,10 @@ export const UpcomingEvents = () => {
                 All
             </button>
             <button 
-                onClick={() => setActiveTab('live')}
-                className={`px-8 py-2.5 rounded-[8px] text-sm font-medium transition-all duration-200 ${activeTab === 'live' ? 'bg-accent-yellow text-black shadow-sm' : 'text-gray-text hover:text-white'}`}
+                onClick={() => setActiveTab('trending')}
+                className={`px-8 py-2.5 rounded-[8px] text-sm font-medium transition-all duration-200 ${activeTab === 'trending' ? 'bg-accent-yellow text-black shadow-sm' : 'text-gray-text hover:text-white'}`}
             >
-                Live
+                Trending
             </button>
             <button 
                 onClick={() => setActiveTab('upcoming')}
@@ -106,9 +106,9 @@ export const UpcomingEvents = () => {
                 <span className="px-3 py-1 rounded-[8px] bg-primary/10 text-primary text-xs font-medium border border-primary/30">
                   {event.sport}
                 </span>
-                {event.status === 'live' && (
+                {event.status === 'trending' && (
                   <span className="flex items-center gap-2 px-3 py-1 rounded-full bg-[#FB2C36] text-white text-xs font-bold animate-pulse">
-                    LIVE
+                    Trending
                   </span>
                 )}
               </div>

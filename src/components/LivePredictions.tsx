@@ -149,12 +149,15 @@ const PredictionModal: React.FC<PredictionModalProps> = ({ open, onClose, match 
             <span className="text-gray-400 text-xs">42%</span>
           </button>
         </div>
-
+<span className="text-gray-400 text-xs text-center block">Select an Outcome</span>
         {/* Confidence */}
-        <label className="text-gray-400 text-sm">Confidence</label>
+        <div className="flex items-center justify-between mb-4">
+          <label className="text-gray-400 text-sm">Confidence</label>
+          <span className="text-gray-400 text-sm">{confidence}%</span>
+        </div>
         <input
           type="range"
-          className="w-full mt-1 mb-4"
+          className="w-full"
           min="0"
           max="100"
           value={confidence}
@@ -189,7 +192,7 @@ const PredictionModal: React.FC<PredictionModalProps> = ({ open, onClose, match 
           onClick={handlePredict}
           disabled={!selectedOutcome || amount <= 0}
         >
-          Select an outcome
+          Predict Now
         </button>
       </div>
     </div>
