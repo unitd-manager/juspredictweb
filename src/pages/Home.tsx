@@ -6,12 +6,17 @@ import { HowItWorks } from '../components/HowItWorks';
 import { StatsCTA } from '../components/StatsCTA';
 import { Features } from '../components/Features';
 
-export const Home: React.FC = () => {
+interface HomeProps {
+  onNavigate: (page: string) => void;
+  setSelectedSport:(sport:string)=>void;
+}
+
+export const Home: React.FC<HomeProps> = ({ onNavigate ,setSelectedSport}) => {
   return (
     <>
       <Hero />
-      <TrendingSports />
-      <LivePredictions />
+      <TrendingSports onNavigate={onNavigate} setSelectedSport={setSelectedSport} />
+      <LivePredictions onNavigate={onNavigate} />
       <UpcomingEvents />
       <HowItWorks />
       <StatsCTA />

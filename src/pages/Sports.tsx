@@ -345,7 +345,7 @@ const EventDetails: React.FC<{
 };
 
 // Main Sports Page
-export const Sports: React.FC = () => {
+export const Sports: React.FC<{ selectedSport?: string | null }> = ({ selectedSport: propSelectedSport }) => {
   const [events, setEvents] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [selectedEventId, setSelectedEventId] = useState<string | null>(null);

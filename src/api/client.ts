@@ -2,6 +2,8 @@
 interface ApiResponse<T = any> {
   status: { type: 'SUCCESS' | 'ERROR' | 'FAILED' };
   [key: string]: any;
+   data?: T;
+
 }
 
 // Mock events data

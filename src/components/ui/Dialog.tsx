@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { X } from 'lucide-react';
+//import { X } from 'lucide-react';
 
 interface DialogProps {
   open?: boolean;
@@ -60,16 +60,30 @@ export const DialogTrigger = React.forwardRef<
   DialogTriggerProps
 >(({ asChild, children, onClick }, ref) => {
   const { setOpen } = React.useContext(DialogContext);
+if (asChild && React.isValidElement(children)) {
+  // Narrow the child element so TS knows it may have an onClick prop
+  const child = children as React.ReactElement<{ onClick?: (e: React.MouseEvent) => void }>;
 
-  if (asChild && React.isValidElement(children)) {
-    return React.cloneElement(children as React.ReactElement, {
-      onClick: (e: React.MouseEvent) => {
-        children.props.onClick?.(e);
-        onClick?.();
-        setOpen(true);
-      },
-    });
-  }
+  // Build the handler once to keep code tidy
+  const handleClick = (e: React.MouseEvent) => {
+    // call child's onClick (if present) and forward the event
+    child.props.onClick?.(e);
+
+    // call outer onClick and forward event as well (safe even if outer expects no args)
+    onClick?.();
+
+    // your internal side-effect
+    setOpen(true);
+  };
+
+  // Clone element and override/merge the onClick
+  return React.cloneElement(child, {
+    // Optional: spread existing props to be explicit (cloneElement already merges props)
+    ...child.props,
+    onClick: handleClick,
+  });
+}
+
 
   return (
     <button

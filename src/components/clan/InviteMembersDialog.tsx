@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Loader2 } from 'lucide-react';
 import { Dialog, DialogTrigger, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '../ui/Dialog';
-import { Input } from '../ui/Input';
+//import { Input } from '../ui/Input';
 import { Button } from '../ui/Button';
 import { toast } from '../ui/Toast';
 
@@ -13,7 +13,7 @@ interface InviteMembersDialogProps {
 }
 
 export const InviteMembersDialog: React.FC<InviteMembersDialogProps> = ({
-  groupId,
+  //groupId,
   groupName,
   trigger,
   onInvited,

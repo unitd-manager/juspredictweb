@@ -68,7 +68,7 @@ const DEFAULT_FAQS: FaqItem[] = [
 const Faq: React.FC = () => {
   const [faqs, setFaqs] = useState<FaqItem[]>(DEFAULT_FAQS);
   const [loading, setLoading] = useState<boolean>(true);
-  const [error, setError] = useState<string | null>(null);
+  //const [error, setError] = useState<string | null>(null);
   const [openId, setOpenId] = useState<number>(1); // First item open by default
 
   useEffect(() => {
