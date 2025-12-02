@@ -13,13 +13,13 @@ export const Navbar = ({ onNavigate, currentPage }: NavbarProps) => {
 
   const navLinks = [
     { name: 'Home', href: '#', page: 'home' as const },
-    { name: 'FAQ', href: '#', page: 'faq' as const },
-    { name: 'Portfolio', href: '#', page: 'portfolio' as const },
-    { name: 'Clan', href: '#', page: 'clan' as const },
+    { name: 'About', href: '#', page: 'about' as const },
     { name: 'Sports', href: '#', page: 'sports' as const },
+    { name: 'Clan', href: '#', page: 'clan' as const },
+    { name: 'Portfolio', href: '#', page: 'portfolio' as const },
     // { name: 'Events', href: '#', page: undefined },
     // { name: 'Leaderboard', href: '#', page: undefined },
-    { name: 'About', href: '#', page: 'about' as const },
+    { name: 'FAQ', href: '#', page: 'faq' as const },
     { name: 'Contact', href: '#', page: 'contact' as const },
     // { name: 'API Docs', href: '#', page: undefined },
   ];
