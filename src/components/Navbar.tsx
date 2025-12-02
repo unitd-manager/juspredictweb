@@ -4,8 +4,8 @@ import { Menu, X } from 'lucide-react';
 import logoImg from '../assets/juspredict-logo.svg';
 
 interface NavbarProps {
-  onNavigate: (page: 'home' | 'portfolio' | 'clan' | 'clanDetail' | 'sports' | 'about' | 'faq' | 'contact') => void;
-  currentPage: 'home' | 'portfolio' | 'clan' | 'clanDetail' | 'sports' | 'about' | 'faq' | 'contact';
+  onNavigate: (page: 'home' | 'portfolio' | 'clan' | 'clanDetail' | 'sports' | 'about' | 'faq' | 'contact' | 'login') => void;
+  currentPage: 'home' | 'portfolio' | 'clan' | 'clanDetail' | 'sports' | 'about' | 'faq' | 'contact' | 'login';
 }
 
 export const Navbar = ({ onNavigate, currentPage }: NavbarProps) => {
@@ -17,10 +17,10 @@ export const Navbar = ({ onNavigate, currentPage }: NavbarProps) => {
     { name: 'Portfolio', href: '#', page: 'portfolio' as const },
     { name: 'Clan', href: '#', page: 'clan' as const },
     { name: 'Sports', href: '#', page: 'sports' as const },
-    { name: 'Events', href: '#', page: undefined },
-    { name: 'Leaderboard', href: '#', page: undefined },
+    // { name: 'Events', href: '#', page: undefined },
+    // { name: 'Leaderboard', href: '#', page: undefined },
     { name: 'About', href: '#', page: 'about' as const },
-    { name: 'API Docs', href: '#', page: undefined },
+    // { name: 'API Docs', href: '#', page: undefined },
   ];
 
   const handleLinkClick = (e: React.MouseEvent, page?: 'home' | 'portfolio' | 'clan' | 'clanDetail' | 'sports' | 'about' | 'faq' | 'contact') => {
@@ -41,7 +41,7 @@ export const Navbar = ({ onNavigate, currentPage }: NavbarProps) => {
           </div>
 
           {/* Desktop Nav */}
-          <div className="hidden md:flex items-center gap-8">
+          <div className="hidden lg:flex items-center gap-8">
             {navLinks.map((link) => {
               const isActive = link.page && currentPage === link.page;
               return (
@@ -62,16 +62,16 @@ export const Navbar = ({ onNavigate, currentPage }: NavbarProps) => {
           </div>
 
           {/* Auth Buttons */}
-          <div className="hidden md:flex items-center gap-4">
-            <Button variant="ghost" size="sm" className="text-gray-light hover:text-white">Login</Button>
+          <div className="hidden lg:flex items-center gap-4">
+            <Button variant="ghost" size="sm" className="text-gray-light hover:text-white" onClick={() => onNavigate('login')}>Login</Button>
             <Button size="sm" className="bg-primary text-black hover:bg-primary/90 font-bold px-6">Sign Up</Button>
           </div>
 
           {/* Mobile Menu Button */}
-          <div className="md:hidden">
+          <div className="lg:hidden flex-shrink-0 -mr-4 sm:-mr-6 lg:-mr-8">
             <button
               onClick={() => setIsOpen(!isOpen)}
-              className="text-gray-text hover:text-white"
+              className="text-gray-text hover:text-white p-4 sm:p-6 lg:p-8"
             >
               {isOpen ? <X size={24} /> : <Menu size={24} />}
             </button>
@@ -81,7 +81,7 @@ export const Navbar = ({ onNavigate, currentPage }: NavbarProps) => {
 
       {/* Mobile Menu */}
       {isOpen && (
-        <div className="md:hidden bg-dark-bg border-b border-white/5">
+        <div className="lg:hidden bg-dark-bg border-b border-white/5">
           <div className="px-4 pt-2 pb-6 space-y-2">
             {navLinks.map((link) => {
               const isActive = link.page && currentPage === link.page;
@@ -101,7 +101,7 @@ export const Navbar = ({ onNavigate, currentPage }: NavbarProps) => {
               );
             })}
             <div className="pt-4 flex flex-col gap-3">
-              <Button variant="ghost" className="w-full text-white">Login</Button>
+              <Button variant="ghost" className="w-full text-white" onClick={() => onNavigate('login')}>Login</Button>
               <Button className="w-full bg-primary text-black font-bold">Sign Up</Button>
             </div>
           </div>

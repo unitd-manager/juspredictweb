@@ -167,7 +167,7 @@ const SportsCard = ({ sport }: { sport: typeof sports[0] }) => {
           <Button
             variant="glass"
             size="sm"
-            onClick={handlePredictClick}
+            // onClick={handlePredictClick}
             className="w-full text-xs bg-primary/10 text-primary border-primary/30 hover:bg-primary hover:text-black font-medium"
           >
             Predict Now
