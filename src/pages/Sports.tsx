@@ -5,6 +5,7 @@ import { PageHeader } from '../components/PageHeader';
 import { Footer2 } from '../components/Footer2';
 import { Button } from '../components/ui/Button';
 import { api } from '../api/client';
+import { Dialog, DialogContent } from '../components/ui/Dialog';
 
 // Team Row Component
 const TeamRow = ({ team, probability }: { team: any; probability: number }) => {
@@ -352,7 +353,9 @@ export const Sports: React.FC<{ selectedSport?: string | null }> = ({ selectedSp
   const [selectedQuestion, setSelectedQuestion] = useState<any | null>(null);
   const [selectedOutcome, setSelectedOutcome] = useState<any | null>(null);
   const [amount, setAmount] = useState<string>('');
+  const [exitAmount, setExitAmount] = useState<string>('');
   const [confidenceOverride, setConfidenceOverride] = useState<number | null>(null);
+  const [exitConfidence, setExitConfidence] = useState<number | null>(null);
   const [selectedTeams, setSelectedTeams] = useState<{
     a: { name: string; prob: number };
     b: { name: string; prob: number };
@@ -478,6 +481,7 @@ export const Sports: React.FC<{ selectedSport?: string | null }> = ({ selectedSp
   }>>(staticLivePredictions);
   const [selectedPrediction, setSelectedPrediction] = useState<any | null>(null);
   const [selectedAction, setSelectedAction] = useState<'cancel' | 'exit' | null>(null);
+  const [isMobilePanelOpen, setIsMobilePanelOpen] = useState(false);
 
   const tabs = [
     
@@ -808,9 +812,9 @@ export const Sports: React.FC<{ selectedSport?: string | null }> = ({ selectedSp
                       </div>
                       <div className="mt-4">
                         {activeTab === 'open' && p.status === 'PREDICTION_STATUS_ACCEPTED' ? (
-                          <Button variant="outline" onClick={() => { setSelectedPrediction(p); setSelectedAction('cancel'); }} className="hover:border-primary/40">Cancel</Button>
+                          <Button variant="outline" onClick={() => { setSelectedPrediction(p); setSelectedAction('cancel'); setExitAmount(''); setIsMobilePanelOpen(true); }} className="hover:border-primary/40">Cancel</Button>
                         ) : activeTab === 'live' ? (
-                          <Button onClick={() => { setSelectedPrediction(p); setSelectedAction('exit'); }} className="bg-yellow-500 text-dark-bg hover:bg-yellow-400">Exit</Button>
+                          <Button onClick={() => { setSelectedPrediction(p); setSelectedAction('exit'); setExitAmount(String(p.amount ?? '')); setExitConfidence(Number.parseFloat(String(p.percentage ?? 0))); setIsMobilePanelOpen(true); }} className="bg-yellow-500 text-dark-bg hover:bg-yellow-400">Exit</Button>
                         ) : null}
                       </div>
                     </div>
@@ -841,6 +845,7 @@ export const Sports: React.FC<{ selectedSport?: string | null }> = ({ selectedSp
                           setSelectedOutcome(null);
                           setConfidenceOverride(null);
                           setAmount('');
+                          setExitAmount('');
                           setSelectedAction(null);
                           setSelectedPrediction(null);
                           setSuccessMessage(null);
@@ -853,6 +858,8 @@ export const Sports: React.FC<{ selectedSport?: string | null }> = ({ selectedSp
                           setConfidenceOverride(null);
                           setAmount('');
                           setErrorMsg('');
+                          setExitAmount('');
+                          setExitConfidence(null);
                           setSelectedAction(null);
                           setSelectedPrediction(null);
                           setSuccessMessage(null);
@@ -871,6 +878,9 @@ export const Sports: React.FC<{ selectedSport?: string | null }> = ({ selectedSp
                             setSelectedTeams(null);
                             setBalance(null);
                             setErrorMsg('');
+                            setExitAmount('');
+                            setExitConfidence(null);
+                            setIsMobilePanelOpen(false);
                           }}
                           onPredict={(question) => {
                             setSelectedQuestion(question);
@@ -878,10 +888,13 @@ export const Sports: React.FC<{ selectedSport?: string | null }> = ({ selectedSp
                             setConfidenceOverride(null);
                             setAmount('');
                             setErrorMsg('');
+                            setExitAmount('');
+                            setExitConfidence(null);
                             setSelectedAction(null);
                             setSelectedPrediction(null);
                             setSuccessMessage(null);
                             fetchBalance();
+                            setIsMobilePanelOpen(true);
                           }}
                         />
                       )}
@@ -919,6 +932,9 @@ export const Sports: React.FC<{ selectedSport?: string | null }> = ({ selectedSp
                         setErrorMsg('');
                         setSelectedTeams(null);
                         setBalance(null);
+                        setExitAmount('');
+                        setExitConfidence(null);
+                        setIsMobilePanelOpen(false);
                       }}
                       className="w-full py-3 bg-primary text-dark-bg hover:bg-primary/90 rounded-lg font-semibold transition-all"
                     >
@@ -930,7 +946,7 @@ export const Sports: React.FC<{ selectedSport?: string | null }> = ({ selectedSp
                     <div className="bg-dark-card border border-white/10 p-4 rounded-lg">
                       <div className="text-sm text-white font-semibold mb-1">{selectedPrediction.questionName}</div>
                       <div className="text-xs text-gray-text">{selectedPrediction.eventName}</div>
-                      <div className="text-xs text-gray-text mt-2">{selectedPrediction.answer} • {formatPercent(selectedPrediction.percentage)} • {formatCurrency(Number(selectedPrediction.amount))}</div>
+                      <div className="text-xs text-gray-text mt-2">{selectedPrediction.answer} • {formatPercent(exitConfidence ?? selectedPrediction.percentage)} • {formatCurrency(Number(selectedPrediction.amount))}</div>
                     </div>
 
                     {balance && (
@@ -945,25 +961,26 @@ export const Sports: React.FC<{ selectedSport?: string | null }> = ({ selectedSp
                     <div className="grid grid-cols-2 gap-2">
                       <div className={`p-3 rounded-lg border transition-all text-sm font-medium border-white/10 bg-dark-card text-white`}>
                         {selectedPrediction.answer}
-                        <div className="text-xs text-gray-text mt-1">{formatPercent(selectedPrediction.percentage)}</div>
+                        <div className="text-xs text-gray-text mt-1">{formatPercent(exitConfidence ?? selectedPrediction.percentage)}</div>
                       </div>
                       <div className={`p-3 rounded-lg border transition-all text-sm font-medium border-white/10 bg-dark-card text-white`}>
                         Amount
-                        <div className="text-xs text-gray-text mt-1">{formatCurrency(Number(selectedPrediction.amount))}</div>
+                        <div className="text-xs text-gray-text mt-1">{formatCurrency(selectedAction === 'exit' ? Number(exitAmount || 0) : Number(selectedPrediction.amount))}</div>
                       </div>
                     </div>
 
                     <div>
                       <div className="flex items-center justify-between mb-2">
                         <span className="text-xs text-gray-text">Confidence</span>
-                        <span className="text-xs text-white font-semibold">{formatPercent(selectedPrediction.percentage)}</span>
+                        <span className="text-xs text-white font-semibold">{formatPercent(exitConfidence ?? selectedPrediction.percentage)}</span>
                       </div>
                       <input
                         type="range"
                         min={0}
                         max={100}
-                        value={Math.max(0, Math.min(100, Number(selectedPrediction.percentage) || 0))}
-                        disabled
+                        value={Math.max(0, Math.min(100, Number(selectedAction === 'exit' ? (exitConfidence ?? Number.parseFloat(String(selectedPrediction.percentage || 0))) : Number(selectedPrediction.percentage) || 0)))}
+                        disabled={selectedAction !== 'exit'}
+                        onChange={(e) => selectedAction === 'exit' && setExitConfidence(Number(e.target.value))}
                         className="w-full"
                       />
                     </div>
@@ -975,21 +992,29 @@ export const Sports: React.FC<{ selectedSport?: string | null }> = ({ selectedSp
                         type="number"
                         step="0.01"
                         min="0"
-                        value={String(selectedPrediction.amount ?? '')}
-                        disabled
+                        value={selectedAction === 'exit' ? exitAmount : String(selectedPrediction.amount ?? '')}
+                        onChange={(e) => selectedAction === 'exit' && setExitAmount(e.target.value)}
+                        disabled={selectedAction !== 'exit'}
                         placeholder="$100"
                       />
-                      {balance && selectedPrediction.amount && Number(selectedPrediction.amount) > 0 && (
+                      {selectedAction === 'exit' ? (
                         <div className="mt-2 text-xs text-gray-text">
-                          Remaining: {formatCurrency(Math.max(0, getAvailableBalance(balance) - Number(selectedPrediction.amount)))}
+                          Remaining: {formatCurrency(Math.max(0, Number(selectedPrediction.amount) - Number(exitAmount || 0)))}
                         </div>
+                      ) : (
+                        balance && selectedPrediction.amount && Number(selectedPrediction.amount) > 0 && (
+                          <div className="mt-2 text-xs text-gray-text">
+                            Remaining: {formatCurrency(Math.max(0, getAvailableBalance(balance) - Number(selectedPrediction.amount)))}
+                          </div>
+                        )
                       )}
                       <div className="mt-3 grid grid-cols-4 gap-2">
                         {(['10', '50', '100', '500'] as const).map((v) => (
                           <button
                             key={v}
-                            disabled
-                            className="py-2 rounded-lg bg-dark-card border border-white/10 text-sm text-white opacity-50 cursor-not-allowed"
+                            disabled={selectedAction !== 'exit'}
+                            onClick={() => selectedAction === 'exit' && setExitAmount(String(Math.min(Number(v), Number(selectedPrediction.amount || 0))))}
+                            className={`py-2 rounded-lg bg-dark-card border border-white/10 text-sm text-white ${selectedAction !== 'exit' ? 'opacity-50 cursor-not-allowed' : 'hover:border-primary/30'}`}
                           >
                             ${v}
                           </button>
@@ -997,7 +1022,7 @@ export const Sports: React.FC<{ selectedSport?: string | null }> = ({ selectedSp
                       </div>
                     </div>
 
-                    {selectedPrediction.amount && Number(selectedPrediction.amount) > 0 && (
+                    {(selectedAction === 'exit' ? Number(exitAmount) > 0 : Number(selectedPrediction.amount) > 0) && (
                       <div className="bg-dark-card border border-white/10 rounded-lg p-3">
                         <h4 className="text-sm text-white font-semibold mb-3">Potential Returns</h4>
                         {(() => {
@@ -1005,8 +1030,8 @@ export const Sports: React.FC<{ selectedSport?: string | null }> = ({ selectedSp
                             0,
                             Math.min(100, Number.parseFloat(String(selectedPrediction.percentage || '0')) || 0)
                           );
-                          const confPct = impliedPct;
-                          const amt = Number(selectedPrediction.amount);
+                          const confPct = selectedAction === 'exit' ? (exitConfidence ?? impliedPct) : impliedPct;
+                          const amt = Number(selectedAction === 'exit' ? exitAmount || 0 : selectedPrediction.amount);
                           const profit = (amt * confPct) / 100;
                           const totalReturn = amt + profit;
 
@@ -1210,6 +1235,276 @@ export const Sports: React.FC<{ selectedSport?: string | null }> = ({ selectedSp
                 )}
               </div>
             </aside>
+            <div className="lg:hidden">
+              <Dialog open={isMobilePanelOpen} onOpenChange={setIsMobilePanelOpen}>
+                <DialogContent className="max-w-lg w-full">
+                  {successMessage ? (
+                    <div className="text-center py-4">
+                      <div className="mb-4">
+                        <div className="inline-flex items-center justify-center w-12 h-12 bg-primary/20 rounded-full mb-3">
+                          <svg className="w-6 h-6 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                          </svg>
+                        </div>
+                      </div>
+                      <h4 className="text-white font-semibold mb-2">Success!</h4>
+                      <p className="text-gray-text text-sm mb-6">{successMessage}</p>
+                      <button
+                      onClick={() => {
+                        setSuccessMessage(null);
+                        setSelectedQuestion(null);
+                        setSelectedOutcome(null);
+                        setAmount('');
+                        setConfidenceOverride(null);
+                        setSelectedEventId(null);
+                        setErrorMsg('');
+                        setSelectedTeams(null);
+                        setBalance(null);
+                        setExitAmount('');
+                        setExitConfidence(null);
+                        setIsMobilePanelOpen(false);
+                      }}
+                        className="w-full py-3 bg-primary text-dark-bg hover:bg-primary/90 rounded-lg font-semibold transition-all"
+                      >
+                        Ok
+                      </button>
+                    </div>
+                  ) : selectedAction && selectedPrediction ? (
+                    <div className="space-y-4">
+                      <div className="bg-dark-card border border-white/10 p-4 rounded-lg">
+                        <div className="text-sm text-white font-semibold mb-1">{selectedPrediction.questionName}</div>
+                        <div className="text-xs text-gray-text">{selectedPrediction.eventName}</div>
+                        <div className="text-xs text-gray-text mt-2">{selectedPrediction.answer} • {formatPercent(exitConfidence ?? selectedPrediction.percentage)} • {formatCurrency(selectedAction === 'exit' ? Number(exitAmount || 0) : Number(selectedPrediction.amount))}</div>
+                      </div>
+
+                      {balance && (
+                        <div className="bg-primary/10 border border-primary/30 rounded-lg p-3">
+                          <div className="flex items-center justify-between">
+                            <span className="text-sm text-white">Available Balance</span>
+                            <span className="text-primary font-semibold">{formatCurrency(getAvailableBalance(balance))}</span>
+                          </div>
+                        </div>
+                      )}
+
+                      <div className="grid grid-cols-2 gap-2">
+                        <div className={`p-3 rounded-lg border transition-all text-sm font-medium border-white/10 bg-dark-card text-white`}>
+                          {selectedPrediction.answer}
+                          <div className="text-xs text-gray-text mt-1">{formatPercent(exitConfidence ?? selectedPrediction.percentage)}</div>
+                        </div>
+                        <div className={`p-3 rounded-lg border transition-all text-sm font-medium border-white/10 bg-dark-card text-white`}>
+                          Amount
+                          <div className="text-xs text-gray-text mt-1">{formatCurrency(selectedAction === 'exit' ? Number(exitAmount || 0) : Number(selectedPrediction.amount))}</div>
+                        </div>
+                      </div>
+
+                      <div>
+                        <div className="flex items-center justify-between mb-2">
+                          <span className="text-xs text-gray-text">Confidence</span>
+                          <span className="text-xs text-white font-semibold">{formatPercent(exitConfidence ?? selectedPrediction.percentage)}</span>
+                        </div>
+                        <input type="range" min={0} max={100} value={Math.max(0, Math.min(100, Number(selectedAction === 'exit' ? (exitConfidence ?? Number.parseFloat(String(selectedPrediction.percentage || 0))) : Number(selectedPrediction.percentage) || 0)))} disabled={selectedAction !== 'exit'} onChange={(e) => selectedAction === 'exit' && setExitConfidence(Number(e.target.value))} className="w-full" />
+                      </div>
+
+                      <div>
+                        <label className="block text-xs text-gray-text mb-2">Amount</label>
+                        <input className="w-full rounded-lg bg-dark-card border border-white/10 p-3 text-white placeholder:text-gray-muted focus:outline-none focus:border-primary/30 focus:ring-1 focus:ring-primary/20 transition-all" type="number" step="0.01" min="0" value={selectedAction === 'exit' ? exitAmount : String(selectedPrediction.amount ?? '')} onChange={(e) => selectedAction === 'exit' && setExitAmount(e.target.value)} disabled={selectedAction !== 'exit'} placeholder="$100" />
+                        {selectedAction === 'exit' ? (
+                          <div className="mt-2 text-xs text-gray-text">
+                            Remaining: {formatCurrency(Math.max(0, Number(selectedPrediction.amount) - Number(exitAmount || 0)))}
+                          </div>
+                        ) : (
+                          balance && selectedPrediction.amount && Number(selectedPrediction.amount) > 0 && (
+                            <div className="mt-2 text-xs text-gray-text">
+                              Remaining: {formatCurrency(Math.max(0, getAvailableBalance(balance) - Number(selectedPrediction.amount)))}
+                            </div>
+                          )
+                        )}
+                      </div>
+
+                      {(selectedAction === 'exit' ? Number(exitAmount) > 0 : Number(selectedPrediction.amount) > 0) && (
+                        <div className="bg-dark-card border border-white/10 rounded-lg p-3">
+                          <h4 className="text-sm text-white font-semibold mb-3">Potential Returns</h4>
+                          {(() => {
+                            const impliedPct = Math.max(0, Math.min(100, Number.parseFloat(String(selectedPrediction.percentage || '0')) || 0));
+                          const confPct = selectedAction === 'exit' ? (exitConfidence ?? impliedPct) : impliedPct;
+                          const amt = Number(selectedAction === 'exit' ? exitAmount || 0 : selectedPrediction.amount);
+                          const profit = (amt * confPct) / 100;
+                          const totalReturn = amt + profit;
+                            return (
+                              <div className="space-y-2 text-xs">
+                                <div className="flex justify-between">
+                                  <span className="text-gray-text">Investment</span>
+                                  <span className="text-white font-medium">{formatCurrency(amt)}</span>
+                                </div>
+                                <div className="flex justify-between">
+                                  <span className="text-gray-text">Prediction</span>
+                                  <span className="text-white font-medium">{formatPercent(confPct)}</span>
+                                </div>
+                                <div className="flex justify-between">
+                                  <span className="text-gray-text">Potential Profit</span>
+                                  <span className="text-primary font-semibold">+{formatCurrency(profit)}</span>
+                                </div>
+                                <div className="flex justify-between pt-2 border-t border-white/10">
+                                  <span className="text-white">Total Return</span>
+                                  <span className="text-white font-semibold">{formatCurrency(totalReturn)}</span>
+                                </div>
+                              </div>
+                            );
+                          })()}
+                        </div>
+                      )}
+
+                      <button onClick={() => (selectedAction === 'cancel' ? handleCancelPrediction(selectedPrediction.id) : handleExitPrediction(selectedPrediction.id))} className={`w-full py-3 rounded-lg font-semibold transition-all ${selectedAction === 'cancel' ? 'bg-dark-card text-white border border-white/10 hover:border-primary/30' : 'bg-yellow-500 text-dark-bg hover:bg-yellow-400'}`}>
+                        {selectedAction === 'cancel' ? 'Cancel Prediction' : 'Exit Prediction'}
+                      </button>
+                    </div>
+                  ) : selectedQuestion ? (
+                    <div className="space-y-4">
+                      <div className="bg-dark-card border border-white/10 p-4 rounded-lg">
+                        <div className="text-sm text-white font-semibold mb-1">{selectedQuestion.name}</div>
+                        {selectedQuestion.category && (
+                          <div className="text-xs text-gray-text">{selectedQuestion.category}</div>
+                        )}
+                      </div>
+
+                      {balance && (
+                        <div className="bg-primary/10 border border-primary/30 rounded-lg p-3">
+                          <div className="flex items-center justify-between">
+                            <span className="text-sm text-white">Available Balance</span>
+                            <span className="text-primary font-semibold">{formatCurrency(getAvailableBalance(balance))}</span>
+                          </div>
+                        </div>
+                      )}
+
+                      <div className="grid grid-cols-2 gap-2">
+                        {selectedQuestion.activity?.marketDataDetails?.map((option: any, idx: number) => (
+                          <button
+                            key={idx}
+                            onClick={() => {
+                              setSelectedOutcome(option);
+                              setConfidenceOverride(null);
+                            }}
+                            className={`p-3 rounded-lg border transition-all text-sm font-medium ${
+                              selectedOutcome?.outcome === option.outcome
+                                ? 'border-primary bg-primary/10 text-primary'
+                                : 'border-white/10 bg-dark-card text-white hover:border-primary/30'
+                            }`}
+                          >
+                            {option.outcome}
+                            <div className="text-xs text-gray-text mt-1">
+                              {Number.parseFloat(String(option.impliedProbability || '0')).toFixed(1)}%
+                            </div>
+                          </button>
+                        ))}
+                      </div>
+
+                      <div>
+                        <div className="flex items-center justify-between mb-2">
+                          <span className="text-xs text-gray-text">Confidence</span>
+                          <span className="text-xs text-white font-semibold">
+                            {formatPercent(
+                              confidenceOverride ??
+                                (selectedOutcome
+                                  ? Number.parseFloat(String(selectedOutcome?.impliedProbability || '0'))
+                                  : 0)
+                            )}
+                          </span>
+                        </div>
+                        <input
+                          type="range"
+                          min={0}
+                          max={100}
+                          value={
+                            confidenceOverride ??
+                            (selectedOutcome
+                              ? Number.parseFloat(String(selectedOutcome?.impliedProbability || '0'))
+                              : 0)
+                          }
+                          onChange={(e) => setConfidenceOverride(Number(e.target.value))}
+                          className="w-full"
+                        />
+                      </div>
+
+                      {errorMsg && (
+                        <div className="bg-red-500/10 border border-red-500/30 text-red-300 px-3 py-2 rounded flex items-start text-sm gap-2">
+                          <AlertCircle className="w-4 h-4 flex-shrink-0 mt-0.5" />
+                          <span>{errorMsg}</span>
+                        </div>
+                      )}
+
+                      <div>
+                        <label className="block text-xs text-gray-text mb-2">Amount</label>
+                        <input
+                          className="w-full rounded-lg bg-dark-card border border-white/10 p-3 text-white placeholder:text-gray-muted focus:outline-none focus:border-primary/30 focus:ring-1 focus:ring-primary/20 transition-all"
+                          type="number"
+                          step="0.01"
+                          min="0"
+                          value={amount}
+                          onChange={(e) => setAmount(e.target.value)}
+                          placeholder="$100"
+                        />
+                        {balance && amount && Number(amount) > 0 && (
+                          <div className="mt-2 text-xs text-gray-text">
+                            Remaining: {formatCurrency(Math.max(0, getAvailableBalance(balance) - Number(amount)))}
+                          </div>
+                        )}
+                      </div>
+
+                      {selectedOutcome && amount && Number(amount) > 0 && (
+                        <div className="bg-dark-card border border-white/10 rounded-lg p-3">
+                          <h4 className="text-sm text-white font-semibold mb-3">Potential Returns</h4>
+                          {(() => {
+                            const impliedPct = Math.max(0, Math.min(100, Number.parseFloat(String(selectedOutcome?.impliedProbability || '0')) || 0));
+                            const confPct = confidenceOverride ?? impliedPct;
+                            const amt = Number(amount);
+                            const profit = (amt * confPct) / 100;
+                            const totalReturn = amt + profit;
+                            return (
+                              <div className="space-y-2 text-xs">
+                                <div className="flex justify-between">
+                                  <span className="text-gray-text">Investment</span>
+                                  <span className="text-white font-medium">{formatCurrency(amt)}</span>
+                                </div>
+                                <div className="flex justify-between">
+                                  <span className="text-gray-text">Prediction</span>
+                                  <span className="text-white font-medium">{formatPercent(confPct)}</span>
+                                </div>
+                                <div className="flex justify-between">
+                                  <span className="text-gray-text">Potential Profit</span>
+                                  <span className="text-primary font-semibold">+{formatCurrency(profit)}</span>
+                                </div>
+                                <div className="flex justify-between pt-2 border-t border-white/10">
+                                  <span className="text-white">Total Return</span>
+                                  <span className="text-white font-semibold">{formatCurrency(totalReturn)}</span>
+                                </div>
+                              </div>
+                            );
+                          })()}
+                        </div>
+                      )}
+
+                      <button
+                        onClick={handleMakePrediction}
+                        disabled={!selectedOutcome || !amount || Number(amount) <= 0 || isSubmitting}
+                        className={`w-full py-3 rounded-lg font-semibold transition-all flex items-center justify-center gap-2 ${
+                          !selectedOutcome || !amount || Number(amount) <= 0 || isSubmitting
+                            ? 'bg-gray-muted text-gray-text cursor-not-allowed opacity-50'
+                            : 'bg-primary text-dark-bg hover:bg-primary/90 cursor-pointer'
+                        }`}
+                      >
+                        {isSubmitting && <Loader2 className="w-4 h-4 animate-spin" />}
+                        {isSubmitting ? 'Submitting...' : !selectedOutcome ? 'Select an outcome' : !amount || Number(amount) <= 0 ? 'Enter amount' : 'Make Prediction'}
+                      </button>
+                    </div>
+                  ) : (
+                    <div className="text-gray-text text-sm text-center py-8">
+                      <TrendingUp className="w-8 h-8 mx-auto mb-2 opacity-50" />
+                      <p>Select a question from the events to start your prediction.</p>
+                    </div>
+                  )}
+                </DialogContent>
+              </Dialog>
+            </div>
           </div>
         </div>
       </div>
