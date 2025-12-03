@@ -31,6 +31,7 @@ function App() {
   const [selectedClanId, setSelectedClanId] = useState<string | undefined>();
  const handleNavigate = (page: Page) => {
     setCurrentPage(page);
+    window.scrollTo(0,0);
   };
 
   useEffect(() => {
