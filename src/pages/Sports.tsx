@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { ArrowLeft, TrendingUp, Users, DollarSign, AlertCircle, Loader2 } from 'lucide-react';
 import { Badge } from '../components/ui/Badge';
-import { PageHeader } from '../components/PageHeader';
+import { PageHeader } from '../components/PageHeaderSport';
 import { Button } from '../components/ui/Button';
 import { api } from '../api/client';
 import { Dialog, DialogContent } from '../components/ui/Dialog';
@@ -845,8 +845,8 @@ export const Sports: React.FC<{ selectedSport?: string | null }> = ({ selectedSp
   return (
     <div className="min-h-screen bg-dark-bg text-gray-light">
       <PageHeader
-        title="Live Prediction Markets"
-        tagline="Make your prediction. Own your call. Skill-based matching with transparent odds."
+        title=""
+        tagline=""
         compact={true}
         isSubpage={true}
       />
