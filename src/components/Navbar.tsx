@@ -2,35 +2,29 @@ import { useState } from 'react';
 import { Button } from './ui/Button';
 import { Menu, X } from 'lucide-react';
 import logoImg from '../assets/juspredict-logo.svg';
+import { Link, useNavigate, useLocation } from 'react-router-dom';
 
-interface NavbarProps {
-  onNavigate: (page: 'home' | 'portfolio' | 'clan' | 'clanDetail' | 'sports' | 'about' | 'faq' | 'contact' | 'login') => void;
-  currentPage: 'home' | 'portfolio' | 'clan' | 'clanDetail' | 'sports' | 'about' | 'faq' | 'contact' | 'login';
-}
-
-export const Navbar = ({ onNavigate, currentPage }: NavbarProps) => {
+export const Navbar = () => {
   const [isOpen, setIsOpen] = useState(false);
+  const navigate = useNavigate();
+  const location = useLocation();
 
   const navLinks = [
-    { name: 'Home', href: '#', page: 'home' as const },
-    { name: 'About', href: '#', page: 'about' as const },
-    { name: 'Sports', href: '#', page: 'sports' as const },
-    { name: 'Clan', href: '#', page: 'clan' as const },
-    { name: 'Portfolio', href: '#', page: 'portfolio' as const },
-    { name: 'Transactions', href: '#', page: 'transactions' as const },
-    // { name: 'Events', href: '#', page: undefined },
-    // { name: 'Leaderboard', href: '#', page: undefined },
-    { name: 'FAQ', href: '#', page: 'faq' as const },
-    { name: 'Contact', href: '#', page: 'contact' as const },
-    // { name: 'API Docs', href: '#', page: undefined },
+    { name: 'Home', path: '/', page: 'home' as const },
+    { name: 'About', path: '/about', page: 'about' as const },
+    { name: 'Sports', path: '/sports', page: 'sports' as const },
+    { name: 'Clan', path: '/clan', page: 'clan' as const },
+    { name: 'Portfolio', path: '/portfolio', page: 'portfolio' as const },
+    { name: 'Transactions', path: '/transactions', page: 'transactions' as const },
+    // { name: 'Events', path: '#', page: undefined },
+    // { name: 'Leaderboard', path: '#', page: undefined },
+    { name: 'FAQ', path: '/faq', page: 'faq' as const },
+    { name: 'Contact', path: '/contact', page: 'contact' as const },
+    // { name: 'API Docs', path: '#', page: undefined },
   ];
 
-  const handleLinkClick = (e: React.MouseEvent, page?: 'home' | 'portfolio' | 'clan' | 'clanDetail' | 'sports' | 'about' | 'faq' | 'contact') => {
-    if (page) {
-      e.preventDefault();
-      onNavigate(page);
-      setIsOpen(false);
-    }
+  const handleLinkClick = () => {
+    setIsOpen(false);
   };
 
   return (
@@ -39,18 +33,19 @@ export const Navbar = ({ onNavigate, currentPage }: NavbarProps) => {
         <div className="flex items-center justify-between h-20">
           {/* Logo */}
           <div className="flex-shrink-0 flex items-center gap-2">
-            <img src={logoImg} alt="JusPredict" className="h-16 w-auto" />
+            <Link to="/">
+              <img src={logoImg} alt="JusPredict" className="h-16 w-auto" />
+            </Link>
           </div>
 
           {/* Desktop Nav */}
           <div className="hidden lg:flex items-center gap-8">
             {navLinks.map((link) => {
-              const isActive = link.page && currentPage === link.page;
+              const isActive = location.pathname === link.path;
               return (
-                <a
+                <Link
                   key={link.name}
-                  href={link.href}
-                  onClick={(e) => handleLinkClick(e, link.page)}
+                  to={link.path}
                   className={`text-sm font-medium transition-colors ${
                     isActive
                       ? 'text-primary font-bold'
@@ -58,14 +53,14 @@ export const Navbar = ({ onNavigate, currentPage }: NavbarProps) => {
                   }`}
                 >
                   {link.name}
-                </a>
+                </Link>
               );
             })}
           </div>
 
           {/* Auth Buttons */}
           <div className="hidden lg:flex items-center gap-4">
-            <Button variant="ghost" size="sm" className="text-gray-light hover:text-white" onClick={() => onNavigate('login')}>Login</Button>
+            <Button variant="ghost" size="sm" className="text-gray-light hover:text-white" onClick={() => navigate('/login')}>Login</Button>
             <Button size="sm" className="bg-primary text-black hover:bg-primary/90 font-bold px-6">Sign Up</Button>
           </div>
 
@@ -86,12 +81,12 @@ export const Navbar = ({ onNavigate, currentPage }: NavbarProps) => {
         <div className="lg:hidden bg-dark-bg border-b border-white/5">
           <div className="px-4 pt-2 pb-6 space-y-2">
             {navLinks.map((link) => {
-              const isActive = link.page && currentPage === link.page;
+              const isActive = location.pathname === link.path;
               return (
-                <a
+                <Link
                   key={link.name}
-                  href={link.href}
-                  onClick={(e) => handleLinkClick(e, link.page)}
+                  to={link.path}
+                  onClick={handleLinkClick}
                   className={`block px-3 py-2 text-base font-medium rounded-md transition-colors ${
                     isActive
                       ? 'text-primary font-bold bg-white/5'
@@ -99,11 +94,11 @@ export const Navbar = ({ onNavigate, currentPage }: NavbarProps) => {
                   }`}
                 >
                   {link.name}
-                </a>
+                </Link>
               );
             })}
             <div className="pt-4 flex flex-col gap-3">
-              <Button variant="ghost" className="w-full text-white" onClick={() => onNavigate('login')}>Login</Button>
+              <Button variant="ghost" className="w-full text-white" onClick={() => navigate('/login')}>Login</Button>
               <Button className="w-full bg-primary text-black font-bold">Sign Up</Button>
             </div>
           </div>

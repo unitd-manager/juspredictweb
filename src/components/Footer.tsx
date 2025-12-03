@@ -1,15 +1,14 @@
 import { Twitter, Facebook, Instagram, Youtube, Github } from 'lucide-react';
 import logoImg from '../assets/juspredict-logo.svg';
+import { useNavigate } from 'react-router-dom';
 
-interface FooterProps {
-  onNavigate?: (page: 'home' | 'portfolio' | 'clan' | 'clanDetail' | 'sports' | 'about' | 'faq' | 'contact') => void;
-}
+export const Footer = () => {
+  const navigate = useNavigate();
 
-export const Footer = ({ onNavigate }: FooterProps) => {
   const handleLinkClick = (e: React.MouseEvent, page?: string) => {
-    if (page && onNavigate) {
+    if (page) {
       e.preventDefault();
-      onNavigate(page as any);
+      navigate(`/${page}`);
     }
   };
 

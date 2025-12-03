@@ -1,4 +1,5 @@
-import { useState, useEffect } from 'react';
+import { BrowserRouter, Routes, Route } from 'react-router-dom';
+import { useState } from 'react';
 import { Navbar } from './components/Navbar';
 import { Home } from './pages/Home';
 import Portfolio from './pages/Portfolio';
@@ -27,61 +28,33 @@ const pageTitles: Record<string, string> = {
 };
 
 function App() {
-  type Page= keyof typeof pageTitles;
-  const [currentPage, setCurrentPage] = useState<Page>('home');
-  //const [selectedSport, setSelectedSport] = useState<string | undefined>();
-  const [selectedClanId, setSelectedClanId] = useState<string | undefined>();
- const handleNavigate = (page: Page) => {
-    setCurrentPage(page);
-    window.scrollTo(0,0);
-  };
-
-  useEffect(() => {
-    const title = pageTitles[currentPage] || 'JusPredict';
-    document.title = title;
-  }, [currentPage]);
-
-  const handleNavigateToClanDetail = (clanId: string) => {
-    setSelectedClanId(clanId);
-    setCurrentPage('clanDetail');
-  };
-
-  const handleBackFromClanDetail = () => {
-    setSelectedClanId(undefined);
-    setCurrentPage('clan');
-  };
+  const [selectedSport, setSelectedSport] = useState<string | undefined>();
 
   return (
-    <div className="min-h-screen bg-dark-bg text-white selection:bg-primary/30 selection:text-primary">
-      <Navbar onNavigate={handleNavigate} currentPage={currentPage} />
-      <main>
-        {currentPage === 'home' ? (
-          <Home 
-          // onNavigate={handleNavigate} setSelectedSport={setSelectedSport}
-          />
-        ) : currentPage === 'portfolio' ? (
-          <Portfolio />
-        ) : currentPage === 'transactions' ? (
-          <Transactions />
-        ) : currentPage === 'clan' ? (
-          <Clan onSelectClan={handleNavigateToClanDetail} />
-        ) : currentPage === 'clanDetail' ? (
-          <ClanDetail groupId={selectedClanId} onBack={handleBackFromClanDetail} />
-        ) : currentPage === 'about' ? (
-          <About />
-        ) : currentPage === 'faq' ? (
-          <Faq />
-        ) : currentPage === 'contact' ? (
-          <Contact />
-        ) : currentPage === 'login' ? (
-          <Login onNavigate={handleNavigate} />
-        ) :currentPage === 'sports' ?(
-          <Sports />
-        ):<Home onNavigate={handleNavigate} />}
-      </main>
-      {!['clan', 'clanDetail', 'sports'].includes(currentPage) && <Footer onNavigate={handleNavigate} />}
-      <Toaster />
-    </div>
+    <BrowserRouter>
+      <div className="min-h-screen bg-dark-bg text-white selection:bg-primary/30 selection:text-primary">
+        <Navbar />
+        <main>
+          <Routes>
+            <Route path="/" element={<Home />} />
+            <Route path="/portfolio" element={<Portfolio />} />
+            <Route path="/clan" element={<Clan />} />
+            <Route path="/clan/:clanId" element={<ClanDetail onBack={function (): void {
+              throw new Error('Function not implemented.');
+            } } />} />
+            <Route path="/sports" element={<Sports selectedSport={selectedSport} />} />
+            <Route path="/about" element={<About />} />
+            <Route path="/faq" element={<Faq />} />
+            <Route path="/contact" element={<Contact />} />
+            <Route path="/transactions" element={<Transactions />} />
+            <Route path="/login" element={<Login />} />
+            <Route path="*" element={<Home />} />
+          </Routes>
+        </main>
+        <Footer />
+        <Toaster />
+      </div>
+    </BrowserRouter>
   );
 }
 

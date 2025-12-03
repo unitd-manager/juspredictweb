@@ -1,6 +1,7 @@
 import { Button } from './ui/Button';
 import trendingImg from '../assets/trending.png';
 import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 
 const sports = [
@@ -124,7 +125,7 @@ const flippedCardData = {
   volume: '$3.7K',
 };
 
-const SportsCard = ({ sport,onNavigate,setSelectedSport }: { sport: typeof sports[0],onNavigate: (Page:string)=>void,setSelectedSport: (sport:string)=>void; }) => {
+const SportsCard = ({ sport,setSelectedSport }: { sport: typeof sports[0],setSelectedSport: (sport:string)=>void; }) => {
   const [isFlipped, setIsFlipped] = useState(false);
 
   const handlePredictClick = (e: React.MouseEvent) => {
@@ -132,6 +133,7 @@ const SportsCard = ({ sport,onNavigate,setSelectedSport }: { sport: typeof sport
     setIsFlipped(!isFlipped);
   };
 
+  const navigate = useNavigate();
 
   return (
     <div
@@ -169,7 +171,7 @@ const SportsCard = ({ sport,onNavigate,setSelectedSport }: { sport: typeof sport
             size="sm"
             // onClick={handlePredictClick}
             className="w-full text-xs bg-primary/10 text-primary border-primary/30 hover:bg-primary hover:text-black font-medium"
-          onClick={()=>{setSelectedSport(sport.name);onNavigate("sports");}} >
+          onClick={()=>{setSelectedSport(sport.name);navigate("/sports");}} >
             Predict Now
           </Button>
         </div>
@@ -247,12 +249,11 @@ const SportsCard = ({ sport,onNavigate,setSelectedSport }: { sport: typeof sport
   );
 };
 
-interface TrendingSportsProps {
-  onNavigate: (page: string) => void;
-  setSelectedSport: (sport: string) => void;
-}
 
-export const TrendingSports: React.FC<TrendingSportsProps> = ({ onNavigate,setSelectedSport }) => {
+
+export const TrendingSports = ({ setSelectedSport }: { setSelectedSport: (sport: string) => void; }) => {
+  // const [activeTab, setActiveTab] = useState('Trending');
+  // const navigate = useNavigate();
   return (
     <section className="relative py-24 bg-dark-bg">
       <div className="absolute pointer-events-none z-0" style={{ right: '-40px', top: '70px' }}>
@@ -268,7 +269,7 @@ export const TrendingSports: React.FC<TrendingSportsProps> = ({ onNavigate,setSe
 
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-6">
           {sports.map((sport) => (
-            <SportsCard key={sport.name} sport={sport} onNavigate={onNavigate} setSelectedSport={setSelectedSport} />
+            <SportsCard key={sport.name} sport={sport} setSelectedSport={setSelectedSport} />
           ))}
         </div>
       </div>
