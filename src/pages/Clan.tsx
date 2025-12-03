@@ -125,11 +125,14 @@ export const Clan: React.FC<ClanProps> = ({ onSelectClan }) => {
     }
 
     return (
-      <div className="grid gap-5 md:grid-cols-2">
+      <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
+
         {filteredGroups.map((group) => {
           const groupId = group.groupInfo?.groupId ?? '';
           const earnings = group.topTotalEarnings ?? '0';
           const topPerformer = buildTopPerformerName(group);
+          const totalPredictions = group.totalPredictions ?? 0;
+          const won = group.won ?? 0;
           return (
             <div
               key={groupId || group.groupInfo?.groupName}
@@ -146,27 +149,35 @@ export const Clan: React.FC<ClanProps> = ({ onSelectClan }) => {
 
                   <p className="mt-2 text-sm text-gray-text">{group.groupInfo?.groupAlias}</p>
 
-                  <div className="mt-6 flex items-center gap-3">
-                    <div className="flex h-12 w-12 items-center justify-center rounded-full border border-primary/40 bg-primary/10 text-lg font-semibold text-primary">
-                      {(group.groupInfo?.groupName ?? 'CL')
-                        .split(' ')
-                        .map((word) => word[0])
-                        .join('')
-                        .slice(0, 2)
-                        .toUpperCase()}
-                    </div>
-                    <div>
-                      <p className="text-xs text-white/70">Top performer</p>
-                      <p className="text-lg font-semibold text-white">{topPerformer}</p>
-                      <div className="mt-1 flex items-center gap-2 text-sm text-primary">
-                        <Award className="h-4 w-4" />
-                        {earnings}
+                  <div className="mt-6 flex items-center justify-between gap-3">
+                    <div className="flex items-center gap-3">
+                      <div className="flex h-12 w-12 items-center justify-center rounded-full border border-primary/40 bg-primary/10 text-lg font-semibold text-primary">
+                        {(group.groupInfo?.groupName ?? 'CL')
+                          .split(' ')
+                          .map((word) => word[0])
+                          .join('')
+                          .slice(0, 2)
+                          .toUpperCase()}
                       </div>
+                      <div>
+                        <p className="text-xs text-white/70">Top performer</p>
+                        <p className="text-lg font-semibold text-white">{topPerformer}</p>
+                        <div className="mt-1 flex items-center gap-2 text-sm text-primary">
+                          <Award className="h-4 w-4" />
+                          {earnings}
+                        </div>
+                      </div>
+                    </div>
+                    <div className="text-right text-sm text-white/80">
+                      <p>Total Predictions: {totalPredictions}</p>
+                      <p> won: {won}</p>
                     </div>
                   </div>
 
-                  <div className="mt-6 flex items-center justify-between text-sm text-white/80">
+                  
+                  <div className="mt-2 flex items-center justify-between text-sm text-white/80">
                     <span>{formatRelative(group.groupLastActivity)}</span>
+                   
                     <Badge variant="outline" className="border-white/30 text-white">
                       View details
                     </Badge>

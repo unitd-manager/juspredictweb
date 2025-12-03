@@ -11,6 +11,7 @@ import Contact from './pages/Contact';
 import { Login } from './pages/Login';
 import { Footer } from './components/Footer';
 import { Toaster } from './components/ui/Toast';
+import Transactions from './pages/Transactions';
 
 const pageTitles: Record<string, string> = {
   home: 'JusPredict - Predict Sports, Politics & More',
@@ -22,12 +23,13 @@ const pageTitles: Record<string, string> = {
   faq: 'FAQ - JusPredict',
   contact: 'Contact Us - JusPredict',
   login: 'Login - JusPredict',
+  transactions: 'Transactions - JusPredict',
 };
 
 function App() {
   type Page= keyof typeof pageTitles;
   const [currentPage, setCurrentPage] = useState<Page>('home');
-  const [selectedSport, setSelectedSport] = useState<string | undefined>();
+  //const [selectedSport, setSelectedSport] = useState<string | undefined>();
   const [selectedClanId, setSelectedClanId] = useState<string | undefined>();
  const handleNavigate = (page: Page) => {
     setCurrentPage(page);
@@ -54,9 +56,13 @@ function App() {
       <Navbar onNavigate={handleNavigate} currentPage={currentPage} />
       <main>
         {currentPage === 'home' ? (
-          <Home onNavigate={handleNavigate} setSelectedSport={setSelectedSport}/>
+          <Home 
+          // onNavigate={handleNavigate} setSelectedSport={setSelectedSport}
+          />
         ) : currentPage === 'portfolio' ? (
           <Portfolio />
+        ) : currentPage === 'transactions' ? (
+          <Transactions />
         ) : currentPage === 'clan' ? (
           <Clan onSelectClan={handleNavigateToClanDetail} />
         ) : currentPage === 'clanDetail' ? (
@@ -70,7 +76,7 @@ function App() {
         ) : currentPage === 'login' ? (
           <Login onNavigate={handleNavigate} />
         ) :currentPage === 'sports' ?(
-          <Sports selectedSport={selectedSport}/>
+          <Sports />
         ):<Home onNavigate={handleNavigate} />}
       </main>
       {!['clan', 'clanDetail', 'sports'].includes(currentPage) && <Footer onNavigate={handleNavigate} />}

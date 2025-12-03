@@ -17,6 +17,7 @@ export const Navbar = ({ onNavigate, currentPage }: NavbarProps) => {
     { name: 'Sports', href: '#', page: 'sports' as const },
     { name: 'Clan', href: '#', page: 'clan' as const },
     { name: 'Portfolio', href: '#', page: 'portfolio' as const },
+    { name: 'Transactions', href: '#', page: 'transactions' as const },
     // { name: 'Events', href: '#', page: undefined },
     // { name: 'Leaderboard', href: '#', page: undefined },
     { name: 'FAQ', href: '#', page: 'faq' as const },

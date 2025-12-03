@@ -40,6 +40,8 @@ export interface GroupSummary {
   topLastName?: string;
   topTotalEarnings?: string;
   memberCount?: number;
+  totalPredictions?: number;
+  won?: number;
 }
 
 export interface GroupResponse {
@@ -134,6 +136,36 @@ const mockGroupDetails: { [key: string]: { info: GroupInfo; members: GroupMember
     leaderboard: [
       { userInfo: { userId: '401', firstName: 'Emma', lastName: 'Davis', userEmail: 'emma@example.com' }, accuracy: '76%', earnings: '$2,675.90', predictions: 48 },
     ]
+  },
+  '5': {
+    info: {
+      groupId: '5',
+      groupName: 'Prediction Pros',
+      groupAlias: 'predpros',
+      createdAt: new Date(Date.now() - 120 * 24 * 60 * 60 * 1000).toISOString(),
+      memberCount: 9,
+      groupMode: 'PUBLIC'
+    },
+    members: [],
+    activities: [],
+    leaderboard: [
+      { userInfo: { userId: '501', firstName: 'David', lastName: 'Miller', userEmail: 'david@example.com' }, accuracy: '68%', earnings: '$1,540.60', predictions: 82 },
+    ]
+  },
+  '6': {
+    info: {
+      groupId: '6',
+      groupName: 'Elite Forecasters',
+      groupAlias: 'elitefc',
+      createdAt: new Date(Date.now() - 150 * 24 * 60 * 60 * 1000).toISOString(),
+      memberCount: 14,
+      groupMode: 'PRIVATE'
+    },
+    members: [],
+    activities: [],
+    leaderboard: [
+      { userInfo: { userId: '601', firstName: 'Olivia', lastName: 'Brown', userEmail: 'olivia@example.com' }, accuracy: '85%', earnings: '$3,450.10', predictions: 160 },
+    ]
   }
 };
 
@@ -144,7 +176,9 @@ const mockGroups: GroupSummary[] = [
     topFirstName: 'John',
     topLastName: 'Smith',
     topTotalEarnings: '$2,450.75',
-    memberCount: 12
+    memberCount: 12,
+    totalPredictions: 120,
+    won: 78
   },
   {
     groupInfo: mockGroupDetails['2'].info,
@@ -152,7 +186,9 @@ const mockGroups: GroupSummary[] = [
     topFirstName: 'Sarah',
     topLastName: 'Johnson',
     topTotalEarnings: '$3,120.50',
-    memberCount: 8
+    memberCount: 8,
+    totalPredictions: 95,
+    won: 63
   },
   {
     groupInfo: mockGroupDetails['3'].info,
@@ -160,7 +196,9 @@ const mockGroups: GroupSummary[] = [
     topFirstName: 'Mike',
     topLastName: 'Chen',
     topTotalEarnings: '$1,890.25',
-    memberCount: 15
+    memberCount: 15,
+    totalPredictions: 143,
+    won: 87
   },
   {
     groupInfo: mockGroupDetails['4'].info,
@@ -168,9 +206,32 @@ const mockGroups: GroupSummary[] = [
     topFirstName: 'Emma',
     topLastName: 'Davis',
     topTotalEarnings: '$2,675.90',
-    memberCount: 10
+    memberCount: 10,
+    totalPredictions: 110,
+    won: 71
+  },
+  {
+    groupInfo: mockGroupDetails['5'].info,
+    groupLastActivity: new Date(Date.now() - 4 * 60 * 60 * 1000).toISOString(),
+    topFirstName: 'David',
+    topLastName: 'Miller',
+    topTotalEarnings: '$1,540.60',
+    memberCount: 9,
+    totalPredictions: 82,
+    won: 49
+  },
+  {
+    groupInfo: mockGroupDetails['6'].info,
+    groupLastActivity: new Date(Date.now() - 25 * 60 * 1000).toISOString(),
+    topFirstName: 'Olivia',
+    topLastName: 'Brown',
+    topTotalEarnings: '$3,450.10',
+    memberCount: 14,
+    totalPredictions: 160,
+    won: 102
   }
 ];
+
 
 export const groupApi = {
   getGroups: async (): Promise<GroupResponse> => {
