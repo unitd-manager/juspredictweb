@@ -1,5 +1,7 @@
 import React, { useState } from "react";
 import { Clock, TrendingUp, TrendingDown, Users, CheckCircle } from "lucide-react";
+import {  useNavigate } from "react-router-dom";
+
 import { Button } from "./ui/Button";
 
 interface Team {
@@ -206,10 +208,11 @@ const PredictionModal: React.FC<PredictionModalProps> = ({ open, onClose, match 
 // -------------------------------------------------------
 
 interface LivePredictionsProps {
-  onNavigate: (page: string) => void;
 }
 
-export const LivePredictions: React.FC<LivePredictionsProps> = ({ onNavigate }) => {
+export const LivePredictions: React.FC<LivePredictionsProps> = () => {
+
+  const navigate = useNavigate();
 
   const [selectedMatch, setSelectedMatch] = useState<Match | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -356,7 +359,7 @@ export const LivePredictions: React.FC<LivePredictionsProps> = ({ onNavigate }) 
 
         <div className="mt-12 text-center">
           <Button variant="outline" className="border-primary text-primary hover:bg-primary/10 px-8"
-          onClick={()=>onNavigate('sports')} >
+          onClick={()=>navigate('/sports')} >
             View All Matches
           </Button>
         </div>

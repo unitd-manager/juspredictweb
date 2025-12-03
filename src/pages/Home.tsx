@@ -7,16 +7,15 @@ import { StatsCTA } from '../components/StatsCTA';
 import { Features } from '../components/Features';
 
 interface HomeProps {
-  onNavigate: (page: string) => void;
   setSelectedSport:(sport:string)=>void;
 }
 
-export const Home: React.FC<HomeProps> = ({ onNavigate ,setSelectedSport}) => {
+export const Home: React.FC<HomeProps> = ({setSelectedSport}) => {
   return (
     <>
       <Hero />
-      <TrendingSports onNavigate={onNavigate} setSelectedSport={setSelectedSport} />
-      <LivePredictions onNavigate={onNavigate} />
+      <TrendingSports setSelectedSport={setSelectedSport} />
+      <LivePredictions />
       <UpcomingEvents />
       <HowItWorks />
       <StatsCTA />
