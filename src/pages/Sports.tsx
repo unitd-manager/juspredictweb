@@ -71,6 +71,112 @@ const TeamRow = ({ team, probability }: { team: any; probability: number }) => {
   );
 };
 
+// Thumbnail for a single event (compact)
+const EventThumbnail = ({ event, onSelect, selectedId }: { event: any; onSelect: (id: string) => void; selectedId?: string | null }) => {
+  const id = String(event.id ?? event.eventId ?? '');
+  const teams = Array.isArray(event?.teams)
+    ? event.teams
+    : Array.isArray(event?.sportEvent?.teams)
+    ? event.sportEvent.teams
+    : [];
+
+  const teamA = teams?.[0] || {};
+  const teamB = teams?.[1] || {};
+
+  let probA = 50;
+  let probB = 50;
+  try {
+    const stats = JSON.parse(event.stats || '{}');
+    const pred = stats.result_prediction;
+    if (Array.isArray(pred) && pred.length === 2) {
+      probA = Number(pred[0]?.value) || probA;
+      probB = Number(pred[1]?.value) || probB;
+    }
+  } catch {
+    // ignore
+  }
+
+  const timeLabel = (() => {
+    try {
+      return new Date(Number(event.startDate) * 1000).toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit' });
+    } catch {
+      return '';
+    }
+  })();
+
+  const name = (event.name || event.eventName || event.sportEvent?.name || '').toString();
+
+  return (
+    <button
+      onClick={() => onSelect(id)}
+      aria-pressed={selectedId === id}
+      className={`relative w-56 min-w-[14rem] md:w-64 md:min-w-[16rem] flex-shrink-0 rounded-xl p-3 text-left transition-all ${
+        selectedId === id
+          ? 'bg-primary/10 border border-primary ring-2 ring-primary/30 shadow-lg'
+          : 'bg-dark-card border border-white/6 hover:shadow-lg hover:border-primary/30'
+      }`}
+    >
+      {selectedId === id && (
+        <span className="absolute top-2 right-2 flex items-center gap-2">
+          <span className="h-2 w-2 rounded-full bg-red-500 shadow-md" />
+          <span className="text-xs text-white">▾</span>
+        </span>
+      )}
+      <div className="flex items-center justify-between mb-2">
+        <div className="text-xs text-gray-text">{timeLabel}</div>
+        <div className="text-xs text-gray-text">{event?.league || event?.category || ''}</div>
+      </div>
+      <div className="flex items-center gap-3 mb-2">
+        <div className="flex items-center gap-2">
+          <div className="h-10 w-10 rounded bg-dark-lighter flex items-center justify-center text-sm overflow-hidden">
+            {teamA?.imageUrl || teamA?.logoUrl ? (
+              <img src={(teamA.imageUrl || teamA.logoUrl).toString()} alt={teamA.name} className="h-10 w-10 object-cover" onError={(e)=>{(e.currentTarget as HTMLImageElement).style.display='none'}} />
+            ) : (
+              <span className="text-sm">{(teamA?.abbreviation || teamA?.shortName || teamA?.name || 'A')[0]}</span>
+            )}
+          </div>
+          <div className="text-sm text-white font-medium line-clamp-1">{teamA?.shortName || 'Team A'}</div>
+        </div>
+
+        <div className="flex-1 text-center text-xs text-gray-text">vs</div>
+
+        <div className="flex items-center gap-2 justify-end">
+          <div className="text-sm text-white font-medium line-clamp-1">{teamB?.shortName || 'Team B'}</div>
+          <div className="h-10 w-10 rounded bg-dark-lighter flex items-center justify-center text-sm overflow-hidden">
+            {teamB?.imageUrl || teamB?.logoUrl ? (
+              <img src={(teamB.imageUrl || teamB.logoUrl).toString()} alt={teamB.name} className="h-10 w-10 object-cover" onError={(e)=>{(e.currentTarget as HTMLImageElement).style.display='none'}} />
+            ) : (
+              <span className="text-sm">{(teamB?.abbreviation || teamB?.shortName || teamB?.name || 'B')[0]}</span>
+            )}
+          </div>
+        </div>
+      </div>
+
+      <div className="flex items-center justify-between">
+        <div className="text-xs text-gray-text">{name}</div>
+        <div className="text-xs text-white font-semibold">{Math.round(probA)}% / {Math.round(probB)}%</div>
+      </div>
+    </button>
+  );
+};
+
+// Horizontal strip of thumbnails
+const EventThumbnailStrip = ({ events, onSelect, selectedId }: { events: any[]; onSelect: (id: string) => void; selectedId?: string | null }) => {
+  if (!events || events.length === 0) return null;
+
+  return (
+    <div className="overflow-x-auto -mx-4 sm:-mx-6 lg:-mx-8 py-4">
+      <div className="px-4 sm:px-6 lg:px-8 max-w-[1400px] mx-auto">
+        <div className="flex gap-3">
+          {events.slice(0, 20).map((ev, idx) => (
+            <EventThumbnail key={String(ev.id ?? ev.eventId ?? idx)} event={ev} onSelect={onSelect} selectedId={selectedId} />
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+};
+
 // Event Card Component
 const EventCard = ({ 
   event, 
@@ -263,8 +369,35 @@ const EventDetails: React.FC<{
     );
   }
 
+  // derive teams and probabilities for display
+  const teams = Array.isArray(event?.teams)
+    ? event.teams
+    : Array.isArray(event?.sportEvent?.teams)
+    ? event.sportEvent.teams
+    : [];
+
+  const teamA = teams?.[0] || {};
+  const teamB = teams?.[1] || {};
+
+  let probA = 50;
+  let probB = 50;
+  try {
+    const stats = JSON.parse(event.stats || '{}');
+    const pred = stats.result_prediction;
+    if (Array.isArray(pred) && pred.length === 2) {
+      probA = Number(pred[0]?.value) || probA;
+      probB = Number(pred[1]?.value) || probB;
+    }
+  } catch {
+    // ignore
+  }
+
   return (
     <div className="rounded-xl border border-white/10 bg-dark-card p-6 mt-2">
+      <div className="mb-4 grid grid-cols-1 md:grid-cols-2 gap-4">
+        <TeamRow team={teamA} probability={probA} />
+        <TeamRow team={teamB} probability={probB} />
+      </div>
       <div className="flex items-center justify-between mb-4">
         <h2 className="text-lg font-bold text-white">Available Predictions</h2>
         <button onClick={onBack} className="flex items-center text-gray-text hover:text-white transition-colors">
@@ -720,6 +853,44 @@ export const Sports: React.FC<{ selectedSport?: string | null }> = ({ selectedSp
 
       <div className="px-4 sm:px-6 lg:px-8 pb-10">
         <div className="max-w-[1400px] mx-auto">
+          {/* Thumbnail strip under header */}
+          <EventThumbnailStrip
+            events={events}
+            selectedId={selectedEventId}
+            onSelect={(id: string) => {
+              setSelectedEventId(id);
+              // bring the details into view by scrolling a bit
+              try {
+                window.scrollTo({ top: 200, behavior: 'smooth' });
+              } catch {}
+            }}
+          />
+
+          {/* {selectedEventId && (
+            <div className="mb-7">
+              <button
+                onClick={() => {
+                  setSelectedEventId(null);
+                  setSelectedQuestion(null);
+                  setSelectedOutcome(null);
+                  setConfidenceOverride(null);
+                  setAmount('');
+                  setSelectedTeams(null);
+                  setBalance(null);
+                  setErrorMsg('');
+                  setExitAmount('');
+                  setExitConfidence(null);
+                  setIsMobilePanelOpen(false);
+                  setActiveTab('all');
+                }}
+                className="flex items-center text-gray-text hover:text-white mb-4 transition-colors"
+              >
+                <ArrowLeft className="w-5 h-5 mr-2" />
+                Back
+              </button>
+            </div>
+          )} */}
+
           <div className="flex flex-col lg:flex-row gap-8">
             {/* Left Sidebar - Sports */}
             <aside className="w-full lg:w-64 lg:flex-shrink-0">
@@ -769,26 +940,60 @@ export const Sports: React.FC<{ selectedSport?: string | null }> = ({ selectedSp
 
             {/* Main Content */}
             <main className="flex-1">
-              {/* Horizontal Tabs */}
-              <div className="mb-8 overflow-x-auto">
-                <div className="flex gap-2 border-b border-white/10 pb-0">
-                  {tabs.map((tab) => (
-                    <button
-                      key={tab.id}
-                      onClick={() => setActiveTab(tab.id)}
-                      className={`px-6 py-3 text-sm font-semibold whitespace-nowrap transition-all border-b-2 ${
-                        activeTab === tab.id
-                          ? 'text-primary border-b-primary'
-                          : 'text-gray-text border-b-transparent hover:text-white'
-                      }`}
-                    >
-                      {tab.label}
-                    </button>
-                  ))}
+              {/* Horizontal Tabs (hidden when viewing a single event detail) */}
+              {!selectedEventId && (
+                <div className="mb-8 overflow-x-auto">
+                  <div className="flex gap-2 border-b border-white/10 pb-0">
+                    {tabs.map((tab) => (
+                      <button
+                        key={tab.id}
+                        onClick={() => setActiveTab(tab.id)}
+                        className={`px-6 py-3 text-sm font-semibold whitespace-nowrap transition-all border-b-2 ${
+                          activeTab === tab.id
+                            ? 'text-primary border-b-primary'
+                            : 'text-gray-text border-b-transparent hover:text-white'
+                        }`}
+                      >
+                        {tab.label}
+                      </button>
+                    ))}
+                  </div>
                 </div>
-              </div>
+              )}
 
-              {!isLoading && activeTab !== 'all' && filteredPredictionsByTab.length > 0 ? (
+              {selectedEventId ? (
+                <EventDetails
+                  eventId={String(selectedEventId)}
+                  onBack={() => {
+                    setSelectedEventId(null);
+                    setSelectedQuestion(null);
+                    setSelectedOutcome(null);
+                    setConfidenceOverride(null);
+                    setAmount('');
+                    setSelectedTeams(null);
+                    setBalance(null);
+                    setErrorMsg('');
+                    setExitAmount('');
+                    setExitConfidence(null);
+                    setIsMobilePanelOpen(false);
+                    setActiveTab('all');
+                  }}
+                  onPredict={(question) => {
+                    setSelectedQuestion(question);
+                    setSelectedOutcome(null);
+                    setConfidenceOverride(null);
+                    setAmount('');
+                    setErrorMsg('');
+                    setExitAmount('');
+                    setExitConfidence(null);
+                    setSelectedAction(null);
+                    setSelectedPrediction(null);
+                    setSuccessMessage(null);
+                    fetchBalance();
+                    setIsMobilePanelOpen(true);
+                  }}
+                />
+              ) : !isLoading && activeTab !== 'all' && filteredPredictionsByTab.length > 0 ? (
                 <div className="space-y-4">
                   {filteredPredictionsByTab.map((p) => (
                     <div key={p.id} className="rounded-2xl border border-white/10 bg-dark-card p-6 overflow-hidden">
