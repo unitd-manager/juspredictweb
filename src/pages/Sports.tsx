@@ -2,7 +2,6 @@ import React, { useState, useEffect } from 'react';
 import { ArrowLeft, TrendingUp, Users, DollarSign, AlertCircle, Loader2 } from 'lucide-react';
 import { Badge } from '../components/ui/Badge';
 import { PageHeader } from '../components/PageHeader';
-import { Footer2 } from '../components/Footer2';
 import { Button } from '../components/ui/Button';
 import { api } from '../api/client';
 import { Dialog, DialogContent } from '../components/ui/Dialog';
@@ -1509,7 +1508,6 @@ export const Sports: React.FC<{ selectedSport?: string | null }> = ({ selectedSp
         </div>
       </div>
 
-      <Footer2 />
     </div>
   );
 };

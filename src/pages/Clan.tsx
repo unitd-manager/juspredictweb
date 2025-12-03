@@ -1,7 +1,6 @@
 import React, { useMemo, useState, useEffect } from 'react';
 import { format, formatDistanceToNowStrict, isToday } from '../lib/dateUtils';
 import { Award, Loader2, RefreshCcw, Search, Users } from 'lucide-react';
-import { Footer2 } from '../components/Footer2';
 import { PageHeader } from '../components/PageHeader';
 import { Card, CardContent } from '../components/ui/Card';
 import { Input } from '../components/ui/Input';
@@ -239,7 +238,7 @@ export const Clan: React.FC<ClanProps> = ({ onSelectClan }) => {
         </div>
       </main>
 
-      <Footer2 />
+   
 
       {/* FAB - Create Clan Button */}
       <div className="fixed bottom-6 right-6">
