@@ -1,12 +1,13 @@
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
-import { useState } from 'react';
+import { useState, lazy, Suspense } from 'react';
+import { useHostname } from './lib/useHostname';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import Navbar from './components/Navbar';
 import { Home } from './pages/Home';
 import Portfolio from './pages/Portfolio';
 import Clan from './pages/Clan';
-import ClanList from './pages/ClanList';
-import ClanDetailDyn from './pages/ClanDetailDyn';
+const ClanList = lazy(() => import('./pages/ClanList'));
+const ClanDetailDyn = lazy(() => import('./pages/ClanDetailDyn'));
 import ClanDetail from './pages/ClanDetail';
 import Sports from './pages/Sports';
 import About from './pages/About';
@@ -20,6 +21,11 @@ import Transactions from './pages/Transactions';
 
 function App() {
   const [ selectedSport ] = useState<string | undefined>();
+  const hostname = useHostname();
+  const allowedHosts = [
+    'localhost',
+    '127.0.0.1',
+  ];
   const queryClient = new QueryClient();
 
   return (
@@ -41,8 +47,18 @@ function App() {
             <Route path="/contact" element={<Contact />} />
             <Route path="/transactions" element={<Transactions />} />
             <Route path="/login" element={<Login />} />
-            <Route path="/clanlist" element={<ClanList />} />
-            <Route path="/clanDetailDyn/:groupId" element={<ClanDetailDyn />} />
+            {allowedHosts.includes(hostname) && (
+              <>
+                <Route
+                  path="/clanlist"
+                  element={<Suspense fallback={null}><ClanList /></Suspense>}
+                />
+                <Route
+                  path="/clanDetailDyn/:groupId"
+                  element={<Suspense fallback={null}><ClanDetailDyn /></Suspense>}
+                />
+              </>
+            )}
             <Route path="*" element={<Home />} />
           </Routes>
         </main>
