@@ -135,6 +135,10 @@ export const DialogTitle: React.FC<DialogTitleProps> = ({ children }) => {
   return <h2 className="text-lg font-semibold text-white">{children}</h2>;
 };
 
+export const DialogDescription: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+  return <p className="text-sm text-muted-foreground mt-1">{children}</p>;
+};
+
 export const DialogFooter: React.FC<DialogFooterProps> = ({ children }) => {
   return <div className="mt-6 flex gap-3 justify-end">{children}</div>;
 };

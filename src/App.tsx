@@ -1,9 +1,12 @@
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import { useState } from 'react';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import Navbar from './components/Navbar';
 import { Home } from './pages/Home';
 import Portfolio from './pages/Portfolio';
 import Clan from './pages/Clan';
+import ClanList from './pages/ClanList';
+import ClanDetailDyn from './pages/ClanDetailDyn';
 import ClanDetail from './pages/ClanDetail';
 import Sports from './pages/Sports';
 import About from './pages/About';
@@ -14,25 +17,15 @@ import { Footer } from './components/Footer';
 import { Toaster } from './components/ui/Toast';
 import Transactions from './pages/Transactions';
 
-const pageTitles: Record<string, string> = {
-  home: 'JusPredict - Predict Sports, Politics & More',
-  portfolio: 'Portfolio - JusPredict',
-  clan: 'Clans - JusPredict',
-  clanDetail: 'Clan Details - JusPredict',
-  sports: 'Sports - JusPredict',
-  about: 'About Us - JusPredict',
-  faq: 'FAQ - JusPredict',
-  contact: 'Contact Us - JusPredict',
-  login: 'Login - JusPredict',
-  transactions: 'Transactions - JusPredict',
-};
 
 function App() {
-  const [selectedSport, setSelectedSport] = useState<string | undefined>();
+  const [ selectedSport ] = useState<string | undefined>();
+  const queryClient = new QueryClient();
 
   return (
-    <BrowserRouter>
-      <div className="min-h-screen bg-dark-bg text-white selection:bg-primary/30 selection:text-primary">
+    <QueryClientProvider client={queryClient}>
+      <BrowserRouter>
+        <div className="min-h-screen bg-dark-bg text-white selection:bg-primary/30 selection:text-primary">
         <Navbar />
         <main>
           <Routes>
@@ -48,13 +41,16 @@ function App() {
             <Route path="/contact" element={<Contact />} />
             <Route path="/transactions" element={<Transactions />} />
             <Route path="/login" element={<Login />} />
+            <Route path="/clanlist" element={<ClanList />} />
+            <Route path="/clanDetailDyn/:groupId" element={<ClanDetailDyn />} />
             <Route path="*" element={<Home />} />
           </Routes>
         </main>
         <Footer />
         <Toaster />
       </div>
-    </BrowserRouter>
+      </BrowserRouter>
+    </QueryClientProvider>
   );
 }
 
