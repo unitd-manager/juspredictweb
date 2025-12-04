@@ -1,5 +1,5 @@
 import { Button } from "./../components/ui/Button";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, NavLink, useNavigate } from "react-router-dom";
 import { Bell, Menu } from "lucide-react";
 import logo from "../assets/logo.png";
 import { useEffect, useState } from "react";
@@ -150,10 +150,10 @@ const Navbar = () => {
   };
 
   return (
-    <nav className="sticky top-0 z-50 w-full border-b border-border bg-background/80 backdrop-blur-md">
-      <div className="container mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex h-16 items-center justify-between">
-          <div className="flex items-center gap-2">
+    <nav className="fixed top-0 left-0 right-0 z-50 bg-dark-bg/80 backdrop-blur-md border-b border-white/5">
+      <div className="max-w-[1400px] mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="flex items-center justify-between h-20">
+          <div className="flex-shrink-0 flex items-center gap-2">
             <img src={logo} alt="JusPredict Logo" className="h-10 w-10" />
             <span className="text-xl font-bold text-foreground">JusPredict</span>
           </div>
@@ -163,15 +163,31 @@ const Navbar = () => {
               <a href="#home" className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors">Home</a>
             ) : (
               <>
-                <a href="/" className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors">Home</a>
-             
-              <a href="/faq" className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors">FAQ</a>
-                <a href="/portfolio" className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors">Portfolio</a>
-                <a href="/clan" className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors">Clan</a>
-                {isLoggedIn && <Link to="/profile" className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors">Profile</Link>}
-                <a href="/sports" className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors">Sports</a>
-                <a href="/about" className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors">About</a>
-                <a href="/contact" className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors">Contact</a>
+                <NavLink to="/" className={({ isActive }) => `text-sm font-medium transition-colors ${
+                    isActive ? 'text-primary font-bold' : 'text-muted-foreground hover:text-foreground'
+                  }`}>Home</NavLink>
+
+              <NavLink to="/faq" className={({ isActive }) => `text-sm font-medium transition-colors ${
+                    isActive ? 'text-primary font-bold' : 'text-gray-light hover:text-primary'
+                  }`}>FAQ</NavLink>
+                <NavLink to="/portfolio" className={({ isActive }) => `text-sm font-medium transition-colors ${
+                    isActive ? 'text-primary font-bold' : 'text-gray-light hover:text-primary'
+                  }`}>Portfolio</NavLink>
+                <NavLink to="/clan" className={({ isActive }) => `text-sm font-medium transition-colors ${
+                    isActive ? 'text-primary font-bold' : 'text-gray-light hover:text-primary'
+                  }`}>Clan</NavLink>
+                {/* {isLoggedIn && <NavLink to="/profile" className={({ isActive }) => `text-sm font-medium transition-colors ${
+                    isActive ? 'text-primary font-bold' : 'text-gray-light hover:text-primary'
+                  }`}>Profile</NavLink>} */}
+                <NavLink to="/sports" className={({ isActive }) => `text-sm font-medium transition-colors ${
+                    isActive ? 'text-primary font-bold' : 'text-gray-light hover:text-primary'
+                  }`}>Sports</NavLink>
+                <NavLink to="/about" className={({ isActive }) => `text-sm font-medium transition-colors ${
+                    isActive ? 'text-primary font-bold' : 'text-gray-light hover:text-primary'
+                  }`}>About</NavLink>
+                <NavLink to="/contact" className={({ isActive }) => `text-sm font-medium transition-colors ${
+                    isActive ? 'text-primary font-bold' : 'text-gray-light hover:text-primary'
+                  }`}>Contact</NavLink>
               
               </>
             )}
