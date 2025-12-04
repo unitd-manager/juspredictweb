@@ -6,7 +6,7 @@ export default defineConfig({
   base: './',
    server: {
     host: "::",
-    
+    port: 3000,
     proxy: {
       "/api": {
         target: "https://api.predictyourgame.com",

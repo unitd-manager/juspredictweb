@@ -206,11 +206,9 @@ console.log(claims);
      UI
   --------------------------------------------- */
   return (
-    <div className="min-h-screen bg-background">
-    
-      <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-10">
-        <div className="mx-auto max-w-md">
-          <Card>
+    <div className="min-h-screen flex items-center justify-center bg-background">
+      <div className="w-full max-w-md px-4 sm:px-6 lg:px-8 py-10">
+          <Card className="embossed">
             <CardHeader>
               <CardTitle>Login</CardTitle>
               <CardDescription>Access your JusPredict account</CardDescription>
@@ -265,7 +263,7 @@ console.log(claims);
 
               <CardFooter className="flex flex-col gap-3">
                 {mode === "email" && (
-                  <Button disabled={loading} type="submit" className="w-full">
+                  <Button disabled={loading} type="submit" className="w-full embossed-button">
                     {loading ? "Logging in..." : "Login"}
                   </Button>
                 )}
@@ -274,7 +272,6 @@ console.log(claims);
               </CardFooter>
             </form>
           </Card>
-        </div>
       </div>
     </div>
   );

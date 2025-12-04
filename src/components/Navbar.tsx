@@ -1,109 +1,245 @@
-import { useState } from 'react';
-import { Button } from './ui/Button';
-import { Menu, X } from 'lucide-react';
-import logoImg from '../assets/juspredict-logo.svg';
-import { Link, useNavigate, useLocation } from 'react-router-dom';
+import { Button } from "./../components/ui/Button";
+import { Link, useNavigate } from "react-router-dom";
+import { Bell, Menu } from "lucide-react";
+import logo from "../assets/logo.png";
+import { useEffect, useState } from "react";
+import { useHostname } from "../lib/useHostname";
+import { api } from "../api/api";
+import { toast } from "./../components/ui/sonner";
 
-export const Navbar = () => {
-  const [isOpen, setIsOpen] = useState(false);
+interface Notification {
+  notificationId: string;
+  notificationMessage: string;
+  notificationStatus: string;
+  notificationMsgCreatedAt: string;
+}
+
+declare global {
+  interface Window {
+    __localStoragePatched?: boolean;
+  }
+}
+
+const Navbar = () => {
   const navigate = useNavigate();
-  const location = useLocation();
+  const [isLoggedIn, setIsLoggedIn] = useState<boolean>(false);
+  const [userName, setUserName] = useState<string | null>(null);
+  const [unreadCount, setUnreadCount] = useState<number>(0);
+  const [showNotifications, setShowNotifications] = useState<boolean>(false);
+  const [notifications, setNotifications] = useState<Notification[]>([]);
+  const hostname = useHostname();
 
-  const navLinks = [
-    { name: 'Home', path: '/', page: 'home' as const },
-    { name: 'About', path: '/about', page: 'about' as const },
-    { name: 'Sports', path: '/sports', page: 'sports' as const },
-    { name: 'Clan', path: '/clan', page: 'clan' as const },
-    { name: 'Portfolio', path: '/portfolio', page: 'portfolio' as const },
-    { name: 'Transactions', path: '/transactions', page: 'transactions' as const },
-    // { name: 'Events', path: '#', page: undefined },
-    // { name: 'Leaderboard', path: '#', page: undefined },
-    { name: 'FAQ', path: '/faq', page: 'faq' as const },
-    { name: 'Contact', path: '/contact', page: 'contact' as const },
-    // { name: 'API Docs', path: '#', page: undefined },
-  ];
+  useEffect(() => {
+    const syncAuth = () => {
+      const token = localStorage.getItem("auth_token");
+      setIsLoggedIn(!!token);
 
-  const handleLinkClick = () => {
-    setIsOpen(false);
+      const userProfile = localStorage.getItem("user_profile");
+      if (userProfile) {
+        try {
+          const user = JSON.parse(userProfile);
+          const name = user.firstName || user.userName || null;
+          setUserName(name);
+        } catch (e) {
+          console.error("Failed to parse user profile from localStorage", e);
+          setUserName(null);
+        }
+      } else {
+        setUserName(null);
+      }
+    };
+    syncAuth();
+
+    // Sync across tabs
+    window.addEventListener("storage", syncAuth);
+
+    // Sync inside same tab
+    const handleLocalStorageCustom = (_e: Event) => {
+      syncAuth();
+    };
+    window.addEventListener("local-storage", handleLocalStorageCustom);
+
+    // Patch setItem once
+    if (!window.__localStoragePatched) {
+      const originalSetItem = Storage.prototype.setItem;
+      Storage.prototype.setItem = function (key: string, value: string) {
+        originalSetItem.apply(this, [key, value]);
+        window.dispatchEvent(
+          new CustomEvent("local-storage", { detail: { key, newValue: value } })
+        );
+      };
+      window.__localStoragePatched = true;
+    }
+
+    return () => {
+      window.removeEventListener("storage", syncAuth);
+      window.removeEventListener("local-storage", handleLocalStorageCustom);
+    };
+  }, []);
+
+  useEffect(() => {
+    if (isLoggedIn) {
+      fetchUnreadCount();
+      const interval = setInterval(fetchUnreadCount, 60000); // Refresh every minute
+      return () => clearInterval(interval);
+    }
+  }, [isLoggedIn]);
+
+  const fetchUnreadCount = async () => {
+    try {
+      const response = await api.post<{ notificationsCount: number }>("/notification/v1/unreadcount", {  
+        status: "NOTIFICATION_STATUS_UNREAD" });
+      setUnreadCount(response.notificationsCount);
+    } catch (error) {
+      console.error("Failed to fetch unread notification count", error);
+    }
+  };
+
+  const fetchNotifications = async () => {
+    try {
+      const response = await api.post<{ notifications: Notification[] }>("/notification/v1/getlist", {
+        pageRequest: {
+          pageNumber: 1,
+          pageSize: 50, // Assuming a default page size of 10
+        },
+        status: ["NOTIFICATION_STATUS_UNREAD"],
+      });
+      setNotifications(response.notifications);
+    } catch (error) {
+      console.error("Failed to fetch notifications", error);
+    }
+  };
+
+  const handleBellClick = () => {
+    setShowNotifications(prev => !prev);
+    if (!showNotifications) {
+      fetchNotifications();
+    }
+  };
+
+  const markAsRead = async (id: string) => {
+    try {
+      await api.post("/notification/v1/markmessages", { messageIds: [id], status: "NOTIFICATION_STATUS_READ" });
+      setNotifications(prev => prev.filter(n => n.notificationId !== id));
+      setUnreadCount(prev => Math.max(0, prev - 1));
+    } catch (error) {
+      console.error("Failed to mark notification as read", error);
+    }
+  };
+
+  const onLogout = async () => {
+    try {
+      await api.post("/user/v1/logout");
+    } catch (error) {
+      console.error("Failed to call logout", error);
+    }
+
+    localStorage.removeItem("auth_token");
+    localStorage.removeItem("refresh_token");
+    localStorage.removeItem("token_expiry");
+    localStorage.removeItem("user_profile");
+
+    window.dispatchEvent(
+      new CustomEvent("local-storage", { detail: { key: "auth_token", newValue: null } })
+    );
+
+    setIsLoggedIn(false);
+    setUserName(null);
+    toast.success("Logged out");
+    navigate("/");
   };
 
   return (
-    <nav className="fixed top-0 left-0 right-0 z-50 bg-dark-bg/80 backdrop-blur-md border-b border-white/5">
-      <div className="max-w-[1400px] mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex items-center justify-between h-20">
-          {/* Logo */}
-          <div className="flex-shrink-0 flex items-center gap-2">
-            <Link to="/">
-              <img src={logoImg} alt="JusPredict" className="h-16 w-auto" />
-            </Link>
+    <nav className="sticky top-0 z-50 w-full border-b border-border bg-background/80 backdrop-blur-md">
+      <div className="container mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="flex h-16 items-center justify-between">
+          <div className="flex items-center gap-2">
+            <img src={logo} alt="JusPredict Logo" className="h-10 w-10" />
+            <span className="text-xl font-bold text-foreground">JusPredict</span>
           </div>
 
-          {/* Desktop Nav */}
-          <div className="hidden lg:flex items-center gap-8">
-            {navLinks.map((link) => {
-              const isActive = location.pathname === link.path;
-              return (
-                <Link
-                  key={link.name}
-                  to={link.path}
-                  className={`text-sm font-medium transition-colors ${
-                    isActive
-                      ? 'text-primary font-bold'
-                      : 'text-gray-light hover:text-primary'
-                  }`}
+          <div className="hidden md:flex items-center gap-8">
+            {hostname === "juspredictlive.unitdtechnologies.com" ? (
+              <a href="#home" className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors">Home</a>
+            ) : (
+              <>
+                <a href="/" className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors">Home</a>
+             
+              <a href="/faq" className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors">FAQ</a>
+                <a href="/portfolio" className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors">Portfolio</a>
+                <a href="/clan" className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors">Clan</a>
+                {isLoggedIn && <Link to="/profile" className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors">Profile</Link>}
+                <a href="/sports" className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors">Sports</a>
+                <a href="#events" className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors">Events</a>
+                <a href="#leaderboard" className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors">Leaderboard</a>
+                <a href="/about" className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors">About</a>
+                <a href="/contact" className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors">Contact</a>
+                <a
+                  href="https://api.predictyourgame.com/swagger-ui/"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
                 >
-                  {link.name}
-                </Link>
-              );
-            })}
+                  API Docs
+                </a>
+              </>
+            )}
           </div>
 
-          {/* Auth Buttons */}
-          <div className="hidden lg:flex items-center gap-4">
-            <Button variant="ghost" size="sm" className="text-gray-light hover:text-white" onClick={() => navigate('/login')}>Login</Button>
-            <Button size="sm" className="bg-primary text-black hover:bg-primary/90 font-bold px-6">Sign Up</Button>
-          </div>
+          <div className="flex items-center gap-3">
+            {isLoggedIn ? (
+              <>
+                {userName && <span className="text-sm font-medium text-foreground">Hi, {userName}</span>}
+                <div className="relative">
+                  <Button variant="ghost" size="sm" onClick={handleBellClick} className="relative">
+                    <Bell className="h-5 w-5" />
+                    {unreadCount > 0 && (
+                      <span className="absolute top-0 right-0 inline-flex items-center justify-center px-2 py-1 text-xs font-bold leading-none text-red-100 transform translate-x-1/2 -translate-y-1/2 bg-red-600 rounded-full">
+                        {unreadCount}
+                      </span>
+                    )}
+                  </Button>
+                  {showNotifications && (
+                    <div className="absolute right-0 mt-2 w-80 bg-background border border-border rounded-md shadow-lg z-10 max-h-60 overflow-y-auto">
+                      <div className="p-4 border-b border-border">
+                        <h5 className="text-sm font-medium">Notifications</h5>
+                      </div>
+                      {
+                        notifications.length > 0 ? (
+                          notifications.map(notification => (
+                            <div key={notification.notificationId} className="p-4 border-b border-border flex justify-between items-center">
+                              <p className="text-sm">{notification.notificationMessage}</p>
+                              <Button variant="ghost" size="sm" onClick={() => markAsRead(notification.notificationId)}>Mark as Read</Button>
+                            </div>
+                          ))
+                        ) : (
+                          <p className="p-4 text-sm text-muted-foreground">No new notifications.</p>
+                        )
+                      }
+                    </div>
+                  )}
+                </div>
+                <Button variant="ghost" className="hidden sm:inline-flex" onClick={onLogout}>
+                  Logout
+                </Button>
+              </>
+            ) : (
+              <>
+                <Button variant="ghost" className="hidden sm:inline-flex">
+                  <Link to="/login">Login</Link>
+                </Button>
+                <Button className="bg-primary hover:bg-primary/90">Sign Up</Button>
+              </>
+            )}
 
-          {/* Mobile Menu Button */}
-          <div className="lg:hidden flex-shrink-0 -mr-4 sm:-mr-6 lg:-mr-8">
-            <button
-              onClick={() => setIsOpen(!isOpen)}
-              className="text-gray-text hover:text-white p-4 sm:p-6 lg:p-8"
-            >
-              {isOpen ? <X size={24} /> : <Menu size={24} />}
-            </button>
+            <Button variant="ghost" size="sm" className="md:hidden p-0">
+              <Menu className="h-5 w-5" />
+            </Button>
           </div>
         </div>
       </div>
-
-      {/* Mobile Menu */}
-      {isOpen && (
-        <div className="lg:hidden bg-dark-bg border-b border-white/5">
-          <div className="px-4 pt-2 pb-6 space-y-2">
-            {navLinks.map((link) => {
-              const isActive = location.pathname === link.path;
-              return (
-                <Link
-                  key={link.name}
-                  to={link.path}
-                  onClick={handleLinkClick}
-                  className={`block px-3 py-2 text-base font-medium rounded-md transition-colors ${
-                    isActive
-                      ? 'text-primary font-bold bg-white/5'
-                      : 'text-gray-text hover:text-primary hover:bg-white/5'
-                  }`}
-                >
-                  {link.name}
-                </Link>
-              );
-            })}
-            <div className="pt-4 flex flex-col gap-3">
-              <Button variant="ghost" className="w-full text-white" onClick={() => navigate('/login')}>Login</Button>
-              <Button className="w-full bg-primary text-black font-bold">Sign Up</Button>
-            </div>
-          </div>
-        </div>
-      )}
     </nav>
   );
 };
+
+export default Navbar;
