@@ -170,18 +170,9 @@ const Navbar = () => {
                 <a href="/clan" className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors">Clan</a>
                 {isLoggedIn && <Link to="/profile" className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors">Profile</Link>}
                 <a href="/sports" className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors">Sports</a>
-                <a href="#events" className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors">Events</a>
-                <a href="#leaderboard" className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors">Leaderboard</a>
                 <a href="/about" className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors">About</a>
                 <a href="/contact" className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors">Contact</a>
-                <a
-                  href="https://api.predictyourgame.com/swagger-ui/"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
-                >
-                  API Docs
-                </a>
+              
               </>
             )}
           </div>
