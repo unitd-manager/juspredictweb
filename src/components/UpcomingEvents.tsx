@@ -483,7 +483,7 @@ export const UpcomingEvents = () => {
             <p className="text-gray-text">Don't miss out on these exciting matches</p>
           </div> */}
           
-          <div className="flex bg-dark-card p-1.5 rounded-[10px] border border-white/10">
+          <div className="flex flex-wrap gap-2 bg-dark-card p-1.5 rounded-[10px] border border-white/10">
             <button 
                 onClick={() => setActiveTab('all')}
                 className={`px-8 py-2.5 rounded-[8px] text-sm font-medium transition-all duration-200 ${activeTab === 'all' ? 'bg-accent-yellow text-black shadow-sm' : 'text-gray-text hover:text-white'}`}

@@ -65,7 +65,7 @@ export const Navbar = () => {
           </div>
 
           {/* Mobile Menu Button */}
-          <div className="lg:hidden flex-shrink-0 -mr-4 sm:-mr-6 lg:-mr-8">
+          <div className="lg:hidden flex-shrink-0">
             <button
               onClick={() => setIsOpen(!isOpen)}
               className="text-gray-text hover:text-white p-4 sm:p-6 lg:p-8"
