@@ -463,17 +463,17 @@ export const UpcomingEvents = () => {
 
   return (
     <section className="py-20 bg-[#1A1A1D] relative">
-      <div className="absolute top-[45%] left-[-20%] -translate-y-1/2 w-[450px] h-[500px] blur-[50px] z-50 pointer-events-none">
+      {/* <div className="absolute top-[45%] left-[-20%] -translate-y-1/2 w-[450px] h-[500px] blur-[50px] z-50 pointer-events-none">
         <svg width="450" height="500" viewBox="0 0 299 617" fill="none" xmlns="http://www.w3.org/2000/svg" className="w-full h-full">
           <ellipse cx="291" cy="308.5" rx="291" ry="308.5" fill="url(#paint0_radial_2043_1685)" fillOpacity="1"></ellipse>
           <defs>
-            <radialGradient id="paint0_radial_2043_1685" cx="0" cy="0" r="1" gradientTransform="matrix(10.0537 288.96 -443.72 17.351 414.996 343.436)" gradientUnits="userSpaceOnUse">
+            {/* <radialGradient id="paint0_radial_2043_1685" cx="0" cy="0" r="1" gradientTransform="matrix(10.0537 288.96 -443.72 17.351 414.996 343.436)" gradientUnits="userSpaceOnUse">
               <stop stopColor="#00FF73"></stop>
               <stop offset="1" stopColor="#1A1A1D" stopOpacity="0"></stop>
-            </radialGradient>
-          </defs>
+            </radialGradient> */}
+          {/* </defs>
         </svg>
-      </div>
+      </div> */} 
       <div className="max-w-[1400px] mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
         <div className="flex flex-col md:flex-row items-end justify-between mb-12 gap-6">
           {/* <div>
@@ -518,7 +518,7 @@ export const UpcomingEvents = () => {
               className="bg-dark-card border border-white/5 rounded-2xl p-6 hover:border-primary/30 transition-all duration-300 group relative overflow-hidden"
             >
               <div className="flex justify-between items-start mb-6">
-                <span className="px-3 py-1 rounded-[8px] bg-primary/10 text-primary text-xs font-medium border border-primary/30">
+                <span className="px-3 py-1 rounded-[8px] bg-gray-500 text-white text-xs font-medium border border-gray-400">
                   {event.sport}
                 </span>
                 {event.status === 'trending' && (
@@ -531,9 +531,9 @@ export const UpcomingEvents = () => {
               <p className="text-sm font-medium text-white mb-2 group-hover:text-primary transition-colors">
   {event.title}
 </p>
- <h6 className="text-xl font-bold min-h-[60px] text-white mb-4 group-hover:text-primary transition-colors">
+<p className="text-lg font-bold min-h-[60px] text-white mb-4 group-hover:text-primary transition-colors">
                 {event.question}
-              </h6>
+              </p>
               <div className="space-y-3 mb-2">
                 <div className="flex items-center gap-3 text-gray-text text-sm">
                   <Calendar size={16} className="text-[#FEDE39]" />
