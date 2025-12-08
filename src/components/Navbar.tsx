@@ -1,6 +1,6 @@
 import { Button } from "./../components/ui/Button";
 import { Link, NavLink, useNavigate } from "react-router-dom";
-import { Bell, Menu } from "lucide-react";
+import { Bell, Menu, X } from "lucide-react";
 import logo from "../assets/logo.png";
 import { useEffect, useState } from "react";
 import { useHostname } from "../lib/useHostname";
@@ -22,6 +22,7 @@ declare global {
 
 const Navbar = () => {
   const navigate = useNavigate();
+  const [isOpen, setIsOpen] = useState(false);
   const [isLoggedIn, setIsLoggedIn] = useState<boolean>(false);
   const [userName, setUserName] = useState<string | null>(null);
   const [unreadCount, setUnreadCount] = useState<number>(0);
@@ -182,6 +183,9 @@ const Navbar = () => {
                 <NavLink to="/sports" className={({ isActive }) => `text-sm font-medium transition-colors ${
                     isActive ? 'text-primary font-bold' : 'text-gray-light hover:text-primary'
                   }`}>Sports</NavLink>
+                   <NavLink to="/transactions" className={({ isActive }) => `text-sm font-medium transition-colors ${
+                    isActive ? 'text-primary font-bold' : 'text-gray-light hover:text-primary'
+                  }`}>Transactions</NavLink>
                 <NavLink to="/about" className={({ isActive }) => `text-sm font-medium transition-colors ${
                     isActive ? 'text-primary font-bold' : 'text-gray-light hover:text-primary'
                   }`}>About</NavLink>
@@ -235,16 +239,62 @@ const Navbar = () => {
                 <Button variant="ghost" className="hidden sm:inline-flex">
                   <Link to="/login">Login</Link>
                 </Button>
-                <Button className="bg-primary hover:bg-primary/90">Sign Up</Button>
+                <Button className="hidden sm:inline-flex bg-primary text-black font-bold" onClick={() => navigate('/signup')}>Sign Up</Button>
               </>
             )}
 
-            <Button variant="ghost" size="sm" className="md:hidden p-0">
-              <Menu className="h-5 w-5" />
+            <Button variant="ghost" size="sm" className="md:hidden p-3 relative z-50" onClick={() => setIsOpen(!isOpen)}>
+              {isOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
             </Button>
           </div>
         </div>
       </div>
+
+      {/* Mobile Menu */}
+      {isOpen && (
+        <div className="md:hidden bg-dark-bg border-b border-white/5 relative z-50">
+          <div className="px-4 pt-2 pb-6 space-y-2">
+            {hostname === "juspredictlive.unitdtechnologies.com" ? (
+              <a href="#home" className="block px-3 py-2 text-base font-medium rounded-md transition-colors text-muted-foreground hover:text-foreground" onClick={() => setIsOpen(false)}>Home</a>
+            ) : (
+              <>
+                <NavLink to="/" className={({ isActive }) => `block px-3 py-2 text-base font-medium rounded-md transition-colors ${
+                    isActive ? 'text-primary font-bold bg-white/5' : 'text-muted-foreground hover:text-foreground hover:bg-white/5'
+                  }`} onClick={() => setIsOpen(false)}>Home</NavLink>
+
+              <NavLink to="/faq" className={({ isActive }) => `block px-3 py-2 text-base font-medium rounded-md transition-colors ${
+                    isActive ? 'text-primary font-bold bg-white/5' : 'text-gray-light hover:text-primary hover:bg-white/5'
+                  }`} onClick={() => setIsOpen(false)}>FAQ</NavLink>
+                <NavLink to="/portfolio" className={({ isActive }) => `block px-3 py-2 text-base font-medium rounded-md transition-colors ${
+                    isActive ? 'text-primary font-bold bg-white/5' : 'text-gray-light hover:text-primary hover:bg-white/5'
+                  }`} onClick={() => setIsOpen(false)}>Portfolio</NavLink>
+                <NavLink to="/clan" className={({ isActive }) => `block px-3 py-2 text-base font-medium rounded-md transition-colors ${
+                    isActive ? 'text-primary font-bold bg-white/5' : 'text-gray-light hover:text-primary hover:bg-white/5'
+                  }`} onClick={() => setIsOpen(false)}>Clan</NavLink>
+                <NavLink to="/sports" className={({ isActive }) => `block px-3 py-2 text-base font-medium rounded-md transition-colors ${
+                    isActive ? 'text-primary font-bold bg-white/5' : 'text-gray-light hover:text-primary hover:bg-white/5'
+                  }`} onClick={() => setIsOpen(false)}>Sports</NavLink>
+                <NavLink to="/about" className={({ isActive }) => `block px-3 py-2 text-base font-medium rounded-md transition-colors ${
+                    isActive ? 'text-primary font-bold bg-white/5' : 'text-gray-light hover:text-primary hover:bg-white/5'
+                  }`} onClick={() => setIsOpen(false)}>About</NavLink>
+                <NavLink to="/contact" className={({ isActive }) => `block px-3 py-2 text-base font-medium rounded-md transition-colors ${
+                    isActive ? 'text-primary font-bold bg-white/5' : 'text-gray-light hover:text-primary hover:bg-white/5'
+                  }`} onClick={() => setIsOpen(false)}>Contact</NavLink>
+              </>
+            )}
+            <div className="pt-4 flex flex-col gap-3">
+              {isLoggedIn ? (
+                <Button variant="ghost" className="w-full text-white" onClick={onLogout}>Logout</Button>
+              ) : (
+                <>
+                  <Button variant="ghost" className="w-full text-white" onClick={() => navigate('/login')}>Login</Button>
+                  <Button className="w-full bg-primary text-black font-bold" onClick={() => navigate('/signup')}>Sign Up</Button>
+                </>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
     </nav>
   );
 };

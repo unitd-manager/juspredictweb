@@ -12,14 +12,14 @@ export const StatsCTA = () => {
           <ellipse cx="332.5" cy="367.5" rx="332.5" ry="352.5" fill="url(#paint0_radial_35_50)" fill-opacity="0.5" />
           <ellipse cx="628.5" cy="318.5" rx="332.5" ry="352.5" fill="url(#paint1_radial_35_50)" fill-opacity="0.5" />
           <defs>
-            <radialGradient id="paint0_radial_35_50" cx="0" cy="0" r="1" gradientTransform="matrix(75.1627 280.515 -293.643 78.6823 332.5 368.071)" gradientUnits="userSpaceOnUse">
+            {/* <radialGradient id="paint0_radial_35_50" cx="0" cy="0" r="1" gradientTransform="matrix(75.1627 280.515 -293.643 78.6823 332.5 368.071)" gradientUnits="userSpaceOnUse">
               <stop stop-color="#00FF73" />
               <stop offset="1" stop-color="#1A1A1D" stop-opacity="0" />
             </radialGradient>
             <radialGradient id="paint1_radial_35_50" cx="0" cy="0" r="1" gradientTransform="matrix(75.1627 280.515 -293.643 78.6823 628.5 319.071)" gradientUnits="userSpaceOnUse">
               <stop stop-color="#00FF73" />
               <stop offset="1" stop-color="#1A1A1D" stop-opacity="0" />
-            </radialGradient>
+            </radialGradient> */}
           </defs>
         </svg>
       </div>

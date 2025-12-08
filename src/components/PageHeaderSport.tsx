@@ -43,10 +43,10 @@ export const PageHeader: React.FC<PageHeaderProps> = ({
             <svg width="728" height="771" viewBox="0 0 299 617" fill="none" xmlns="http://www.w3.org/2000/svg">
               <ellipse cx="291" cy="308.5" rx="291" ry="308.5" fill="url(#paint0_radial_2043_1685)" fillOpacity="1" />
               <defs>
-                <radialGradient id="paint0_radial_2043_1685" cx="0" cy="0" r="1" gradientTransform="matrix(10.0537 288.96 -443.72 17.351 414.996 343.436)" gradientUnits="userSpaceOnUse">
+                {/* <radialGradient id="paint0_radial_2043_1685" cx="0" cy="0" r="1" gradientTransform="matrix(10.0537 288.96 -443.72 17.351 414.996 343.436)" gradientUnits="userSpaceOnUse">
                   <stop stopColor="#00FF73" />
                   <stop offset="1" stopColor="#1A1A1D" stopOpacity="0" />
-                </radialGradient>
+                </radialGradient> */}
               </defs>
             </svg>
           </div>
@@ -58,12 +58,12 @@ export const PageHeader: React.FC<PageHeaderProps> = ({
         <div className="absolute top-[45%] left-[-20%] -translate-y-1/2 w-[450px] h-[500px] blur-[50px] z-50 pointer-events-none">
           <svg width="450" height="500" viewBox="0 0 299 617" fill="none" xmlns="http://www.w3.org/2000/svg" className="w-full h-full">
             <ellipse cx="291" cy="308.5" rx="291" ry="308.5" fill="url(#paint1_radial_2043_1685)" fillOpacity="1"></ellipse>
-            <defs>
-              <radialGradient id="paint1_radial_2043_1685" cx="0" cy="0" r="1" gradientTransform="matrix(10.0537 288.96 -443.72 17.351 414.996 343.436)" gradientUnits="userSpaceOnUse">
+             <defs>
+              {/* <radialGradient id="paint1_radial_2043_1685" cx="0" cy="0" r="1" gradientTransform="matrix(10.0537 288.96 -443.72 17.351 414.996 343.436)" gradientUnits="userSpaceOnUse">
                 <stop stopColor="#00FF73"></stop>
                 <stop offset="1" stopColor="#1A1A1D" stopOpacity="0"></stop>
-              </radialGradient>
-            </defs>
+              </radialGradient> */}
+            </defs> 
           </svg>
         </div>
       )}
