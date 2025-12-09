@@ -22,7 +22,7 @@ const events = [
     time: "20:00",
     venue: "Santiago Bernabéu",
     timer: "Live",
-    status: "trending",
+    status: "live",
     question: "Which team will score the next goal?"
   },
   {
@@ -496,6 +496,12 @@ export const UpcomingEvents = () => {
             >
                 Sports
             </button>
+              <button 
+                onClick={() => setActiveTab('live')}
+                className={`px-8 py-2.5 rounded-[8px] text-sm font-medium transition-all duration-200 ${activeTab === 'live' ? 'bg-accent-yellow text-black shadow-sm' : 'text-gray-text hover:text-white'}`}
+            >
+                Live
+            </button>
             <button 
                 onClick={() => setActiveTab('trending')}
                 className={`px-8 py-2.5 rounded-[8px] text-sm font-medium transition-all duration-200 ${activeTab === 'trending' ? 'bg-accent-yellow text-black shadow-sm' : 'text-gray-text hover:text-white'}`}
@@ -551,6 +557,7 @@ export const UpcomingEvents = () => {
                   {event.timer}
                 </div>
                 <Button size="sm" className="bg-primary text-black hover:bg-primary/90 border-transparent font-bold px-6">
+
                   Predict
                 </Button>
               </div>

@@ -252,7 +252,7 @@ export const Clan: React.FC<ClanProps> = ({ onSelectClan }) => {
    
 
       {/* FAB - Create Clan Button */}
-      <div className="fixed bottom-6 right-6">
+      <div className="fixed bottom-6 right-6 z-50">
         <CreateClanDialog
           trigger={
             <div className="h-14 w-14 rounded-full bg-primary text-dark-bg shadow-lg shadow-primary/40 flex items-center justify-center cursor-pointer">

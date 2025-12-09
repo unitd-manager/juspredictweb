@@ -8,7 +8,7 @@ export default {
     extend: {
       colors: {
         primary: {
-          DEFAULT: '#008000',
+          DEFAULT: '#00ff73',
           dim: 'rgba(0, 255, 115, 0.1)',
           glow: 'rgba(0, 255, 115, 0.5)',
         },
@@ -44,7 +44,7 @@ export default {
         'hero-glow': 'radial-gradient(circle at center, rgba(0, 255, 115, 0.15) 0%, rgba(11, 11, 13, 0) 70%)',
       },
       boxShadow: {
-        'glow': '0 0 20px rgba(0, 255, 115, 0.3)',
+
         'card': '0 4px 24px -1px rgba(0, 0, 0, 0.2)',
       }
     },
