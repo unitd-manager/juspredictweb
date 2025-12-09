@@ -10,6 +10,7 @@ const ClanList = lazy(() => import('./pages/ClanList'));
 const ClanDetailDyn = lazy(() => import('./pages/ClanDetailDyn'));
 import ClanDetail from './pages/ClanDetail';
 import Sports from './pages/Sports';
+import SportsDyn from './pages/SportsDyn';
 import About from './pages/About';
 import Faq from './pages/Faq';
 import Contact from './pages/Contact';
@@ -35,6 +36,23 @@ function App() {
         <Navbar />
         <main>
           <Routes>
+              {allowedHosts.includes(hostname) && (
+              <>
+                <Route
+                  path="/clanlist"
+                  element={<Suspense fallback={null}><ClanList /></Suspense>}
+                />
+                <Route
+                  path="/clanDetailDyn/:groupId"
+                  element={<Suspense fallback={null}><ClanDetailDyn /></Suspense>}
+                />
+                <Route
+                  path="/sportsDyn"
+                  element={<Suspense fallback={null}><SportsDyn /></Suspense>}
+                  />
+              </>
+            )}
+            
             <Route path="/" element={<Home />} />
             <Route path="/portfolio" element={<Portfolio />} />
             <Route path="/clan" element={<Clan />} />
@@ -47,18 +65,6 @@ function App() {
             <Route path="/contact" element={<Contact />} />
             <Route path="/transactions" element={<Transactions />} />
             <Route path="/login" element={<Login />} />
-            {allowedHosts.includes(hostname) && (
-              <>
-                <Route
-                  path="/clanlist"
-                  element={<Suspense fallback={null}><ClanList /></Suspense>}
-                />
-                <Route
-                  path="/clanDetailDyn/:groupId"
-                  element={<Suspense fallback={null}><ClanDetailDyn /></Suspense>}
-                />
-              </>
-            )}
             <Route path="*" element={<Home />} />
           </Routes>
         </main>
