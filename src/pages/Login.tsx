@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { Eye, EyeOff } from "lucide-react";
 
 
 import {
@@ -118,6 +119,7 @@ export const Login = () => {
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [mode, setMode] = useState<"email" | "social">("email");
 
@@ -236,12 +238,25 @@ console.log(claims);
 
                     <div>
                       <Label>Password</Label>
-                      <Input
-                        type="password"
-                        placeholder="••••••••"
-                        value={password}
-                        onChange={(e: React.ChangeEvent<HTMLInputElement>) => setPassword(e.target.value)}
-                      />
+                      <div className="relative">
+                        <Input
+                          type={showPassword ? "text" : "password"}
+                          placeholder="••••••••"
+                          value={password}
+                          onChange={(e: React.ChangeEvent<HTMLInputElement>) => setPassword(e.target.value)}
+                        />
+                        <button
+                          type="button"
+                          onClick={() => setShowPassword(!showPassword)}
+                          className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
+                        >
+                          {showPassword ? (
+                            <EyeOff size={18} />
+                          ) : (
+                            <Eye size={18} />
+                          )}
+                        </button>
+                      </div>
                     </div>
                   </TabsContent>
 
@@ -268,7 +283,12 @@ console.log(claims);
                   </Button>
                 )}
 
-               
+                <div className="text-sm text-muted-foreground text-center">
+                  Don't have an account?{" "}
+                  <a href="/signup" className="text-primary hover:underline font-semibold">
+                    Sign up here
+                  </a>
+                </div>
               </CardFooter>
             </form>
           </Card>
