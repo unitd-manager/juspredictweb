@@ -1,5 +1,6 @@
 import { motion } from 'framer-motion';
 import { Trophy } from 'lucide-react';
+import heroimg from "../assets/heroimg.jpg";
 
 export const Hero = () => {
   // const sportsIcons = [
@@ -153,7 +154,7 @@ export const Hero = () => {
             className="relative flex items-center justify-center lg:justify-end"
           >
             <img
-              src="https://img-wrapper.vercel.app/image?url=https://img-wrapper.vercel.app/image?url=https://s3-alpha-sig.figma.com/img/bf09/a08b/27d637544a8da5cac591f3b17ec3faad?Expires=1765152000&Key-Pair-Id=APKAQ4GOSFWCW27IBOMQ&Signature=QBj6FiJ568mR40h0v-yzal~JBI-pvAIgPnKEi8zwYx5gkgzXcnyr8AkV0spns9k-NzmsgDm8dCuiM3Qh0N9JavLaTG-d5I9UGWeDL4rgqLt66YluImbNBe~e7iBCEIfrRol~ghvijZuLVrvr8KuKT0IAMlo0fWf1z1n-yfGXTa2nlCS58e6r7NmDiRjDERR38~WCobYYkyV5alJ51MqLvHWzYoQvHHLaxRS9Sa563EjtRbXtcCmlhBMkzQBVa1wDfFzGV9mVFBFMX9SW8G5dh6Y3T0iX-bk0g75Q8uR4ZNNzQtkS5oFSuFxMApGyu1zGTGHsWnhJIypMUxt9n3YYag__"
+              src={heroimg}
               alt="JusPredict App Interface"
               className="w-full max-w-[600px] h-[300px] object-contain drop-shadow-2xl"
             />
