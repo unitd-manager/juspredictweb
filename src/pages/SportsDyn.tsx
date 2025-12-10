@@ -1,10 +1,82 @@
 import React, { useState, useEffect } from 'react';
-import { ArrowLeft, TrendingUp, Users, DollarSign, AlertCircle, Loader2 } from 'lucide-react';
+import { ArrowLeft, TrendingUp, Users, DollarSign, AlertCircle, Loader2, ExternalLink } from 'lucide-react';
 import { Badge } from '../components/ui/Badge';
 import { PageHeader } from '../components/PageHeaderSport';
 import { Button } from '../components/ui/Button';
 import { api } from '../api/api';
 import { Dialog, DialogContent } from '../components/ui/Dialog';
+import { useNavigate } from 'react-router-dom';
+
+// Helper function to extract probabilities correctly matched to teams
+const getTeamProbabilities = (event: any, teams: any[]) => {
+  let probA = 50;
+  let probB = 50;
+
+  try {
+    const stats = JSON.parse(event.stats || '{}');
+    const pred = stats.result_prediction;
+    const statsTeams = stats.teams || {};
+    
+    if (Array.isArray(pred) && pred.length === 2 && teams.length >= 2) {
+      // Create a mapping from team code to probability
+      const predMap: Record<string, number> = {};
+      for (const p of pred) {
+        if (p?.team_key) {
+          predMap[p.team_key.toLowerCase()] = Number(p.value) || 50;
+        }
+      }
+      
+      // Try to find team codes from stats.teams object
+      let team0Code: string | null = null;
+      let team1Code: string | null = null;
+      
+      // Search for team0 (Ireland Women)
+      for (const [key, teamInfo] of Object.entries(statsTeams)) {
+        const info = teamInfo as any;
+        if (info?.code === teams[0]?.shortName || info?.alternate_code === teams[0]?.shortName) {
+          team0Code = key.toLowerCase();
+          break;
+        }
+      }
+      
+      // Search for team1 (South Africa Women)
+      for (const [key, teamInfo] of Object.entries(statsTeams)) {
+        const info = teamInfo as any;
+        if (info?.code === teams[1]?.shortName || info?.alternate_code === teams[1]?.shortName) {
+          team1Code = key.toLowerCase();
+          break;
+        }
+      }
+      
+      // If we found the codes, use them to get probabilities
+      if (team0Code && predMap[team0Code] !== undefined) {
+        probA = predMap[team0Code];
+      }
+      if (team1Code && predMap[team1Code] !== undefined) {
+        probB = predMap[team1Code];
+      }
+      
+      // If still default values, try matching by shortName directly
+      if (probA === 50 && probB === 50) {
+        const team0Short = teams[0]?.shortName?.toLowerCase()?.replace(/\s/g, '') || '';
+        const team1Short = teams[1]?.shortName?.toLowerCase()?.replace(/\s/g, '') || '';
+        
+        for (const [key, value] of Object.entries(predMap)) {
+          if (key.includes(team0Short) || team0Short.includes(key)) {
+            probA = value;
+          }
+          if (key.includes(team1Short) || team1Short.includes(key)) {
+            probB = value;
+          }
+        }
+      }
+    }
+  } catch (e) {
+    // ignore parsing errors, use defaults
+  }
+  
+  return { probA, probB };
+};
 
 // Team Row Component
 const TeamRow = ({ team, probability }: { team: any; probability: number }) => {
@@ -83,18 +155,7 @@ const EventThumbnail = ({ event, onSelect, selectedId }: { event: any; onSelect:
   const teamA = teams?.[0] || {};
   const teamB = teams?.[1] || {};
 
-  let probA = 50;
-  let probB = 50;
-  try {
-    const stats = JSON.parse(event.stats || '{}');
-    const pred = stats.result_prediction;
-    if (Array.isArray(pred) && pred.length === 2) {
-      probA = Number(pred[0]?.value) || probA;
-      probB = Number(pred[1]?.value) || probB;
-    }
-  } catch {
-    // ignore
-  }
+  const { probA, probB } = getTeamProbabilities(event, teams);
 
   const timeLabel = (() => {
     try {
@@ -216,19 +277,7 @@ const EventCard = ({
   const teamA = teams?.[0] || {};
   const teamB = teams?.[1] || {};
 
-  let probA = 50;
-  let probB = 50;
-
-  try {
-    const stats = JSON.parse(event.stats || '{}');
-    const pred = stats.result_prediction;
-    if (Array.isArray(pred) && pred.length === 2) {
-      probA = Number(pred[0]?.value) || probA;
-      probB = Number(pred[1]?.value) || probB;
-    }
-  } catch {
-    // fallback
-  }
+  const { probA, probB } = getTeamProbabilities(event, teams);
 
   const [lastQuestionName, setLastQuestionName] = useState<string | null>(null);
   const [latestQuestion, setLatestQuestion] = useState<any | null>(null);
@@ -400,18 +449,7 @@ const EventDetails: React.FC<{
   const teamA = teams?.[0] || {};
   const teamB = teams?.[1] || {};
 
-  let probA = 50;
-  let probB = 50;
-  try {
-    const stats = JSON.parse(event.stats || '{}');
-    const pred = stats.result_prediction;
-    if (Array.isArray(pred) && pred.length === 2) {
-      probA = Number(pred[0]?.value) || probA;
-      probB = Number(pred[1]?.value) || probB;
-    }
-  } catch {
-    // ignore
-  }
+  const { probA, probB } = getTeamProbabilities(event, teams);
 
   return (
     <div className="rounded-xl border border-white/10 bg-dark-card p-6 mt-2">
@@ -500,6 +538,7 @@ const EventDetails: React.FC<{
 
 // Live Predictions List Component
 const LivePredictionsList: React.FC<{ onExit: (p: any, event: any) => void }> = ({ onExit }) => {
+  const navigate = useNavigate();
   const [items, setItems] = React.useState<any[]>([]);
   const [eventsMap, setEventsMap] = React.useState<Record<string, any>>({});
   const [isLoading, setIsLoading] = React.useState<boolean>(true);
@@ -545,7 +584,11 @@ const LivePredictionsList: React.FC<{ onExit: (p: any, event: any) => void }> = 
         await Promise.all(
           ids.map(async (id: string) => {
             try {
-              const ev = await api.post<any>("/event/v1/getevent", { eventId: id });
+              const ev = await api.post<any>("/event/v1/getevent", {
+            eventId: id,
+            getEventQuestions: true,
+            questionsPageInfo: { pageNumber: 1, pageSize: 50 },
+          });
               if (ev?.status?.type === "SUCCESS") map[id] = ev?.event || null;
             } catch {}
           })
@@ -601,9 +644,17 @@ const LivePredictionsList: React.FC<{ onExit: (p: any, event: any) => void }> = 
               <span>•</span>
               <span className="inline-flex items-center gap-1"><DollarSign className="w-4 h-4" /> {matchedText}</span>
             </div>
-            <Button onClick={() => onExit(p, event)} className="mt-4 w-full bg-yellow-500 text-dark-bg hover:bg-yellow-400">
-              Exit
-            </Button>
+            <div className="flex gap-3 mt-4">
+              <Button onClick={() => onExit(p, event)} className="flex-1 bg-yellow-500 text-dark-bg hover:bg-yellow-400">
+                Exit
+              </Button>
+              <Button 
+                onClick={() => navigate(`/order-details/${p?.orderId}`)}
+                className="flex-1 bg-primary text-dark-bg hover:bg-primary/90"
+              >
+                Order Details
+              </Button>
+            </div>
           </div>
         );
       })}
@@ -613,9 +664,11 @@ const LivePredictionsList: React.FC<{ onExit: (p: any, event: any) => void }> = 
 
 // Open Predictions List Component
 const OpenPredictionsList: React.FC<{ onOpen: (p: any, event: any) => void }> = ({ onOpen }) => {
+  const navigate = useNavigate();
   const [items, setItems] = React.useState<any[]>([]);
   const [eventsMap, setEventsMap] = React.useState<Record<string, any>>({});
   const [isLoading, setIsLoading] = React.useState<boolean>(true);
+  const [isCancelling, setIsCancelling] = React.useState<string | null>(null);
 
   // const getEventName = (event: any) => (
   //   (typeof event?.name === "string" && event.name.trim()) ||
@@ -658,7 +711,11 @@ const OpenPredictionsList: React.FC<{ onOpen: (p: any, event: any) => void }> = 
         await Promise.all(
           ids.map(async (id: string) => {
             try {
-              const ev = await api.post<any>("/event/v1/getevent", { eventId: id });
+              const ev = await api.post<any>("/event/v1/getevent", {
+            eventId: id,
+            getEventQuestions: true,
+            questionsPageInfo: { pageNumber: 1, pageSize: 50 },
+          });
               if (ev?.status?.type === "SUCCESS") map[id] = ev?.event || null;
             } catch {}
           })
@@ -676,14 +733,33 @@ const OpenPredictionsList: React.FC<{ onOpen: (p: any, event: any) => void }> = 
     };
   }, []);
 
+  const handleCancelOrder = async (orderId: string) => {
+    setIsCancelling(orderId);
+    try {
+      const response = await api.post<any>('/order/v1/cancelorder', {
+        orderId: orderId,
+      });
+
+      if (response?.status?.type === 'SUCCESS') {
+        // Remove the cancelled item from the list
+        setItems(prevItems => prevItems.filter(p => p?.orderId !== orderId));
+      } else {
+        alert('Failed to cancel order');
+      }
+    } catch (err) {
+      console.error('Failed to cancel order:', err);
+      alert('Failed to cancel order');
+    } finally {
+      setIsCancelling(null);
+    }
+  };
+
   if (isLoading) return <div className="text-gray-text">Loading open predictions...</div>;
   if (!items || items.length === 0) return <div className="text-gray-text">No open predictions</div>;
 
   return (
     <div className="space-y-4">
       {items.map((p: any, idx: number) => {
-        const eventId = String(p?.eventId || "");
-        const event = eventsMap[eventId] || {};
         // const title = getEventName(event) || `Event ${eventId}`;
         const eventDes = p?.eventDescription;
         const eventDate = new Date(p?.eventStartDate);
@@ -718,6 +794,21 @@ const OpenPredictionsList: React.FC<{ onOpen: (p: any, event: any) => void }> = 
               <span>•</span>
               <span className="inline-flex items-center gap-1"><DollarSign className="w-4 h-4" /> {matchedText}</span>
             </div>
+            <div className="flex gap-3 mt-4">
+              <Button 
+                onClick={() => handleCancelOrder(p?.orderId)}
+                disabled={isCancelling === (p?.orderId)}
+                className="flex-1 bg-red-500 text-white hover:bg-red-600 disabled:opacity-50"
+              >
+                {isCancelling === (p?.orderId) ? 'Cancelling...' : 'Cancel'}
+              </Button>
+              <Button 
+                onClick={() => navigate(`/order-details/${p?.orderId}`)}
+                className="flex-1 bg-primary text-dark-bg hover:bg-primary/90"
+              >
+                Order Details
+              </Button>
+            </div>
           </div>
         );
       })}
@@ -728,17 +819,8 @@ const OpenPredictionsList: React.FC<{ onOpen: (p: any, event: any) => void }> = 
 // Completed Predictions List Component
 const CompletedPredictionsList: React.FC<{ onOpen: (p: any, event: any) => void }> = ({ onOpen }) => {
   const [items, setItems] = React.useState<any[]>([]);
-  const [eventsMap, setEventsMap] = React.useState<Record<string, any>>({});
   const [isLoading, setIsLoading] = React.useState<boolean>(true);
   const [period, setPeriod] = React.useState<string>("PREDICTIONTIMEINFORCE_COMPLETED_ALLTIME");
-
-  const getEventName = (event: any) => (
-    (typeof event?.name === "string" && event.name.trim()) ||
-    (typeof event?.eventName === "string" && event.eventName.trim()) ||
-    (typeof event?.sportEvent?.name === "string" && event.sportEvent.name.trim()) ||
-    (typeof event?.sportEvent?.eventName === "string" && event.sportEvent.eventName.trim()) ||
-    [event?.sportEvent?.sportType?.replace?.("SPORT_TYPE_", ""), event?.sportEvent?.eventFormat].filter(Boolean).join(" • ")
-  );
 
   React.useEffect(() => {
     let mounted = true;
@@ -749,7 +831,6 @@ const CompletedPredictionsList: React.FC<{ onOpen: (p: any, event: any) => void 
         if (!token) {
           if (mounted) {
             setItems([]);
-            setEventsMap({});
             setIsLoading(false);
           }
           return;
@@ -763,29 +844,9 @@ const CompletedPredictionsList: React.FC<{ onOpen: (p: any, event: any) => void 
         });
         const preds = Array.isArray(res?.predictions) ? res.predictions : [];
         if (mounted) setItems(preds);
-        const idsSet = new Set<string>(
-          preds
-            .map((p: any) => String(p?.eventId || ""))
-            .filter((s: string) => s.length > 0)
-        );
-        const ids: string[] = Array.from(idsSet);
-        const map: Record<string, any> = {};
-        await Promise.all(
-          ids.map(async (id: string) => {
-            try {
-              const ev = await api.post<any>("/event/v1/getevent", {
-                eventId: id,
-                getEventQuestions: true,
-                questionsPageInfo: {
-                  pageNumber: 1,
-                  pageSize: 50,
-                },
-              });
-              if (ev?.status?.type === "SUCCESS") map[id] = ev?.event || null;
-            } catch {}
-          })
-        );
-        if (mounted) setEventsMap(map);
+      } catch (error) {
+        console.error('Failed to fetch completed predictions:', error);
+        if (mounted) setItems([]);
       } finally {
         if (mounted) setIsLoading(false);
       }
@@ -798,70 +859,92 @@ const CompletedPredictionsList: React.FC<{ onOpen: (p: any, event: any) => void 
     };
   }, [period]);
 
-  if (isLoading) return <div className="text-gray-text">Loading completed predictions...</div>;
-  if (!items || items.length === 0) return <div className="text-gray-text">No completed predictions</div>;
+  if (isLoading) return <div className="text-gray-text text-center py-8">Loading completed predictions...</div>;
+  if (!items || items.length === 0) return <div className="text-gray-text text-center py-8">No completed predictions</div>;
 
   return (
     <div className="space-y-4">
-      <div className="mb-2 inline-flex rounded-lg border border-white/10 bg-dark-card p-1">
+      <div className="mb-4 inline-flex rounded-lg border border-white/10 bg-dark-card p-1">
         {[
-          "PREDICTIONTIMEINFORCE_COMPLETED_ALLTIME",
-          "PREDICTIONTIMEINFORCE_COMPLETED_TODAY",
-          "PREDICTIONTIMEINFORCE_COMPLETED_YESTERDAY",
-          "PREDICTIONTIMEINFORCE_COMPLETED_LASTWEEK",
-          "PREDICTIONTIMEINFORCE_COMPLETED_LASTMONTH",
-          "PREDICTIONTIMEINFORCE_COMPLETED_THISMONTH",
-        ].map((code) => (
+          { code: "PREDICTIONTIMEINFORCE_COMPLETED_ALLTIME", label: "All Time" },
+          { code: "PREDICTIONTIMEINFORCE_COMPLETED_TODAY", label: "Today" },
+          { code: "PREDICTIONTIMEINFORCE_COMPLETED_YESTERDAY", label: "Yesterday" },
+          { code: "PREDICTIONTIMEINFORCE_COMPLETED_LASTWEEK", label: "Last Week" },
+          { code: "PREDICTIONTIMEINFORCE_COMPLETED_LASTMONTH", label: "Last Month" },
+          { code: "PREDICTIONTIMEINFORCE_COMPLETED_THISMONTH", label: "This Month" },
+        ].map(({ code, label }) => (
           <button
             key={code}
             onClick={() => setPeriod(code)}
-            className={`px-3 py-1 text-xs font-medium rounded-md ${
+            className={`px-3 py-1 text-xs font-medium rounded-md transition-all ${
               period === code ? "bg-primary text-dark-bg" : "text-gray-text hover:bg-dark-lighter"
             }`}
           >
-            {code.replace("PREDICTIONTIMEINFORCE_COMPLETED_", "Completed ")}
+            {label}
           </button>
         ))}
       </div>
-      {items.map((p: any, idx: number) => {
-        const eventId = String(p?.eventId || "");
-        const event = eventsMap[eventId] || {};
-        const eventDate = new Date(p?.eventStartDate);
-        const today = new Date();
-        const diffTime = Math.abs(eventDate.getTime() - today.getTime());
-        const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-        const startsIn = diffDays > 0 ? `${diffDays} day${diffDays > 1 ? "s" : ""}` : "Today";
-        const qName = p?.question || p?.questionName || p?.question?.description || "Prediction";
-        const status = String(p?.predictionStatus || "");
-        const isSettled = status === "PREDICTION_STATUS_SETTLED";
-                  const eventDes = p?.eventDescription;
-        const outcome = String(p?.eventShortName ?? p?.predictedOutcome ?? p?.predictionDetails?.selectedPredictionOutcome ?? p?.selectedPredictionOutcome ?? "").trim();
-        const pctNum = Number(p?.percentage ?? p?.exitPercentage ?? 0);
-        const pctText = isFinite(pctNum) ? `${Math.max(0, Math.min(100, Math.round(pctNum)))}%` : "--%";
-        const matched = Number(p?.matchedAmt ?? 0);
-        const invest = Number(p?.investmentAmt ?? 0);
-        const matchedText = isFinite(matched) && isFinite(invest) && invest > 0 ? `${matched.toFixed(2)}/${invest.toFixed(2)} is matched` : "--";
-        return (
-          <div key={p?.predictionId || idx} className="rounded-2xl border border-white/10 bg-dark-card p-4">
-            <div className="flex items-center justify-between">
-              <div className="text-white font-semibold">{outcome || "--"} {eventDes}</div>
-              <Badge variant="secondary" className="text-red-300">Match starts in {startsIn}</Badge>
+
+      <div className="space-y-3">
+        {items.map((p: any, idx: number) => {
+          const eventName = p?.eventName || p?.eventShortName || "Event";
+          const eventShortName = p?.eventShortName || "";
+          const eventDesc = p?.eventDescription || "";
+          const eventStatus = p?.eventStatus || "";
+          const question = p?.question || "Question";
+          const predictedOutcome = p?.predictedOutcome || p?.predictedOutcomeChoice || "";
+          const percentage = Number(p?.percentage || 0);
+          const investmentAmt = Number(p?.investmentAmt || 0);
+          const potentialReturns = Number(p?.potentialReturns || 0);
+          const earnings = Number(p?.earnings || 0);
+          const predictionOutcome = String(p?.predictionOutcome || "");
+          const daysAgo = p?.eventStartDate ? Math.floor((Date.now() - new Date(p.eventStartDate).getTime()) / (1000 * 60 * 60 * 24)) : 0;
+          
+          const isWin = predictionOutcome === "PREDICTIONOUTCOME_SUCCESS" || earnings > 0;
+          const statusLabel = eventStatus === "PREDICTION_EVENT_STATUS_CLOSED" ? "Event Closed" : "Active";
+          const outcomeLabel = isWin ? "Winnings" : "Lost";
+          const outcomeColor = isWin ? "bg-green-500/20 text-green-400" : "bg-red-500/20 text-red-400";
+
+          return (
+            <div key={p?.predictionId || idx} className="rounded-xl border border-white/10 bg-dark-card p-5 hover:border-primary/30 transition-all">
+              {/* Header: Event name and status */}
+              <div className="flex items-center justify-between mb-4">
+                <div>
+                  <h3 className="text-white font-semibold">{eventShortName} {eventDesc}</h3>
+                  <p className="text-xs text-gray-text mt-1">{question}</p>
+                </div>
+                <Badge variant="outline" className="text-xs text-gray-text">{statusLabel}</Badge>
+              </div>
+
+              {/* Prediction details row */}
+              <div className="flex items-center gap-3 mb-4 text-sm">
+                <span className="text-gray-text">{predictedOutcome}</span>
+                <span className="text-gray-text">•</span>
+                <span className="text-white font-medium">{percentage}%</span>
+                <span className="text-gray-text">•</span>
+                <span className="text-gray-text inline-flex items-center gap-1">
+                  <DollarSign className="w-3 h-3" />
+                  {investmentAmt}
+                </span>
+              </div>
+
+              {/* Outcome bar */}
+              <div className={`rounded-lg p-3 flex items-center justify-between ${outcomeColor}`}>
+                <span className="font-medium">{outcomeLabel}</span>
+                <span className="font-bold inline-flex items-center gap-1">
+                  <DollarSign className="w-4 h-4" />
+                  {Math.abs(earnings)}
+                </span>
+              </div>
+
+              {/* Time ago indicator */}
+              <div className="mt-3 text-xs text-gray-text text-right">
+                <Badge className="text-blue-300">Settled</Badge> {daysAgo}d ago
+              </div>
             </div>
-            <div className="my-3 border-t border-white/10" />
-            <div className="flex items-start justify-between">
-              <div className="text-white font-medium">{qName}</div>
-              {isSettled && <Badge className="text-blue-300">Settled</Badge>}
-            </div>
-            <div className="mt-2 text-gray-text text-sm flex items-center gap-2">
-              <span>{outcome || "--"}</span>
-              <span>•</span>
-              <span>{pctText}</span>
-              <span>•</span>
-              <span className="inline-flex items-center gap-1"><DollarSign className="w-4 h-4" /> {matchedText}</span>
-            </div>
-          </div>
-        );
-      })}
+          );
+        })}
+      </div>
     </div>
   );
 };
@@ -869,16 +952,7 @@ const CompletedPredictionsList: React.FC<{ onOpen: (p: any, event: any) => void 
 // Cancelled Predictions List Component
 const CancelledPredictionsList: React.FC<{ onOpen: (p: any, event: any) => void }> = ({ onOpen }) => {
   const [items, setItems] = React.useState<any[]>([]);
-  const [eventsMap, setEventsMap] = React.useState<Record<string, any>>({});
   const [isLoading, setIsLoading] = React.useState<boolean>(true);
-
-  // const getEventName = (event: any) => (
-  //   (typeof event?.name === "string" && event.name.trim()) ||
-  //   (typeof event?.eventName === "string" && event.eventName.trim()) ||
-  //   (typeof event?.sportEvent?.name === "string" && event.sportEvent.name.trim()) ||
-  //   (typeof event?.sportEvent?.eventName === "string" && event.sportEvent.eventName.trim()) ||
-  //   [event?.sportEvent?.sportType?.replace?.("SPORT_TYPE_", ""), event?.sportEvent?.eventFormat].filter(Boolean).join(" • ")
-  // );
 
   React.useEffect(() => {
     let mounted = true;
@@ -889,7 +963,6 @@ const CancelledPredictionsList: React.FC<{ onOpen: (p: any, event: any) => void 
         if (!token) {
           if (mounted) {
             setItems([]);
-            setEventsMap({});
             setIsLoading(false);
           }
           return;
@@ -903,22 +976,9 @@ const CancelledPredictionsList: React.FC<{ onOpen: (p: any, event: any) => void 
         });
         const preds = Array.isArray(res?.predictions) ? res.predictions : [];
         if (mounted) setItems(preds);
-        const idsSet = new Set<string>(
-          preds
-            .map((p: any) => String(p?.eventId || ""))
-            .filter((s: string) => s.length > 0)
-        );
-        const ids: string[] = Array.from(idsSet);
-        const map: Record<string, any> = {};
-        await Promise.all(
-          ids.map(async (id: string) => {
-            try {
-              const ev = await api.post<any>("/event/v1/getevent", { eventId: id });
-              if (ev?.status?.type === "SUCCESS") map[id] = ev?.event || null;
-            } catch {}
-          })
-        );
-        if (mounted) setEventsMap(map);
+      } catch (error) {
+        console.error('Failed to fetch cancelled predictions:', error);
+        if (mounted) setItems([]);
       } finally {
         if (mounted) setIsLoading(false);
       }
@@ -931,48 +991,74 @@ const CancelledPredictionsList: React.FC<{ onOpen: (p: any, event: any) => void 
     };
   }, []);
 
-  if (isLoading) return <div className="text-gray-text">Loading cancelled predictions...</div>;
-  if (!items || items.length === 0) return <div className="text-gray-text">No cancelled predictions</div>;
+  if (isLoading) return <div className="text-gray-text text-center py-8">Loading cancelled predictions...</div>;
+  if (!items || items.length === 0) return <div className="text-gray-text text-center py-8">No cancelled predictions</div>;
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-3">
       {items.map((p: any, idx: number) => {
-        const eventId = String(p?.eventId || "");
-        const event = eventsMap[eventId] || {};
-        // const title = getEventName(event) || `Event ${eventId}`;
-        const eventDate = new Date(p?.eventStartDate);
-        const today = new Date();
-        const diffTime = Math.abs(eventDate.getTime() - today.getTime());
-        const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-        const startsIn = diffDays > 0 ? `${diffDays} day${diffDays > 1 ? "s" : ""}` : "Today";
-        const qName = p?.question || p?.questionName || p?.question?.description || "Prediction";
-        const status = String(p?.predictionStatus || "");
-        const isCancelled = status === "PREDICTION_STATUS_CANCELLED";
-                  const eventDes = p?.eventDescription;
+        const eventName = p?.eventName || p?.eventShortName || "Event";
+        const eventShortName = p?.eventShortName || "";
+        const eventDesc = p?.eventDescription || "";
+        const eventStatus = p?.eventStatus || "";
+        const question = p?.question || "Question";
+        const predictedOutcome = p?.predictedOutcome || p?.predictedOutcomeChoice || "";
+        const percentage = Number(p?.percentage || 0);
+        const investmentAmt = Number(p?.investmentAmt || 0);
+        const matchedAmt = Number(p?.matchedAmt || 0);
+        const daysAgo = p?.eventStartDate ? Math.floor((Date.now() - new Date(p.eventStartDate).getTime()) / (1000 * 60 * 60 * 24)) : 0;
+        
+        const statusLabel = eventStatus === "PREDICTION_EVENT_STATUS_CLOSED" ? "Event Closed" : "Match starts in";
+        const isClosed = eventStatus === "PREDICTION_EVENT_STATUS_CLOSED";
+        
+        // Calculate exited amount
+        const exitedAmount = investmentAmt - matchedAmt;
 
-        const outcome = String(p?.eventShortName ?? p?.predictedOutcome ?? p?.predictionDetails?.selectedPredictionOutcome ?? p?.selectedPredictionOutcome ?? "").trim();
-        const pctNum = Number(p?.percentage ?? p?.exitPercentage ?? 0);
-        const pctText = isFinite(pctNum) ? `${Math.max(0, Math.min(100, Math.round(pctNum)))}%` : "--%";
-        const matched = Number(p?.matchedAmt ?? 0);
-        const invest = Number(p?.investmentAmt ?? 0);
-        const matchedText = isFinite(matched) && isFinite(invest) && invest > 0 ? `${matched.toFixed(2)}/${invest.toFixed(2)} is matched` : "--";
         return (
-          <div key={p?.predictionId || idx} className="rounded-2xl border border-white/10 bg-dark-card p-4">
-            <div className="flex items-center justify-between">
-              <div className="text-white font-semibold">{outcome || "--"} {eventDes}</div>
-              <Badge variant="secondary" className="text-red-300">Match starts in {startsIn}</Badge>
+          <div key={p?.predictionId || idx} className="rounded-xl border border-white/10 bg-dark-card p-5 hover:border-primary/30 transition-all">
+            {/* Header: Event name and status */}
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-white font-semibold">{eventShortName} {eventDesc}</h3>
+              {isClosed ? (
+                <Badge variant="outline" className="text-xs text-gray-text">{statusLabel}</Badge>
+              ) : (
+                <Badge variant="outline" className="text-xs text-red-400 border-red-400/30">Match starts in {daysAgo}d</Badge>
+              )}
             </div>
-            <div className="my-3 border-t border-white/10" />
-            <div className="flex items-start justify-between">
-              <div className="text-white font-medium">{qName}</div>
-              {isCancelled && <Badge className="text-slate-300">Cancelled</Badge>}
+
+            {/* Question */}
+            <div className="mb-4">
+              <p className="text-white font-medium">{question}</p>
             </div>
-            <div className="mt-2 text-gray-text text-sm flex items-center gap-2">
-              <span>{outcome || "--"}</span>
-              <span>•</span>
-              <span>{pctText}</span>
-              <span>•</span>
-              <span className="inline-flex items-center gap-1"><DollarSign className="w-4 h-4" /> {matchedText}</span>
+
+            {/* Prediction details row */}
+            <div className="flex items-center gap-3 mb-4 text-sm">
+              <span className="text-gray-text">{predictedOutcome}</span>
+              <span className="text-gray-text">•</span>
+              <span className="text-white font-medium">{percentage}%</span>
+              <span className="text-gray-text">•</span>
+              <span className="text-gray-text inline-flex items-center gap-1">
+                <DollarSign className="w-3 h-3" />
+                {investmentAmt}
+              </span>
+            </div>
+
+            {/* Cancelled badge */}
+            <div className="mb-4 inline-flex">
+              <Badge className="bg-orange-500/20 text-orange-400 border-orange-500/30">Cancelled</Badge>
+            </div>
+
+            {/* Info box */}
+            <div className="bg-dark-lighter rounded-lg p-3 border border-white/5 flex items-start gap-3 text-sm text-gray-text">
+              <AlertCircle className="w-4 h-4 flex-shrink-0 mt-0.5 text-orange-400" />
+              <span>
+                You predicted {investmentAmt} JP coins. Out of these, {matchedAmt.toFixed(1)} have been exited, and the remaining have been cancelled.
+              </span>
+            </div>
+
+            {/* Time ago indicator */}
+            <div className="mt-3 text-xs text-gray-text text-right">
+              {daysAgo}d
             </div>
           </div>
         );
@@ -983,17 +1069,12 @@ const CancelledPredictionsList: React.FC<{ onOpen: (p: any, event: any) => void 
 
 // Exited Predictions List Component
 const ExitedPredictionsList: React.FC<{ onOpen: (p: any, event: any) => void }> = ({ onOpen }) => {
+  const navigate = useNavigate();
   const [items, setItems] = React.useState<any[]>([]);
   const [eventsMap, setEventsMap] = React.useState<Record<string, any>>({});
   const [isLoading, setIsLoading] = React.useState<boolean>(true);
 
-  const getEventName = (event: any) => (
-    (typeof event?.name === "string" && event.name.trim()) ||
-    (typeof event?.eventName === "string" && event.eventName.trim()) ||
-    (typeof event?.sportEvent?.name === "string" && event.sportEvent.name.trim()) ||
-    (typeof event?.sportEvent?.eventName === "string" && event.sportEvent.eventName.trim()) ||
-    [event?.sportEvent?.sportType?.replace?.("SPORT_TYPE_", ""), event?.sportEvent?.eventFormat].filter(Boolean).join(" • ")
-  );
+ 
 
   React.useEffect(() => {
     let mounted = true;
@@ -1028,7 +1109,11 @@ const ExitedPredictionsList: React.FC<{ onOpen: (p: any, event: any) => void }> 
         await Promise.all(
           ids.map(async (id: string) => {
             try {
-              const ev = await api.post<any>("/event/v1/getevent", { eventId: id });
+              const ev = await api.post<any>("/event/v1/getevent", {
+            eventId: id,
+            getEventQuestions: true,
+            questionsPageInfo: { pageNumber: 1, pageSize: 50 },
+          });
               if (ev?.status?.type === "SUCCESS") map[id] = ev?.event || null;
             } catch {}
           })
@@ -1088,6 +1173,12 @@ const ExitedPredictionsList: React.FC<{ onOpen: (p: any, event: any) => void }> 
               <span>•</span>
               <span className="inline-flex items-center gap-1"><DollarSign className="w-4 h-4" /> {matchedText}</span>
             </div>
+            <Button 
+              onClick={() => navigate(`/order-details/${p?.orderId}`)}
+              className="mt-4 w-full bg-primary text-dark-bg hover:bg-primary/90"
+            >
+              Order Details
+            </Button>
           </div>
         );
       })}
@@ -1373,16 +1464,16 @@ export const Sports: React.FC<{ selectedSport?: string | null }> = ({ selectedSp
     }
   };
 
-  const formatStartsIn = (startDateSeconds: number) => {
-    const ms = startDateSeconds * 1000 - Date.now();
-    if (ms <= 0) return 'Match live';
-    const days = Math.floor(ms / (24 * 60 * 60 * 1000));
-    if (days >= 1) return `Match starts in ${days} day${days > 1 ? 's' : ''}`;
-    const hours = Math.floor(ms / (60 * 60 * 1000));
-    if (hours >= 1) return `Match starts in ${hours} hour${hours > 1 ? 's' : ''}`;
-    const minutes = Math.floor(ms / (60 * 1000));
-    return `Match starts in ${minutes} minute${minutes > 1 ? 's' : ''}`;
-  };
+  // const formatStartsIn = (startDateSeconds: number) => {
+  //   const ms = startDateSeconds * 1000 - Date.now();
+  //   if (ms <= 0) return 'Match live';
+  //   const days = Math.floor(ms / (24 * 60 * 60 * 1000));
+  //   if (days >= 1) return `Match starts in ${days} day${days > 1 ? 's' : ''}`;
+  //   const hours = Math.floor(ms / (60 * 60 * 1000));
+  //   if (hours >= 1) return `Match starts in ${hours} hour${hours > 1 ? 's' : ''}`;
+  //   const minutes = Math.floor(ms / (60 * 1000));
+  //   return `Match starts in ${minutes} minute${minutes > 1 ? 's' : ''}`;
+  // };
 
   const handleExitPrediction = (id: string) => {
     setActivePredictions(prev => prev.map(p => (p.id === id ? { ...p, status: 'PREDICTION_STATUS_EXITED' } : p)));
@@ -1585,23 +1676,37 @@ export const Sports: React.FC<{ selectedSport?: string | null }> = ({ selectedSp
                 />
               ) : activeTab === 'live' ? (
                 <LivePredictionsList
-                  onExit={(p: any, ev: any) => {
-                    const id = String(p?.eventId || "");
-                    setSelectedEventId(id);
-                    const q = p?.question || { questionId: p?.questionId, name: p?.questionName };
-                    setSelectedQuestion(q);
-                    setSelectedOutcome(null);
-                    setConfidenceOverride(null);
-                    setAmount("");
+                  onExit={(p: any) => {
+                    // Show exit prediction panel in right sidebar instead of navigating to details
+                    const eventDes = p?.eventDescription || p?.eventName || "Event";
+                    const qName = p?.question || p?.questionName || p?.question?.description || "Prediction";
+                    const outcome = String(p?.eventShortName ?? p?.predictionDetails?.selectedPredictionOutcome ?? p?.selectedPredictionOutcome ?? "").trim();
+                    const pctNum = Number(p?.percentage ?? p?.exitPercentage ?? 0);
+                    const matchedAmt = Number(p?.matchedAmt ?? 0);
+                    const investAmt = Number(p?.investmentAmt ?? 0);
+                    
+                    setSelectedPrediction({
+                      predictionId: String(p?.predictionId || ""),
+                      eventId: String(p?.eventId || ""),
+                      eventName: eventDes,
+                      eventDescription: p?.eventDescription || "",
+                      questionName: qName,
+                      answer: outcome,
+                      percentage: pctNum,
+                      amount: investAmt,
+                      matchedAmt: matchedAmt,
+                      status: p?.predictionStatus || p?.status || "PREDICTION_STATUS_LIVE"
+                    });
+                    setSelectedAction('exit');
+                    setExitAmount("");
+                    setExitConfidence(null);
                     setErrorMsg("");
-                    setSuppressQuestionPredictionFetch(true);
-                    setSelectedQuestionPrediction(p);
                     fetchBalance();
                   }}
                 />
               ) : activeTab === 'open' ? (
                 <OpenPredictionsList
-                  onOpen={(p: any, ev: any) => {
+                  onOpen={(p: any) => {
                     const id = String(p?.eventId || "");
                     setSelectedEventId(id);
                     const q = p?.question || { questionId: p?.questionId, name: p?.questionName };
@@ -1617,7 +1722,7 @@ export const Sports: React.FC<{ selectedSport?: string | null }> = ({ selectedSp
                 />
               ) : activeTab === 'completed' ? (
                 <CompletedPredictionsList
-                  onOpen={(p: any, ev: any) => {
+                  onOpen={(p: any) => {
                     const id = String(p?.eventId || "");
                     setSelectedEventId(id);
                     const q = p?.question || { questionId: p?.questionId, name: p?.questionName };
@@ -1633,7 +1738,7 @@ export const Sports: React.FC<{ selectedSport?: string | null }> = ({ selectedSp
                 />
               ) : activeTab === 'cancelled' ? (
                 <CancelledPredictionsList
-                  onOpen={(p: any, ev: any) => {
+                  onOpen={(p: any) => {
                     const id = String(p?.eventId || "");
                     setSelectedEventId(id);
                     const q = p?.question || { questionId: p?.questionId, name: p?.questionName };

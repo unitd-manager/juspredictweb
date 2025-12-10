@@ -15,9 +15,13 @@ import About from './pages/About';
 import Faq from './pages/Faq';
 import Contact from './pages/Contact';
 import { Login } from './pages/Login';
+import { Signup } from './pages/Signup'
+import { VerifyEmail } from './pages/VerifyEmail';
 import { Footer } from './components/Footer';
 import { Toaster } from './components/ui/Toast';
 import Transactions from './pages/Transactions';
+import OrderDetails from './pages/OrderDetails';
+import Profile from "./pages/Profile";
 
 
 function App() {
@@ -64,7 +68,12 @@ function App() {
             <Route path="/faq" element={<Faq />} />
             <Route path="/contact" element={<Contact />} />
             <Route path="/transactions" element={<Transactions />} />
+            <Route path="/order-details/:orderId" element={<OrderDetails />} />
             <Route path="/login" element={<Login />} />
+            <Route path="/signup" element={<Signup />} />
+            <Route path="/verify-email" element={<VerifyEmail />} />
+            <Route path="/profile" element={<Profile />} />
+
             <Route path="*" element={<Home />} />
           </Routes>
         </main>

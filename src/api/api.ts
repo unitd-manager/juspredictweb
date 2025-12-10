@@ -29,7 +29,18 @@ async function request<T>(path: string, init: RequestInit = {}): Promise<T> {
 
   if (!res.ok) {
     const text = await res.text().catch(() => "");
-    throw new Error(`API ${res.status} ${res.statusText}: ${text}`);
+    let errorData: any = {};
+    try {
+      errorData = JSON.parse(text);
+    } catch {
+      errorData = { message: text };
+    }
+    
+    const error = new Error(errorData.message || errorData.status?.details?.[0]?.message || `API ${res.status} ${res.statusText}`);
+    (error as any).response = errorData;
+    (error as any).code = errorData.code || errorData.status?.details?.[0]?.code;
+    (error as any).status = errorData.status;
+    throw error;
   }
 
   const contentType = res.headers.get("content-type") || "";
