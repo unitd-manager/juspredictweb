@@ -1304,7 +1304,7 @@ export const Sports: React.FC<{ selectedSport?: string | null }> = ({ selectedSp
                         <span className={`text-xs transition-transform ${selectedCategory === cat.id ? 'rotate-180' : ''}`}>▼</span>
                       </li>
                       {selectedCategory === cat.id && (
-                        <ul className="pl-6 mt-1 space-y-1 border-l border-white/10">
+                        <ul className="pl-10 mt-1 space-y-1 border-l border-white/10">
                           {cat.tournaments.map((tournament) => (
                             <li
                               key={tournament.id}

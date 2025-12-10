@@ -2192,7 +2192,7 @@ export const Sports: React.FC<{ selectedSport?: string | null }> = ({ selectedSp
                             {loadingTournaments[sport.name] ? (
                               <div className="text-xs text-gray-text">Loading tournaments...</div>
                             ) : (
-                              <ul className="space-y-2">
+                              <ul className="pl-6 mt-1 space-y-1 border-l border-white/10">
                                 {Array.isArray(sportTournaments[sport.name]) && sportTournaments[sport.name].length > 0 ? (
                                   sportTournaments[sport.name].map((t: any) => (
                                     <li
