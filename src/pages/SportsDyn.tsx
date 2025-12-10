@@ -165,7 +165,23 @@ const EventThumbnail = ({ event, onSelect, selectedId }: { event: any; onSelect:
     }
   })();
 
+  const dateLabel = (() => {
+    try {
+      return new Date(Number(event.startDate) * 1000).toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
+    } catch {
+      return '';
+    }
+  })();
+
   const name = (event.name || event.eventName || event.sportEvent?.name || '').toString();
+
+  const dayLabel = (() => {
+    try {
+      return new Date(Number(event.startDate) * 1000).toLocaleDateString(undefined, { weekday: 'short' }).toUpperCase();
+    } catch {
+      return '';
+    }
+  })();
 
   return (
     <button
@@ -183,9 +199,16 @@ const EventThumbnail = ({ event, onSelect, selectedId }: { event: any; onSelect:
           <span className="text-xs text-white">▾</span>
         </span>
       )}
-      <div className="flex items-center justify-between mb-2">
-        <div className="text-xs text-gray-text">{timeLabel}</div>
-        <div className="text-xs text-gray-text">{event?.league || event?.category || ''}</div>
+      <div className="flex gap-3 mb-2">
+        {/* Left side: Day and Date vertically */}
+        <div className="flex flex-col items-start text-center min-w-fit">
+          <div className="text-xs font-semibold text-white">{dayLabel}</div>
+          <div className="text-xs text-gray-text">{dateLabel}</div>
+        </div>
+        {/* Right side: Time */}
+        <div className="flex-1 text-right">
+          <div className="text-xs text-gray-text">{timeLabel}</div>
+        </div>
       </div>
       <div className="flex items-center gap-3 mb-2">
         <div className="flex items-center gap-2">
@@ -223,12 +246,71 @@ const EventThumbnail = ({ event, onSelect, selectedId }: { event: any; onSelect:
 
 // Horizontal strip of thumbnails
 const EventThumbnailStrip = ({ events, onSelect, selectedId }: { events: any[]; onSelect: (id: string) => void; selectedId?: string | null }) => {
+  const scrollContainerRef = React.useRef<HTMLDivElement>(null);
+  const [canScrollLeft, setCanScrollLeft] = React.useState(false);
+  const [canScrollRight, setCanScrollRight] = React.useState(true);
+
+  const checkScroll = () => {
+    if (scrollContainerRef.current) {
+      setCanScrollLeft(scrollContainerRef.current.scrollLeft > 0);
+      setCanScrollRight(
+        scrollContainerRef.current.scrollLeft < 
+        scrollContainerRef.current.scrollWidth - scrollContainerRef.current.clientWidth - 10
+      );
+    }
+  };
+
+  const scroll = (direction: 'left' | 'right') => {
+    if (scrollContainerRef.current) {
+      const scrollAmount = 400;
+      if (direction === 'left') {
+        scrollContainerRef.current.scrollBy({ left: -scrollAmount, behavior: 'smooth' });
+      } else {
+        scrollContainerRef.current.scrollBy({ left: scrollAmount, behavior: 'smooth' });
+      }
+      setTimeout(checkScroll, 300);
+    }
+  };
+
+  React.useEffect(() => {
+    checkScroll();
+    const container = scrollContainerRef.current;
+    if (container) {
+      container.addEventListener('scroll', checkScroll);
+      return () => container.removeEventListener('scroll', checkScroll);
+    }
+  }, []);
+
   if (!events || events.length === 0) return null;
 
   return (
-    <div className="overflow-x-auto -mx-4 sm:-mx-6 lg:-mx-8 py-4">
-      <div className="px-4 sm:px-6 lg:px-8 max-w-[1400px] mx-auto">
-        <div className="flex gap-3">
+    <div className="relative group">
+      {/* Left Arrow */}
+      {canScrollLeft && (
+        <button
+          onClick={() => scroll('left')}
+          className="absolute left-0 top-1/2 -translate-y-1/2 z-20 bg-dark-card/90 hover:bg-dark-card border border-white/20 hover:border-primary rounded-full p-2 transition-all"
+        >
+          <svg className="w-5 h-5 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+          </svg>
+        </button>
+      )}
+
+      {/* Right Arrow */}
+      {canScrollRight && (
+        <button
+          onClick={() => scroll('right')}
+          className="absolute right-0 top-1/2 -translate-y-1/2 z-20 bg-dark-card/90 hover:bg-dark-card border border-white/20 hover:border-primary rounded-full p-2 transition-all"
+        >
+          <svg className="w-5 h-5 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+          </svg>
+        </button>
+      )}
+
+      <div className="overflow-x-auto -mx-4 sm:-mx-6 lg:-mx-8 py-4 px-4 sm:px-6 lg:px-8" ref={scrollContainerRef}>
+        <div className="max-w-[1400px] mx-auto flex gap-3">
           {events.slice(0, 20).map((ev, idx) => (
             <EventThumbnail key={String(ev.id ?? ev.eventId ?? idx)} event={ev} onSelect={onSelect} selectedId={selectedId} />
           ))}
@@ -537,7 +619,7 @@ const EventDetails: React.FC<{
 };
 
 // Live Predictions List Component
-const LivePredictionsList: React.FC<{ onExit: (p: any, event: any) => void }> = ({ onExit }) => {
+const LivePredictionsList: React.FC<{ onExit: (p: any, event: any) => void; selectedSport?: string | null; selectedTournamentId?: string | null }> = ({ onExit, selectedSport, selectedTournamentId }) => {
   const navigate = useNavigate();
   const [items, setItems] = React.useState<any[]>([]);
   const [eventsMap, setEventsMap] = React.useState<Record<string, any>>({});
@@ -606,12 +688,37 @@ const LivePredictionsList: React.FC<{ onExit: (p: any, event: any) => void }> = 
     };
   }, []);
 
+  // Filter items by selected sport and tournament
+  const filteredItems = items.filter((p: any) => {
+    const event = eventsMap[String(p?.eventId || "")] || {};
+    
+    // Filter by tournament if selected
+    if (selectedTournamentId) {
+      const parentId = String(event?.parentEventId || "");
+      if (parentId !== selectedTournamentId) return false;
+    }
+    
+    // Filter by sport if selected
+    if (selectedSport) {
+      let raw = event?.sportEvent?.sportType || event?.category || event?.sport || event?.name || 'Other';
+      if (typeof raw === 'string') {
+        raw = raw.replace(/^SPORT_TYPE_/, '').replace(/_/g, ' ').trim();
+      } else {
+        raw = String(raw);
+      }
+      const eventSport = raw || 'Other';
+      if (eventSport !== selectedSport) return false;
+    }
+    
+    return true;
+  });
+
   if (isLoading) return <div className="text-gray-text">Loading live predictions...</div>;
-  if (!items || items.length === 0) return <div className="text-gray-text">No live predictions</div>;
+  if (!filteredItems || filteredItems.length === 0) return <div className="text-gray-text">No live predictions</div>;
 
   return (
     <div className="space-y-4">
-      {items.map((p: any, idx: number) => {
+      {filteredItems.map((p: any, idx: number) => {
         const eventId = String(p?.eventId || "");
         const event = eventsMap[eventId] || {};
         // const title = getEventName(event) || `Event ${eventId}`;
@@ -663,7 +770,7 @@ const LivePredictionsList: React.FC<{ onExit: (p: any, event: any) => void }> = 
 };
 
 // Open Predictions List Component
-const OpenPredictionsList: React.FC<{ onOpen: (p: any, event: any) => void }> = ({ onOpen }) => {
+const OpenPredictionsList: React.FC<{ onOpen: (p: any, event: any) => void; selectedSport?: string | null; selectedTournamentId?: string | null }> = ({ onOpen, selectedSport, selectedTournamentId }) => {
   const navigate = useNavigate();
   const [items, setItems] = React.useState<any[]>([]);
   const [eventsMap, setEventsMap] = React.useState<Record<string, any>>({});
@@ -754,12 +861,37 @@ const OpenPredictionsList: React.FC<{ onOpen: (p: any, event: any) => void }> = 
     }
   };
 
+  // Filter items by selected sport and tournament
+  const filteredItems = items.filter((p: any) => {
+    const event = eventsMap[String(p?.eventId || "")] || {};
+    
+    // Filter by tournament if selected
+    if (selectedTournamentId) {
+      const parentId = String(event?.parentEventId || "");
+      if (parentId !== selectedTournamentId) return false;
+    }
+    
+    // Filter by sport if selected
+    if (selectedSport) {
+      let raw = event?.sportEvent?.sportType || event?.category || event?.sport || event?.name || 'Other';
+      if (typeof raw === 'string') {
+        raw = raw.replace(/^SPORT_TYPE_/, '').replace(/_/g, ' ').trim();
+      } else {
+        raw = String(raw);
+      }
+      const eventSport = raw || 'Other';
+      if (eventSport !== selectedSport) return false;
+    }
+    
+    return true;
+  });
+
   if (isLoading) return <div className="text-gray-text">Loading open predictions...</div>;
-  if (!items || items.length === 0) return <div className="text-gray-text">No open predictions</div>;
+  if (!filteredItems || filteredItems.length === 0) return <div className="text-gray-text">No open predictions</div>;
 
   return (
     <div className="space-y-4">
-      {items.map((p: any, idx: number) => {
+      {filteredItems.map((p: any, idx: number) => {
         // const title = getEventName(event) || `Event ${eventId}`;
         const eventDes = p?.eventDescription;
         const eventDate = new Date(p?.eventStartDate);
@@ -817,8 +949,9 @@ const OpenPredictionsList: React.FC<{ onOpen: (p: any, event: any) => void }> = 
 };
 
 // Completed Predictions List Component
-const CompletedPredictionsList: React.FC<{ onOpen: (p: any, event: any) => void }> = ({ onOpen }) => {
+const CompletedPredictionsList: React.FC<{ onOpen: (p: any, event: any) => void; selectedSport?: string | null; selectedTournamentId?: string | null }> = ({ onOpen, selectedSport, selectedTournamentId }) => {
   const [items, setItems] = React.useState<any[]>([]);
+  const [eventsMap, setEventsMap] = React.useState<Record<string, any>>({});
   const [isLoading, setIsLoading] = React.useState<boolean>(true);
   const [period, setPeriod] = React.useState<string>("PREDICTIONTIMEINFORCE_COMPLETED_ALLTIME");
 
@@ -831,6 +964,7 @@ const CompletedPredictionsList: React.FC<{ onOpen: (p: any, event: any) => void 
         if (!token) {
           if (mounted) {
             setItems([]);
+            setEventsMap({});
             setIsLoading(false);
           }
           return;
@@ -844,9 +978,34 @@ const CompletedPredictionsList: React.FC<{ onOpen: (p: any, event: any) => void 
         });
         const preds = Array.isArray(res?.predictions) ? res.predictions : [];
         if (mounted) setItems(preds);
+        
+        // Fetch event details for filtering
+        const idsSet = new Set<string>(
+          preds
+            .map((p: any) => String(p?.eventId || ""))
+            .filter((s: string) => s.length > 0)
+        );
+        const ids: string[] = Array.from(idsSet);
+        const map: Record<string, any> = {};
+        await Promise.all(
+          ids.map(async (id: string) => {
+            try {
+              const ev = await api.post<any>("/event/v1/getevent", {
+                eventId: id,
+                getEventQuestions: true,
+                questionsPageInfo: { pageNumber: 1, pageSize: 50 },
+              });
+              if (ev?.status?.type === "SUCCESS") map[id] = ev?.event || null;
+            } catch {}
+          })
+        );
+        if (mounted) setEventsMap(map);
       } catch (error) {
         console.error('Failed to fetch completed predictions:', error);
-        if (mounted) setItems([]);
+        if (mounted) {
+          setItems([]);
+          setEventsMap({});
+        }
       } finally {
         if (mounted) setIsLoading(false);
       }
@@ -859,8 +1018,33 @@ const CompletedPredictionsList: React.FC<{ onOpen: (p: any, event: any) => void 
     };
   }, [period]);
 
+  // Filter items by selected sport and tournament
+  const filteredItems = items.filter((p: any) => {
+    const event = eventsMap[String(p?.eventId || "")] || {};
+    
+    // Filter by tournament if selected
+    if (selectedTournamentId) {
+      const parentId = String(event?.parentEventId || "");
+      if (parentId !== selectedTournamentId) return false;
+    }
+    
+    // Filter by sport if selected
+    if (selectedSport) {
+      let raw = event?.sportEvent?.sportType || event?.category || event?.sport || event?.name || 'Other';
+      if (typeof raw === 'string') {
+        raw = raw.replace(/^SPORT_TYPE_/, '').replace(/_/g, ' ').trim();
+      } else {
+        raw = String(raw);
+      }
+      const eventSport = raw || 'Other';
+      if (eventSport !== selectedSport) return false;
+    }
+    
+    return true;
+  });
+
   if (isLoading) return <div className="text-gray-text text-center py-8">Loading completed predictions...</div>;
-  if (!items || items.length === 0) return <div className="text-gray-text text-center py-8">No completed predictions</div>;
+  if (!filteredItems || filteredItems.length === 0) return <div className="text-gray-text text-center py-8">No completed predictions</div>;
 
   return (
     <div className="space-y-4">
@@ -886,7 +1070,7 @@ const CompletedPredictionsList: React.FC<{ onOpen: (p: any, event: any) => void 
       </div>
 
       <div className="space-y-3">
-        {items.map((p: any, idx: number) => {
+        {filteredItems.map((p: any, idx: number) => {
           const eventName = p?.eventName || p?.eventShortName || "Event";
           const eventShortName = p?.eventShortName || "";
           const eventDesc = p?.eventDescription || "";
@@ -950,8 +1134,9 @@ const CompletedPredictionsList: React.FC<{ onOpen: (p: any, event: any) => void 
 };
 
 // Cancelled Predictions List Component
-const CancelledPredictionsList: React.FC<{ onOpen: (p: any, event: any) => void }> = ({ onOpen }) => {
+const CancelledPredictionsList: React.FC<{ onOpen: (p: any, event: any) => void; selectedSport?: string | null; selectedTournamentId?: string | null }> = ({ onOpen, selectedSport, selectedTournamentId }) => {
   const [items, setItems] = React.useState<any[]>([]);
+  const [eventsMap, setEventsMap] = React.useState<Record<string, any>>({});
   const [isLoading, setIsLoading] = React.useState<boolean>(true);
 
   React.useEffect(() => {
@@ -963,6 +1148,7 @@ const CancelledPredictionsList: React.FC<{ onOpen: (p: any, event: any) => void 
         if (!token) {
           if (mounted) {
             setItems([]);
+            setEventsMap({});
             setIsLoading(false);
           }
           return;
@@ -976,9 +1162,34 @@ const CancelledPredictionsList: React.FC<{ onOpen: (p: any, event: any) => void 
         });
         const preds = Array.isArray(res?.predictions) ? res.predictions : [];
         if (mounted) setItems(preds);
+        
+        // Fetch event details for filtering
+        const idsSet = new Set<string>(
+          preds
+            .map((p: any) => String(p?.eventId || ""))
+            .filter((s: string) => s.length > 0)
+        );
+        const ids: string[] = Array.from(idsSet);
+        const map: Record<string, any> = {};
+        await Promise.all(
+          ids.map(async (id: string) => {
+            try {
+              const ev = await api.post<any>("/event/v1/getevent", {
+                eventId: id,
+                getEventQuestions: true,
+                questionsPageInfo: { pageNumber: 1, pageSize: 50 },
+              });
+              if (ev?.status?.type === "SUCCESS") map[id] = ev?.event || null;
+            } catch {}
+          })
+        );
+        if (mounted) setEventsMap(map);
       } catch (error) {
         console.error('Failed to fetch cancelled predictions:', error);
-        if (mounted) setItems([]);
+        if (mounted) {
+          setItems([]);
+          setEventsMap({});
+        }
       } finally {
         if (mounted) setIsLoading(false);
       }
@@ -991,12 +1202,37 @@ const CancelledPredictionsList: React.FC<{ onOpen: (p: any, event: any) => void 
     };
   }, []);
 
+  // Filter items by selected sport and tournament
+  const filteredItems = items.filter((p: any) => {
+    const event = eventsMap[String(p?.eventId || "")] || {};
+    
+    // Filter by tournament if selected
+    if (selectedTournamentId) {
+      const parentId = String(event?.parentEventId || "");
+      if (parentId !== selectedTournamentId) return false;
+    }
+    
+    // Filter by sport if selected
+    if (selectedSport) {
+      let raw = event?.sportEvent?.sportType || event?.category || event?.sport || event?.name || 'Other';
+      if (typeof raw === 'string') {
+        raw = raw.replace(/^SPORT_TYPE_/, '').replace(/_/g, ' ').trim();
+      } else {
+        raw = String(raw);
+      }
+      const eventSport = raw || 'Other';
+      if (eventSport !== selectedSport) return false;
+    }
+    
+    return true;
+  });
+
   if (isLoading) return <div className="text-gray-text text-center py-8">Loading cancelled predictions...</div>;
-  if (!items || items.length === 0) return <div className="text-gray-text text-center py-8">No cancelled predictions</div>;
+  if (!filteredItems || filteredItems.length === 0) return <div className="text-gray-text text-center py-8">No cancelled predictions</div>;
 
   return (
     <div className="space-y-3">
-      {items.map((p: any, idx: number) => {
+      {filteredItems.map((p: any, idx: number) => {
         const eventName = p?.eventName || p?.eventShortName || "Event";
         const eventShortName = p?.eventShortName || "";
         const eventDesc = p?.eventDescription || "";
@@ -1068,7 +1304,7 @@ const CancelledPredictionsList: React.FC<{ onOpen: (p: any, event: any) => void 
 };
 
 // Exited Predictions List Component
-const ExitedPredictionsList: React.FC<{ onOpen: (p: any, event: any) => void }> = ({ onOpen }) => {
+const ExitedPredictionsList: React.FC<{ onOpen: (p: any, event: any) => void; selectedSport?: string | null; selectedTournamentId?: string | null }> = ({ onOpen, selectedSport, selectedTournamentId }) => {
   const navigate = useNavigate();
   const [items, setItems] = React.useState<any[]>([]);
   const [eventsMap, setEventsMap] = React.useState<Record<string, any>>({});
@@ -1131,12 +1367,37 @@ const ExitedPredictionsList: React.FC<{ onOpen: (p: any, event: any) => void }> 
     };
   }, []);
 
+  // Filter items by selected sport and tournament
+  const filteredItems = items.filter((p: any) => {
+    const event = eventsMap[String(p?.eventId || "")] || {};
+    
+    // Filter by tournament if selected
+    if (selectedTournamentId) {
+      const parentId = String(event?.parentEventId || "");
+      if (parentId !== selectedTournamentId) return false;
+    }
+    
+    // Filter by sport if selected
+    if (selectedSport) {
+      let raw = event?.sportEvent?.sportType || event?.category || event?.sport || event?.name || 'Other';
+      if (typeof raw === 'string') {
+        raw = raw.replace(/^SPORT_TYPE_/, '').replace(/_/g, ' ').trim();
+      } else {
+        raw = String(raw);
+      }
+      const eventSport = raw || 'Other';
+      if (eventSport !== selectedSport) return false;
+    }
+    
+    return true;
+  });
+
   if (isLoading) return <div className="text-gray-text">Loading exited predictions...</div>;
-  if (!items || items.length === 0) return <div className="text-gray-text">No exited predictions</div>;
+  if (!filteredItems || filteredItems.length === 0) return <div className="text-gray-text">No exited predictions</div>;
 
   return (
     <div className="space-y-4">
-      {items.map((p: any, idx: number) => {
+      {filteredItems.map((p: any, idx: number) => {
         const eventId = String(p?.eventId || "");
         const event = eventsMap[eventId] || {};
         // const title = getEventName(event) || `Event ${eventId}`;
@@ -1208,9 +1469,13 @@ export const Sports: React.FC<{ selectedSport?: string | null }> = ({ selectedSp
   const [activeTab, setActiveTab] = useState<'all' |'open' | 'live' | 'completed' | 'cancelled' | 'exited'>('all');
   const [selectedSport, setSelectedSport] = useState<string | null>(propSelectedSport ?? null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
+  // When true, show all child events (CHILD_EVENT) in the main panel
+  const [showAllChildEvents, setShowAllChildEvents] = React.useState<boolean>(false);
+  const [allChildEvents, setAllChildEvents] = React.useState<any[] | null>(null);
+  const [loadingAllChildEvents, setLoadingAllChildEvents] = React.useState<boolean>(false);
   const [suppressQuestionPredictionFetch, setSuppressQuestionPredictionFetch] = React.useState<boolean>(false);
   const [selectedQuestionPrediction, setSelectedQuestionPrediction] = React.useState<any | null>(null);
-  const [selectedEventStatusFilter, setSelectedEventStatusFilter] = useState<'live' | 'upcoming' | 'trending' | null>('live');
+  const [selectedEventStatusFilter, setSelectedEventStatusFilter] = useState<'live' | 'upcoming' | 'trending' | null>();
 
   const [activePredictions, setActivePredictions] = useState<Array<{
     id: string;
@@ -1236,6 +1501,223 @@ export const Sports: React.FC<{ selectedSport?: string | null }> = ({ selectedSp
     { id: 'cancelled', label: 'Cancelled' },
     { id: 'exited', label: 'Exited' },
   ] as const;
+
+  // Build dynamic sports list from fetched events
+  const sportsList = React.useMemo(() => {
+    const map = new Map<string, number>();
+    for (const ev of events || []) {
+      // Try a few fields for sport type / name
+      let raw = ev?.sportEvent?.sportType || ev?.category || ev?.sport || ev?.name || 'Other';
+      if (typeof raw === 'string') {
+        // Normalize common API values like SPORT_TYPE_SOCCER
+        raw = raw.replace(/^SPORT_TYPE_/, '').replace(/_/g, ' ').trim();
+      } else {
+        raw = String(raw);
+      }
+      const key = raw || 'Other';
+      map.set(key, (map.get(key) || 0) + 1);
+    }
+
+    const emojiMap: Record<string, string> = {
+      Football: '🏈',
+      Basketball: '🏀',
+      Cricket: '🏏',
+      Soccer: '⚽',
+      Tennis: '🎾',
+      Other: '🎯',
+    };
+
+    return Array.from(map.entries())
+      .map(([name, count]) => ({ name, emoji: emojiMap[name] || '🏅', count }))
+      .sort((a, b) => b.count - a.count);
+  }, [events]);
+
+  // State for expanded sport -> shows tournaments
+  const [expandedSport, setExpandedSport] = React.useState<string | null>(null);
+  const [sportTournaments, setSportTournaments] = React.useState<Record<string, any[]>>({});
+  const [loadingTournaments, setLoadingTournaments] = React.useState<Record<string, boolean>>({});
+  const [tournamentChildEventCounts, setTournamentChildEventCounts] = React.useState<Record<string, number>>({});
+  const [sportTournamentCounts, setSportTournamentCounts] = React.useState<Record<string, number>>({});
+
+  // State for selected tournament and its child events
+  const [selectedTournamentId, setSelectedTournamentId] = React.useState<string | null>(null);
+  const [eventsForTournament, setEventsForTournament] = React.useState<any[] | null>(null);
+  const [loadingTournamentEvents, setLoadingTournamentEvents] = React.useState<Record<string, boolean>>({});
+
+  const mapDisplayToSportType = (display: string) => {
+    if (!display) return '';
+    const key = display.toString().toUpperCase().replace(/[^A-Z0-9]+/g, '_');
+    return `SPORT_TYPE_${key}`;
+  };
+
+  const fetchTournamentsForSport = async (sportName: string) => {
+    if (!sportName) return;
+    if (sportTournaments[sportName]) return; // cached
+    try {
+      setLoadingTournaments(prev => ({ ...prev, [sportName]: true }));
+      const sportType = mapDisplayToSportType(sportName);
+      let allTournaments: any[] = [];
+      let pageNumber = 1;
+      let totalCount = 0;
+
+      while (true) {
+        const res = await api.post<any>('/event/v1/listevents', {
+          status: [
+            'EVENT_STATUS_UPCOMING',
+            'EVENT_STATUS_ACTIVE',
+            'EVENT_STATUS_COMPLETED',
+          ],
+          category: 'EVENT_CATEGORY_SPORTS',
+          eventHierarchy: 'PARENT_EVENT',
+          sportType,
+          pageNumber,
+          pageSize: 20,
+        });
+
+        const evs = Array.isArray(res?.events) ? res.events : [];
+        totalCount = res?.totalCount || 0;
+        allTournaments = allTournaments.concat(evs);
+
+        console.log(`Fetched sport '${sportName}' page ${pageNumber}: ${evs.length} tournaments, total so far: ${allTournaments.length}/${totalCount}`);
+
+        // Stop if we've fetched all tournaments or got empty page
+        if (allTournaments.length >= totalCount || evs.length === 0) {
+          break;
+        }
+        pageNumber++;
+      }
+
+      // Fetch child event counts for each tournament
+      const countMap: Record<string, number> = {};
+      for (const tournament of allTournaments) {
+        const tournamentId = String(tournament.id ?? tournament.eventId ?? '');
+        if (tournamentId) {
+          try {
+            const countRes = await api.post<any>('/event/v1/listevents', {
+              status: [
+                'EVENT_STATUS_UPCOMING',
+                'EVENT_STATUS_ACTIVE',
+                'EVENT_STATUS_COMPLETED',
+              ],
+              category: 'EVENT_CATEGORY_SPORTS',
+              parentEventId: tournamentId,
+              pageNumber: 1,
+              pageSize: 1, // We only need the totalCount, not actual events
+            });
+            countMap[tournamentId] = countRes?.totalCount || 0;
+          } catch (e) {
+            console.error(`Failed to fetch count for tournament ${tournamentId}`, e);
+            countMap[tournamentId] = 0;
+          }
+        }
+      }
+
+      setSportTournaments(prev => ({ ...prev, [sportName]: allTournaments }));
+      setTournamentChildEventCounts(prev => ({ ...prev, ...countMap }));
+      setSportTournamentCounts(prev => ({ ...prev, [sportName]: allTournaments.length }));
+      console.log(`Complete: Fetched ${allTournaments.length} tournaments for sport '${sportName}' (total count: ${totalCount})`);
+    } catch (e) {
+      console.error('Failed to fetch tournaments for sport', sportName, e);
+      setSportTournaments(prev => ({ ...prev, [sportName]: [] }));
+    } finally {
+      setLoadingTournaments(prev => ({ ...prev, [sportName]: false }));
+    }
+  };
+
+  const fetchEventsForTournament = async (tournamentId: string) => {
+    if (!tournamentId) return;
+    if (eventsForTournament && selectedTournamentId === tournamentId) return; // already loaded
+    try {
+      setLoadingTournamentEvents(prev => ({ ...prev, [tournamentId]: true }));
+      let allEvs: any[] = [];
+      let pageNumber = 1;
+      let totalCount = 0;
+
+      while (true) {
+        const res = await api.post<any>('/event/v1/listevents', {
+          status: [
+            'EVENT_STATUS_UPCOMING',
+            'EVENT_STATUS_ACTIVE',
+            'EVENT_STATUS_COMPLETED',
+          ],
+          category: 'EVENT_CATEGORY_SPORTS',
+          parentEventId: tournamentId,
+          pageNumber,
+          pageSize: 20,
+        });
+
+        const evs = Array.isArray(res?.events) ? res.events : [];
+        totalCount = res?.totalCount || 0;
+        allEvs = allEvs.concat(evs);
+
+        console.log(`Fetched tournament page ${pageNumber}: ${evs.length} events, total so far: ${allEvs.length}/${totalCount}`);
+
+        // Stop if we've fetched all events or got empty page
+        if (allEvs.length >= totalCount || evs.length === 0) {
+          break;
+        }
+        pageNumber++;
+      }
+
+      setEventsForTournament(allEvs.map(e => ({
+        ...e,
+        startDate: e.startDate || e.start_date || Math.floor(Date.now() / 1000) + Math.random() * 86400
+      })));
+      console.log(`Complete: Fetched ${allEvs.length} tournament events (total count: ${totalCount})`);
+    } catch (e) {
+      console.error('Failed to fetch events for tournament', tournamentId, e);
+      setEventsForTournament([]);
+    } finally {
+      setLoadingTournamentEvents(prev => ({ ...prev, [tournamentId]: false }));
+    }
+  };
+
+  const fetchAllChildEvents = async () => {
+    try {
+      setLoadingAllChildEvents(true);
+      let allEvs: any[] = [];
+      let pageNumber = 1;
+     
+      let totalCount = 0;
+
+      while (true) {
+        const res = await api.post<any>('/event/v1/listevents', {
+          status: [
+            'EVENT_STATUS_UPCOMING',
+            'EVENT_STATUS_ACTIVE',
+            'EVENT_STATUS_COMPLETED',
+          ],
+          category: 'EVENT_CATEGORY_SPORTS',
+          eventHierarchy: 'CHILD_EVENT',
+          pageNumber,
+          pageSize: 100, // Request 100 but API may return 20
+        });
+
+        const evs = Array.isArray(res?.events) ? res.events : [];
+        totalCount = res?.totalCount || 0;
+        allEvs = allEvs.concat(evs);
+
+        console.log(`Fetched page ${pageNumber}: ${evs.length} events, total so far: ${allEvs.length}/${totalCount}`);
+
+        // Stop if we've fetched all events or got empty page
+        if (allEvs.length >= totalCount || evs.length === 0) {
+          break;
+        }
+        pageNumber++;
+      }
+
+      setAllChildEvents(allEvs.map(e => ({
+        ...e,
+        startDate: e.startDate || e.start_date || Math.floor(Date.now() / 1000) + Math.random() * 86400
+      })));
+      console.log(`Complete: Fetched ${allEvs.length} child events (total count: ${totalCount})`);
+    } catch (e) {
+      console.error('Failed to fetch all child events', e);
+      setAllChildEvents([]);
+    } finally {
+      setLoadingAllChildEvents(false);
+    }
+  };
 
   const formatPercent = (val: any) => {
     const raw = typeof val === 'string' ? val.replace('%', '').trim() : val;
@@ -1276,28 +1758,52 @@ export const Sports: React.FC<{ selectedSport?: string | null }> = ({ selectedSp
     }
   };
 
-  const fetchEvents = async () => {
+ const fetchEvents = async () => {
     setIsLoading(true);
     try {
-      const response = await api.post<{
-        events: any[];
-        status: { type: string };
-      }>("/event/v1/listevents", {
-        status: [
-          "EVENT_STATUS_UPCOMING",
-          "EVENT_STATUS_ACTIVE",
-          "EVENT_STATUS_COMPLETED",
-        ],
-        category: "EVENT_CATEGORY_SPORTS",
-        pageNumber: 1,
-        pageSize: 50,
-      });
+      let allEvs: any[] = [];
+      let pageNumber = 1;
+      let totalCount = 0;
 
-      if (response?.status?.type === "SUCCESS") {
-        setEvents(response.events || []);
-      } else {
-        setEvents([]);
+      while (true) {
+        const response = await api.post<{
+          events: any[];
+          status: { type: string };
+          totalCount: number;
+        }>("/event/v1/listevents", {
+          status: [
+            "EVENT_STATUS_UPCOMING",
+            "EVENT_STATUS_ACTIVE",
+            "EVENT_STATUS_COMPLETED",
+          ],
+          category: "EVENT_CATEGORY_SPORTS",
+          eventHierarchy: "CHILD_EVENT",
+          pageNumber,
+          pageSize: 20,
+        });
+
+        if (response?.status?.type === "SUCCESS") {
+          const evs = Array.isArray(response?.events) ? response.events : [];
+          totalCount = response?.totalCount || 0;
+          allEvs = allEvs.concat(evs);
+
+          console.log(
+            `Fetched page ${pageNumber}: ${evs.length} events, total so far: ${allEvs.length}/${totalCount}`
+          );
+
+          if (allEvs.length >= totalCount || evs.length === 0) {
+            break;
+          }
+          pageNumber++;
+        } else {
+          break;
+        }
       }
+
+      setEvents(allEvs);
+      console.log(
+        `Complete: Fetched ${allEvs.length} events (total count: ${totalCount})`
+      );
     } catch (error) {
       console.error("Failed to fetch events:", error);
       setEvents([]);
@@ -1308,6 +1814,44 @@ export const Sports: React.FC<{ selectedSport?: string | null }> = ({ selectedSp
   useEffect(() => {
     fetchEvents();
   }, []);
+
+  const fetchTournamentCountsForAllSports = async (allSports: typeof sportsList) => {
+    if (allSports.length === 0) return;
+    
+    const countMap: Record<string, number> = {};
+    
+    for (const sport of allSports) {
+      try {
+        const sportType = mapDisplayToSportType(sport.name);
+        const res = await api.post<any>('/event/v1/listevents', {
+          status: [
+            'EVENT_STATUS_UPCOMING',
+            'EVENT_STATUS_ACTIVE',
+            'EVENT_STATUS_COMPLETED',
+          ],
+          category: 'EVENT_CATEGORY_SPORTS',
+          eventHierarchy: 'PARENT_EVENT',
+          sportType,
+          pageNumber: 1,
+          pageSize: 100,
+        });
+        
+        countMap[sport.name] = res?.totalCount || 0;
+      } catch (e) {
+        console.error(`Failed to fetch tournament count for ${sport.name}`, e);
+        countMap[sport.name] = 0;
+      }
+    }
+    
+    setSportTournamentCounts(countMap);
+  };
+
+  useEffect(() => {
+    if (sportsList.length > 0) {
+      fetchTournamentCountsForAllSports(sportsList);
+    }
+  }, [sportsList]);
+
 
    React.useEffect(() => {
     const run = async () => {
@@ -1371,12 +1915,22 @@ export const Sports: React.FC<{ selectedSport?: string | null }> = ({ selectedSp
     // 'trending' filter can be added based on your business logic
 
     if (selectedSport) {
-      const eventName = (event.name || '').toLowerCase();
-      matchesSport = eventName.includes(selectedSport.toLowerCase());
+      // Match by sport type using the same logic as sportsList calculation
+      let raw = event?.sportEvent?.sportType || event?.category || event?.sport || event?.name || 'Other';
+      if (typeof raw === 'string') {
+        raw = raw.replace(/^SPORT_TYPE_/, '').replace(/_/g, ' ').trim();
+      } else {
+        raw = String(raw);
+      }
+      const eventSport = raw || 'Other';
+      matchesSport = eventSport === selectedSport;
     }
 
     return matchesStatus && matchesSport && matchesEventStatusFilter;
   });
+
+  const mainLoading = selectedTournamentId ? (loadingTournamentEvents[selectedTournamentId] ?? false) : (showAllChildEvents ? loadingAllChildEvents : isLoading);
+  const mainEvents = showAllChildEvents ? (allChildEvents ?? []) : (selectedTournamentId ? (eventsForTournament ?? []) : filteredEvents);
 
   const handleMakePrediction = async () => {
     setErrorMsg('');
@@ -1502,7 +2056,7 @@ export const Sports: React.FC<{ selectedSport?: string | null }> = ({ selectedSp
         <div className="max-w-[1400px] mx-auto">
           {/* Thumbnail strip under header */}
           <EventThumbnailStrip
-            events={events}
+            events={mainEvents}
             selectedId={selectedEventId}
             onSelect={(id: string) => {
               setSelectedEventId(id);
@@ -1542,8 +2096,8 @@ export const Sports: React.FC<{ selectedSport?: string | null }> = ({ selectedSp
             {/* Left Sidebar - Sports */}
             <aside className="w-full lg:w-64 lg:flex-shrink-0">
               <div className="rounded-2xl border border-white/10 bg-white/5 p-4 sticky top-24">
-               <h3 className="text-sm font-semibold text-slate-200 mb-4">Filters</h3>
-          <div className="space-y-2 mb-6">
+               {/*<h3 className="text-sm font-semibold text-slate-200 mb-4">Filters</h3>*/}
+          {/* <div className="space-y-2 mb-6">
             <button 
               onClick={() => setSelectedEventStatusFilter('live')}
               className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg font-medium transition-all ${
@@ -1574,12 +2128,20 @@ export const Sports: React.FC<{ selectedSport?: string | null }> = ({ selectedSp
             >
               Trending
             </button>
-          </div>
+          </div> */}
 
                 <h3 className="text-sm font-semibold text-white mb-3">Sports</h3>
                 <ul className="space-y-2">
                   <li
-                    onClick={() => setSelectedSport(null)}
+                    onClick={() => {
+                      // Show all child events across sports
+                      setSelectedSport(null);
+                      setSelectedTournamentId(null);
+                      setEventsForTournament(null);
+                      setShowAllChildEvents(true);
+                      setActiveTab('all');
+                      fetchAllChildEvents();
+                    }}
                     className={`flex items-center justify-between px-3 py-2 rounded-lg transition-all cursor-pointer ${
                       selectedSport === null
                         ? 'bg-primary/20 text-primary'
@@ -1592,29 +2154,78 @@ export const Sports: React.FC<{ selectedSport?: string | null }> = ({ selectedSp
                     </div>
                     <span className="text-xs bg-dark-card px-2 py-0.5 rounded text-white">{events.length}</span>
                   </li>
-                  {[
-                    { name: 'Football', emoji: '🏈', count: 24 },
-                    { name: 'Basketball', emoji: '🏀', count: 18 },
-                    { name: 'Cricket', emoji: '🏏', count: 12 },
-                    { name: 'Soccer', emoji: '⚽', count: 32 },
-                    { name: 'Tennis', emoji: '🎾', count: 15 },
-                  ].map((sport) => (
-                    <li
-                      key={sport.name}
-                      onClick={() => setSelectedSport(sport.name)}
-                      className={`flex items-center justify-between px-3 py-2 rounded-lg transition-all cursor-pointer ${
-                        selectedSport === sport.name
-                          ? 'bg-primary/20 text-primary'
-                          : 'text-gray-text hover:bg-white/5'
-                      }`}
-                    >
-                      <div className="flex items-center gap-3">
-                        <span className="text-xl">{sport.emoji}</span>
-                        <span className="text-sm">{sport.name}</span>
-                      </div>
-                      <span className="text-xs bg-dark-card px-2 py-0.5 rounded text-white">{sport.count}</span>
-                    </li>
-                  ))}
+                  {sportsList.length === 0 ? (
+                    <li className="text-gray-text text-sm">No sports found</li>
+                  ) : (
+                    sportsList.map((sport) => (
+                      <li key={sport.name}>
+                        <div
+                          onClick={() => {
+                            if (expandedSport === sport.name) {
+                              setExpandedSport(null);
+                              setSelectedTournamentId(null);
+                              setEventsForTournament(null);
+                              setShowAllChildEvents(false);
+                            } else {
+                              setExpandedSport(sport.name);
+                              fetchTournamentsForSport(sport.name);
+                            }
+                            setSelectedSport(sport.name);
+                            setShowAllChildEvents(false);
+                            setActiveTab('all');
+                          }}
+                          className={`flex items-center justify-between px-3 py-2 rounded-lg transition-all cursor-pointer ${
+                            selectedSport === sport.name
+                              ? 'bg-primary/20 text-primary'
+                              : 'text-gray-text hover:bg-white/5'
+                          }`}
+                        >
+                          <div className="flex items-center gap-3">
+                            <span className="text-xl">{sport.emoji}</span>
+                            <span className="text-sm">{sport.name}</span>
+                          </div>
+                          <span className={`text-xs transition-transform duration-200 ${expandedSport === sport.name ? 'rotate-180' : ''}`}>▲</span>
+                        </div>
+
+                        {expandedSport === sport.name && (
+                          <div className="mt-2 ml-3">
+                            {loadingTournaments[sport.name] ? (
+                              <div className="text-xs text-gray-text">Loading tournaments...</div>
+                            ) : (
+                              <ul className="space-y-2">
+                                {Array.isArray(sportTournaments[sport.name]) && sportTournaments[sport.name].length > 0 ? (
+                                  sportTournaments[sport.name].map((t: any) => (
+                                    <li
+                                      key={t.id || t.eventId || t.name}
+                                      onClick={() => {
+                                        const id = String(t.id ?? t.eventId ?? '');
+                                        setSelectedTournamentId(id);
+                                        setSelectedEventId(null);
+                                        setEventsForTournament(null);
+                                        setShowAllChildEvents(false);
+                                        setActiveTab('all');
+                                        fetchEventsForTournament(id);
+                                      }}
+                                      className={`flex items-center justify-between px-3 py-2 rounded-lg cursor-pointer text-sm ${
+                                        selectedTournamentId === String(t.id ?? t.eventId ?? '') ? 'bg-white/5 text-primary' : 'text-gray-text hover:bg-white/3'
+                                      }`}
+                                    >
+                                      <div className="truncate">{t.shortName}</div>
+                                      <div className="text-xs bg-dark-card px-2 py-0.5 rounded text-white">{tournamentChildEventCounts[String(t.id ?? t.eventId ?? '')] || 0}</div>
+                                    </li>
+                                  ))
+                                ) : (
+                                  <li className="text-xs text-gray-text">No tournaments</li>
+                                )}
+                              </ul>
+                            )}
+                          </div>
+                        )}
+                      </li>
+                    ))
+                  )}
+
+
                 </ul>
               </div>
             </aside>
@@ -1639,7 +2250,15 @@ export const Sports: React.FC<{ selectedSport?: string | null }> = ({ selectedSp
                       </button>
                     ))}
                   </div>
+                  <br/>
+                     <div className="mb-6">
+                    <h2 className="text-2xl font-bold text-white mb-2">
+                      {sportTournaments[selectedSport || '']?.find((t: any) => String(t.id ?? t.eventId ?? '') === selectedTournamentId)?.name}
+                    </h2>
+                    <p className="text-gray-text text-sm">Events from {selectedSport}</p>
+                  </div>
                 </div>
+                
               )}
 
               {selectedEventId ? (
@@ -1676,6 +2295,8 @@ export const Sports: React.FC<{ selectedSport?: string | null }> = ({ selectedSp
                 />
               ) : activeTab === 'live' ? (
                 <LivePredictionsList
+                  selectedSport={selectedSport}
+                  selectedTournamentId={selectedTournamentId}
                   onExit={(p: any) => {
                     // Show exit prediction panel in right sidebar instead of navigating to details
                     const eventDes = p?.eventDescription || p?.eventName || "Event";
@@ -1706,6 +2327,8 @@ export const Sports: React.FC<{ selectedSport?: string | null }> = ({ selectedSp
                 />
               ) : activeTab === 'open' ? (
                 <OpenPredictionsList
+                  selectedSport={selectedSport}
+                  selectedTournamentId={selectedTournamentId}
                   onOpen={(p: any) => {
                     const id = String(p?.eventId || "");
                     setSelectedEventId(id);
@@ -1722,6 +2345,8 @@ export const Sports: React.FC<{ selectedSport?: string | null }> = ({ selectedSp
                 />
               ) : activeTab === 'completed' ? (
                 <CompletedPredictionsList
+                  selectedSport={selectedSport}
+                  selectedTournamentId={selectedTournamentId}
                   onOpen={(p: any) => {
                     const id = String(p?.eventId || "");
                     setSelectedEventId(id);
@@ -1738,6 +2363,8 @@ export const Sports: React.FC<{ selectedSport?: string | null }> = ({ selectedSp
                 />
               ) : activeTab === 'cancelled' ? (
                 <CancelledPredictionsList
+                  selectedSport={selectedSport}
+                  selectedTournamentId={selectedTournamentId}
                   onOpen={(p: any) => {
                     const id = String(p?.eventId || "");
                     setSelectedEventId(id);
@@ -1754,6 +2381,8 @@ export const Sports: React.FC<{ selectedSport?: string | null }> = ({ selectedSp
                 />
               ) : activeTab === 'exited' ? (
                 <ExitedPredictionsList
+                  selectedSport={selectedSport}
+                  selectedTournamentId={selectedTournamentId}
                   onOpen={(p: any) => {
                     const id = String(p?.eventId || "");
                     setSelectedEventId(id);
@@ -1768,21 +2397,23 @@ export const Sports: React.FC<{ selectedSport?: string | null }> = ({ selectedSp
                     fetchBalance();
                   }}
                 />
-              ) : isLoading ? (
+              ) : mainLoading ? (
                 <div className="text-center py-12">
                   <p className="text-gray-text">Loading events...</p>
                 </div>
-              ) : filteredEvents.length === 0 ? (
+              ) : mainEvents.length === 0 ? (
                 <div className="text-center py-12">
                   <p className="text-gray-text">
-                    {events.length === 0
+                    {selectedTournamentId 
+                      ? 'No events in tournament'
+                      : events.length === 0
                       ? 'No events available'
                       : `No ${activeTab} events${selectedSport ? ` for ${selectedSport}` : ''}`}
                   </p>
                 </div>
               ) : (
                 <div className="space-y-6">
-                  {filteredEvents.map((event, i) => (
+                  {mainEvents.map((event, i) => (
                     <div key={i} className="space-y-3">
                       <EventCard
                         event={event}
