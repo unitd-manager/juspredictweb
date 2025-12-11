@@ -218,15 +218,16 @@ const ClanDetail = () => {
 
               <div className="flex flex-wrap items-center gap-3">
                 <InviteMembersDialog
-                  groupId={groupId}
-                  groupName={groupInfo?.groupName}
-                  trigger={
-                    <Button className="bg-emerald-500 text-white hover:bg-emerald-400">
-                      Invite members
-                    </Button>
-                  }
-                  onInvited={() => queryClient.invalidateQueries({ queryKey: ["group-activity", groupId] })}
-                />
+  groupId={groupId}
+  groupName={groupInfo?.groupName ?? ""}
+  trigger={
+    <Button className="bg-emerald-500 text-white hover:bg-emerald-400">
+      Invite members
+    </Button>
+  }
+  onInvited={() => queryClient.invalidateQueries({ queryKey: ["group-info", groupId] })}
+/>
+
                 <CancelInviteDialog
                   groupId={groupId}
                   trigger={

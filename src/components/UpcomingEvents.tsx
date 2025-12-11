@@ -1,4 +1,4 @@
-import { MapPin, Calendar, Clock,CheckCircle } from 'lucide-react';
+import { Calendar,CheckCircle } from 'lucide-react';
 import { Button } from './ui/Button';
 import { useState } from 'react';
 
@@ -608,7 +608,7 @@ const PredictionModal: React.FC<PredictionModalProps> = ({ open, onClose, event 
 
 export const UpcomingEvents = () => {
   const [activeTab, setActiveTab] = useState('all');
-const [selectedMatch, setSelectedMatch] = useState<Match | null>(null);
+  const [selectedMatch, setSelectedMatch] = useState<Match | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
 
   const openModal = (event: Match) => {
@@ -620,111 +620,109 @@ const [selectedMatch, setSelectedMatch] = useState<Match | null>(null);
     setSelectedMatch(null);
     setIsModalOpen(false);
   };
+
   const filteredEvents = activeTab === 'all' 
     ? events 
     : events.filter(e => e.status === activeTab);
 
   return (
-    <section className="py-20 bg-[#1A1A1D] relative">
-      {/* <div className="absolute top-[45%] left-[-20%] -translate-y-1/2 w-[450px] h-[500px] blur-[50px] z-50 pointer-events-none">
-        <svg width="450" height="500" viewBox="0 0 299 617" fill="none" xmlns="http://www.w3.org/2000/svg" className="w-full h-full">
-          <ellipse cx="291" cy="308.5" rx="291" ry="308.5" fill="url(#paint0_radial_2043_1685)" fillOpacity="1"></ellipse>
-          <defs>
-            {/* <radialGradient id="paint0_radial_2043_1685" cx="0" cy="0" r="1" gradientTransform="matrix(10.0537 288.96 -443.72 17.351 414.996 343.436)" gradientUnits="userSpaceOnUse">
-              <stop stopColor="#00FF73"></stop>
-              <stop offset="1" stopColor="#1A1A1D" stopOpacity="0"></stop>
-            </radialGradient> */}
-          {/* </defs>
-        </svg>
-      </div> */} 
+    <section className="py-12 bg-[#1A1A1D] relative">
       <div className="max-w-[1400px] mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
-        <div className="flex flex-col md:flex-row items-end justify-between mb-12 gap-6">
-          {/* <div>
-            <h2 className="text-3xl md:text-4xl font-bold text-white mb-4">
-              Upcoming <span className="text-primary">Events</span>
-            </h2>
-            <p className="text-gray-text">Don't miss out on these exciting matches</p>
-          </div> */}
-          
-          <div className="flex flex-wrap gap-2 bg-dark-card p-1.5 rounded-[10px] border border-white/10">
+        <div className="flex flex-col md:flex-row items-end justify-between mb-6 gap-4">
+          <div className="flex flex-wrap gap-2 bg-dark-card p-1 rounded-lg border border-white/10">
             <button 
                 onClick={() => setActiveTab('all')}
-                className={`px-8 py-2.5 rounded-[8px] text-sm font-medium transition-all duration-200 ${activeTab === 'all' ? 'bg-accent-yellow text-black shadow-sm' : 'text-gray-text hover:text-white'}`}
+                className={`px-6 py-2 rounded-md text-sm font-medium transition-all duration-200 ${activeTab === 'all' ? 'bg-accent-yellow text-black shadow-sm' : 'text-gray-text hover:text-white'}`}
             >
                 All
             </button>
              <button 
                 onClick={() => setActiveTab('sports')}
-                className={`px-8 py-2.5 rounded-[8px] text-sm font-medium transition-all duration-200 ${activeTab === 'sports' ? 'bg-accent-yellow text-black shadow-sm' : 'text-gray-text hover:text-white'}`}
+                className={`px-6 py-2 rounded-md text-sm font-medium transition-all duration-200 ${activeTab === 'sports' ? 'bg-accent-yellow text-black shadow-sm' : 'text-gray-text hover:text-white'}`}
             >
                 Sports
             </button>
               <button 
                 onClick={() => setActiveTab('live')}
-                className={`px-8 py-2.5 rounded-[8px] text-sm font-medium transition-all duration-200 ${activeTab === 'live' ? 'bg-accent-yellow text-black shadow-sm' : 'text-gray-text hover:text-white'}`}
+                className={`px-6 py-2 rounded-md text-sm font-medium transition-all duration-200 ${activeTab === 'live' ? 'bg-accent-yellow text-black shadow-sm' : 'text-gray-text hover:text-white'}`}
             >
                 Live
             </button>
             <button 
                 onClick={() => setActiveTab('trending')}
-                className={`px-8 py-2.5 rounded-[8px] text-sm font-medium transition-all duration-200 ${activeTab === 'trending' ? 'bg-accent-yellow text-black shadow-sm' : 'text-gray-text hover:text-white'}`}
+                className={`px-6 py-2 rounded-md text-sm font-medium transition-all duration-200 ${activeTab === 'trending' ? 'bg-accent-yellow text-black shadow-sm' : 'text-gray-text hover:text-white'}`}
             >
                 Trending
             </button>
             <button 
                 onClick={() => setActiveTab('upcoming')}
-                className={`px-8 py-2.5 rounded-[8px] text-sm font-medium transition-all duration-200 ${activeTab === 'upcoming' ? 'bg-accent-yellow text-black shadow-sm' : 'text-gray-text hover:text-white'}`}
+                className={`px-6 py-2 rounded-md text-sm font-medium transition-all duration-200 ${activeTab === 'upcoming' ? 'bg-accent-yellow text-black shadow-sm' : 'text-gray-text hover:text-white'}`}
             >
                 Upcoming
             </button>
           </div>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
           {filteredEvents.map((event) => (
-            <div 
-              key={event.id}
-              className="bg-dark-card border border-white/5 rounded-2xl p-6 hover:border-primary/30 transition-all duration-300 group relative overflow-hidden"
-            >
-              <div className="flex justify-between items-start mb-6">
-                <span className="px-3 py-1 rounded-[8px] bg-gray-500 text-white text-xs font-medium border border-gray-400">
-                  {event.sport}
-                </span>
-                {event.status === 'trending' && (
-                  <span className="flex items-center gap-2 px-3 py-1 rounded-full bg-[#FB2C36] text-white text-xs font-bold animate-pulse">
-                    Trending
-                  </span>
-                )}
+            <div key={event.id} className="bg-dark-card border border-white/5 rounded-xl p-4 hover:border-primary/30 transition-all duration-300 group relative overflow-hidden flex flex-col justify-between h-full">
+              {/* Top row: sport badge + timer badge + status indicator */}
+              <div className="flex justify-between items-start mb-2">
+                {/* Left item */}
+                <span className="px-2 py-1 rounded-md bg-gray-500 text-white text-[10px] font-medium border border-gray-400">{event.sport}</span>
+                {/* Right item */}
+                <span className={`px-2 py-1 rounded-md text-white text-[10px] font-medium border ${event.status === 'live' ? 'bg-red-600 border-red-500' : 'bg-primary border-primary'}`}>{event.timer}</span>
               </div>
 
-              <p className="text-sm font-medium text-white mb-2 group-hover:text-primary transition-colors">
-  {event.title}
-</p>
-<p className="text-lg font-bold min-h-[60px] text-white mb-4 group-hover:text-primary transition-colors">
-                {event.question}
-              </p>
-              <div className="space-y-3 mb-2">
-                <div className="flex items-center gap-3 text-gray-text text-sm">
-                  <Calendar size={16} className="text-[#FEDE39]" />
-                  <span>{event.date} • {event.time}</span>
+              {/* Match title */}
+              <p className={`text-sm font-semibold mb-1 transition-colors ${event.status === 'live' ? 'text-red-400 group-hover:text-red-300' : 'text-white group-hover:text-primary'}`}>{event.title}</p>
+
+              {/* Compact question – fixed height for one or two lines */}
+              <p className="text-sm text-gray-300 mb-3 leading-tight font-medium h-10 flex items-center">{event.question}</p>
+              {/* Market data row */}
+               <div className="pt-2 border-t border-white/10 flex items-center justify-between"></div>
+              <div className="grid grid-cols-2 gap-2 mb-2 text-xs">
+                <div className="bg-[#1a1a1a] border border-white/10 rounded-md p-2 text-center flex items-center justify-center gap-2">
+                  <div className="text-green-400 font-semibold">Yes</div>
+                  <div className="text-gray-300">62%</div>
                 </div>
-                <div className="flex items-center gap-3 text-gray-text text-sm">
-                  <MapPin size={16} className="text-[#FEDE39]" />
-                  <span>{event.venue}</span>
+                <div className="bg-[#1a1a1a] border border-white/10 rounded-md p-2 text-center flex items-center justify-center gap-2">
+                  <div className="text-red-400 font-semibold">No</div>
+                  <div className="text-gray-300">38%</div>
                 </div>
               </div>
 
-              <div className="pt-4 border-t border-white/5 flex items-center justify-between">
-                <div className="flex items-center gap-2 text-primary text-sm font-medium">
-                  <Clock size={16} className="text-primary" />
-                  {event.timer}
-                </div>
-                <Button onClick={() => openModal(event)} size="sm" className="bg-primary text-black hover:bg-primary/90 border-transparent font-bold px-6" 
-                      >
+              {/* Yes / No buttons */}
+              {/* <div className="grid grid-cols-2 gap-2 mb-3">
+                <button
+                  onClick={() => openModal({ ...event, question: event.question.replace("?", "") + " – Yes" })}
+                  className="bg-green-600/20 border border-green-600 text-green-400 py-2 rounded-lg text-sm font-semibold hover:bg-green-600/30 transition"
+                >
+                  Yes
+                </button>
+                <button
+                  onClick={() => openModal({ ...event, question: event.question.replace("?", "") + " – No" })}
+                  className="bg-red-600/20 border border-red-600 text-red-400 py-2 rounded-lg text-sm font-semibold hover:bg-red-600/30 transition"
+                >
+                  No
+                </button>
+              </div> */}
 
-                  Predict
-                </Button>
+              {/* Middle block: use whitespace for extra info */}
+              
+               <div className="pt-2 border-t border-white/10 flex items-center justify-between"></div>
+              <div className="flex-1 grid grid-cols-2 gap-x-3 gap-y-2 mb-3 text-gray-400 text-[10px]">
+                <div className="flex items-center gap-1"><Calendar size={12} className="text-[#FEDE39]" /><span>{event.date}</span></div>
+                {/* <div className="flex items-center gap-1"><Clock size={12} className={`${event.status === 'live' ? 'text-red-500' : 'text-primary'}`} /><span>{event.timer}</span></div> */}
+                {/* <div className="flex items-center gap-1 col-span-2"><MapPin size={12} className="text-[#FEDE39]" /><span>{event.venue}</span></div> */}
+                <Button onClick={() => openModal(event)} size="sm" className={`${event.status === 'live' ? 'bg-red-600 hover:bg-red-700' : 'bg-primary hover:bg-primary/90'} text-black border-transparent font-bold px-3`}>Predict</Button>
               </div>
+
+              {/* Bottom row: date row with predict button on the right */}
+              {/* <div className="pt-2 border-t border-white/10 flex items-center justify-between">
+                {/* <div className="flex items-center gap-1 text-xs font-medium text-gray-400"><Calendar size={14} />{event.date}</div> */}
+              
+              {/* </div> */}
             </div>
           ))}
         </div>

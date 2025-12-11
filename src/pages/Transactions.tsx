@@ -379,7 +379,7 @@ const Transactions: React.FC = () => {
                       <th className="px-4 py-2 text-left text-xs font-medium text-gray-text uppercase tracking-wider">Venue</th>
                       <th className="px-4 py-2 text-left text-xs font-medium text-gray-text uppercase tracking-wider">Result</th>
                       <th className="px-4 py-2 text-right text-xs font-medium text-gray-text uppercase tracking-wider">Amount</th>
-                      <th className="px-4 py-2 text-right text-xs font-medium text-gray-text uppercase tracking-wider">Type</th>
+            
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-white/10">
@@ -393,9 +393,7 @@ const Transactions: React.FC = () => {
                         <td className={`px-4 py-2 whitespace-nowrap text-sm font-bold text-right ${transaction.type === 'credit' ? 'text-primary' : 'text-red-400'}`}>
                           {transaction.type === 'credit' ? '+' : '-'}${transaction.amount.toFixed(2)}
                         </td>
-                        <td className={`px-4 py-2 whitespace-nowrap text-sm font-bold text-right ${transaction.type === 'credit' ? 'text-primary' : 'text-red-400'}`}>
-                          {transaction.type === 'credit' ? 'Credit' : 'Debit'}
-                        </td>
+                       
                       </tr>
                     ))}
                   </tbody>

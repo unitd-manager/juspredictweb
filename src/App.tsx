@@ -22,6 +22,7 @@ import { Toaster } from './components/ui/Toast';
 import Transactions from './pages/Transactions';
 import OrderDetails from './pages/OrderDetails';
 import Profile from "./pages/Profile";
+import PortfolioDyn from './pages/PortfolioDyn';
 
 
 function App() {
@@ -59,6 +60,7 @@ function App() {
             
             <Route path="/" element={<Home />} />
             <Route path="/portfolio" element={<Portfolio />} />
+            <Route path="/portfoliodyn" element={<PortfolioDyn />} />
             <Route path="/clan" element={<Clan />} />
             <Route path="/clan/:clanId" element={<ClanDetail onBack={function (): void {
               throw new Error('Function not implemented.');

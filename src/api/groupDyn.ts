@@ -179,15 +179,19 @@ async function createGroup(payload: CreateGroupPayload) {
 
 async function inviteMembers(payload: InviteMembersPayload) {
   const { inviterUserId, groupId, groupName, invites } = payload;
+
   return api.post("/group/v1/invite", {
     groupId,
     groupName,
     groupInvites: invites.map((invite) => ({
-      ...invite,
-      userId: inviterUserId,
+      inviteeEmail: invite.inviteeEmail,
+      inviteeName: invite.inviteeName,
+      eventType: invite.eventType ?? 1,
+      userId: inviterUserId,        // REQUIRED BY BACKEND
     })),
   });
 }
+
 
 async function cancelInvite(payload: CancelInvitePayload) {
   return api.post("/group/v1/cancelinvite", payload);

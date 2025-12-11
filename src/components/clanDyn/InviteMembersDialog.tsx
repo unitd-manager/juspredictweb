@@ -1,91 +1,85 @@
-import React, { useState } from 'react';
-import { Loader2 } from 'lucide-react';
-import { Dialog, DialogTrigger, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '../ui/Dialog';
-//import { Input } from '../ui/Input';
-import { Button } from '../ui/Button';
-import { toast } from '../ui/Toast';
+import { useState } from "react";
+import { useMutation } from "@tanstack/react-query";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogTrigger } from "../ui/Dialog";
+import { Input } from "../ui/Input";
+import { Button } from "../ui/Button";
+import { toast } from "../ui/sonner";
+import { groupApi } from "../../api/groupDyn";
 
 interface InviteMembersDialogProps {
   groupId: string;
-  groupName?: string;
-  trigger?: React.ReactNode;
+  groupName: string;
+  trigger: React.ReactNode;
   onInvited?: () => void;
 }
 
-export const InviteMembersDialog: React.FC<InviteMembersDialogProps> = ({
-  //groupId,
-  groupName,
-  trigger,
-  onInvited,
-}) => {
-  const [isOpen, setIsOpen] = useState(false);
-  const [emails, setEmails] = useState('');
-  const [isPending, setIsPending] = useState(false);
+export function InviteMembersDialog({ groupId, groupName, trigger, onInvited }: InviteMembersDialogProps) {
+  const [open, setOpen] = useState(false);
+  const [email, setEmail] = useState("");
+  const [name, setName] = useState("");
+  const inviterUserId = localStorage.getItem("userId") || ""; // or from auth context
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!emails.trim()) {
-      toast.error('Please enter at least one email');
-      return;
-    }
+  const { mutateAsync, isPending } = useMutation({
+    mutationFn: () =>
+      groupApi.inviteMembers({
+        groupId,
+        groupName,
+        inviterUserId,
+        invites: [
+          {
+            inviteeEmail: email,
+            inviteeName: name,
+            eventType: 1,
+          },
+        ],
+      }),
 
-    setIsPending(true);
-    try {
-      await new Promise(resolve => setTimeout(resolve, 500));
-      toast.success('Invitations sent successfully');
-      setEmails('');
-      setIsOpen(false);
+    onSuccess: () => {
+      toast.success("Invitation sent");
+      setOpen(false);
+      setEmail("");
+      setName("");
       onInvited?.();
-    } catch (err) {
-      toast.error((err as Error).message || 'Failed to send invitations');
-    } finally {
-      setIsPending(false);
-    }
+    },
+
+    onError: (err: any) => {
+      toast.error(err?.message ?? "Failed to send invitation");
+    },
+  });
+
+  const submit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    await mutateAsync();
   };
 
   return (
-    <Dialog open={isOpen} onOpenChange={(next) => !isPending && setIsOpen(next)}>
-      <DialogTrigger onClick={() => setIsOpen(true)}>
-        {trigger || <Button>Invite members</Button>}
-      </DialogTrigger>
-      <DialogContent>
-        <form onSubmit={handleSubmit} className="space-y-4">
+    <Dialog open={open} onOpenChange={(v) => !isPending && setOpen(v)}>
+      <DialogTrigger asChild>{trigger}</DialogTrigger>
+
+      <DialogContent className="sm:max-w-sm">
+        <form onSubmit={submit} className="space-y-4">
           <DialogHeader>
-            <DialogTitle>Invite members to {groupName || 'clan'}</DialogTitle>
+            <DialogTitle>Invite a member</DialogTitle>
           </DialogHeader>
 
-          <div className="space-y-2">
-            <label className="text-sm font-medium text-gray-text">Email addresses</label>
-            <textarea
-              value={emails}
-              onChange={(e) => setEmails(e.target.value)}
-              placeholder="Enter email addresses (one per line)"
-              className="w-full bg-dark-bg border border-white/10 rounded-lg px-4 py-2.5 text-white placeholder:text-gray-muted focus:outline-none focus:border-primary/30 focus:ring-1 focus:ring-primary/20 transition-all resize-none h-32"
-              required
-            />
-            <p className="text-xs text-gray-muted">
-              Enter email addresses separated by new lines
-            </p>
+          <div>
+            <label className="text-sm">Member Email</label>
+            <Input value={email} onChange={(e) => setEmail(e.target.value)} required />
+          </div>
+
+          <div>
+            <label className="text-sm">Name (optional)</label>
+            <Input value={name} onChange={(e) => setName(e.target.value)} />
           </div>
 
           <DialogFooter>
-            <Button
-              type="button"
-              variant="outline"
-              onClick={() => setIsOpen(false)}
-              disabled={isPending}
-            >
-              Cancel
-            </Button>
             <Button type="submit" disabled={isPending}>
-              {isPending ? (
-                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-              ) : null}
-              Send Invites
+              {isPending && <span className="mr-2 animate-spin">⏳</span>}
+              Send Invite
             </Button>
           </DialogFooter>
         </form>
       </DialogContent>
     </Dialog>
   );
-};
+}
