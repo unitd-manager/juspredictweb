@@ -23,6 +23,7 @@ import Transactions from './pages/Transactions';
 import OrderDetails from './pages/OrderDetails';
 import Profile from "./pages/Profile";
 import PortfolioDyn from './pages/PortfolioDyn';
+import TransactionsDyn from './pages/TransactionsDyn';
 
 
 function App() {
@@ -70,6 +71,7 @@ function App() {
             <Route path="/faq" element={<Faq />} />
             <Route path="/contact" element={<Contact />} />
             <Route path="/transactions" element={<Transactions />} />
+            <Route path="/transactionsdyn" element={<TransactionsDyn />} />
             <Route path="/order-details/:orderId" element={<OrderDetails />} />
             <Route path="/login" element={<Login />} />
             <Route path="/signup" element={<Signup />} />

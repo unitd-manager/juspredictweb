@@ -5,6 +5,7 @@ import { UpcomingEvents } from '../components/UpcomingEvents';
 import { HowItWorks } from '../components/HowItWorks';
 import { StatsCTA } from '../components/StatsCTA';
 import { Features } from '../components/Features';
+//import { UpcomingEventsDyn } from '../components/UpcomingEventsDyn';
 
 // interface HomeProps {
 //   onNavigate: (page: string) => void;
@@ -17,6 +18,7 @@ export const Home: React.FC = () => {
       <Hero />
       {/* <TrendingSports onNavigate={onNavigate} setSelectedSport={setSelectedSport} />
       <LivePredictions onNavigate={onNavigate} /> */}
+      {/* <UpcomingEventsDyn /> */}
       <UpcomingEvents />
       <HowItWorks />
       <StatsCTA />

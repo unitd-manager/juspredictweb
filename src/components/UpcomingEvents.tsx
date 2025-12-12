@@ -692,21 +692,7 @@ export const UpcomingEvents = () => {
                 </div>
               </div>
 
-              {/* Yes / No buttons */}
-              {/* <div className="grid grid-cols-2 gap-2 mb-3">
-                <button
-                  onClick={() => openModal({ ...event, question: event.question.replace("?", "") + " – Yes" })}
-                  className="bg-green-600/20 border border-green-600 text-green-400 py-2 rounded-lg text-sm font-semibold hover:bg-green-600/30 transition"
-                >
-                  Yes
-                </button>
-                <button
-                  onClick={() => openModal({ ...event, question: event.question.replace("?", "") + " – No" })}
-                  className="bg-red-600/20 border border-red-600 text-red-400 py-2 rounded-lg text-sm font-semibold hover:bg-red-600/30 transition"
-                >
-                  No
-                </button>
-              </div> */}
+              
 
               {/* Middle block: use whitespace for extra info */}
               
