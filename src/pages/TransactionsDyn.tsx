@@ -230,7 +230,9 @@ const userId = getUserIdFromToken();
                   <tbody className="divide-y divide-white/10">
                     {transactions.map((t) => (
                       <tr key={t.id}>
-                        <td className="px-4 py-2 text-sm">{t.date}</td>
+                        <td className="px-4 py-2 text-sm">
+                          {new Date(t.date).toLocaleDateString("en-GB")}
+                        </td>
                         <td className="px-4 py-2 text-sm">{t.description}</td>
                         <td className="px-4 py-2 text-sm">{t.typeName}</td>
                         <td className="px-4 py-2 text-sm">{t.subTypeName}</td>

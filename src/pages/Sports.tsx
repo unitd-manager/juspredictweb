@@ -366,71 +366,93 @@ const EventThumbnail = ({ event, onSelect, selectedId }: { event: any; onSelect:
     }
   })();
 
-  const name = (event.name || event.eventName || event.sportEvent?.name || '').toString();
-
+  const fullName = (event.name || event.eventName || event.sportEvent?.name || '').toString();
+  const [sportName, teamsStr] = (() => {
+    const parts = fullName.split(' - ');
+    if (parts.length === 2) return [parts[0].trim(), parts[1].trim()];
+    const vsIndex = fullName.toLowerCase().indexOf(' vs ');
+    if (vsIndex !== -1) {
+      return [
+        fullName.slice(0, vsIndex).trim(),
+        fullName.slice(vsIndex).trim()
+      ];
+    }
+    return [fullName, ''];
+  })();
+  const name = fullName;
   return (
     <button
       onClick={() => onSelect(id)}
       aria-pressed={selectedId === id}
-      className={`relative w-56 min-w-[14rem] md:w-64 md:min-w-[16rem] flex-shrink-0 rounded-xl p-3 text-left transition-all ${
+      className={`relative w-64 min-w-[16rem] md:w-72 md:min-w-[18rem] flex-shrink-0 rounded-xl p-3 text-left transition-all flex ${
         selectedId === id
           ? 'bg-primary/10 border border-primary ring-2 ring-primary/30 shadow-lg'
           : 'bg-dark-card border border-white/6 hover:shadow-lg hover:border-primary/30'
       }`}
     >
-      {selectedId === id && (
-        <span className="absolute top-2 right-2 flex items-center gap-2">
-          <span className="h-2 w-2 rounded-full bg-red-500 shadow-md" />
-          <span className="text-xs text-white">▾</span>
-        </span>
-      )}
-      <div className="flex gap-3 mb-2">
-        {/* Left side: Day and Date vertically */}
-        <div className="flex flex-col items-start text-center min-w-fit">
-          <div className="text-xs font-semibold text-white">{dayLabel}</div>
-          <div className="text-xs text-gray-text">{dateLabel}</div>
-        </div>
-        {/* Right side: Time */}
-        <div className="flex-1 text-right">
-          <div className="text-xs text-gray-text">{timeLabel}</div>
-        </div>
-      </div>
-      <div className="flex items-center gap-3 mb-2">
-        <div className="flex items-center gap-2">
-          <div className="h-10 w-10 rounded bg-dark-lighter flex items-center justify-center text-sm overflow-hidden">
-            {teamA?.imageUrl || teamA?.logoUrl ? (
-              <img src={(teamA.imageUrl || teamA.logoUrl).toString()} alt={teamA.name} className="h-10 w-10 object-cover" onError={(e)=>{(e.currentTarget as HTMLImageElement).style.display='none'}} />
-            ) : (
-              <span className="text-sm">{(teamA?.abbreviation || teamA?.shortName || teamA?.name || 'A')[0]}</span>
-            )}
-          </div>
-          <div className="text-sm text-white font-medium line-clamp-1">{teamA?.shortName || 'Team A'}</div>
-        </div>
-
-        <div className="flex-1 text-center text-xs text-gray-text">vs</div>
-
-        <div className="flex items-center gap-2 justify-end">
-          <div className="text-sm text-white font-medium line-clamp-1">{teamB?.shortName || 'Team B'}</div>
-          <div className="h-10 w-10 rounded bg-dark-lighter flex items-center justify-center text-sm overflow-hidden">
-            {teamB?.imageUrl || teamB?.logoUrl ? (
-              <img src={(teamB.imageUrl || teamB.logoUrl).toString()} alt={teamB.name} className="h-10 w-10 object-cover" onError={(e)=>{(e.currentTarget as HTMLImageElement).style.display='none'}} />
-            ) : (
-              <span className="text-sm">{(teamB?.abbreviation || teamB?.shortName || teamB?.name || 'B')[0]}</span>
-            )}
-          </div>
-        </div>
+      {/* Left side: full-height date/time block with highlighted background */}
+      <div className="flex flex-col justify-center items-start pr-3 border-r border-white/10 mr-3 bg-primary/20 rounded-lg px-3">
+        <div className="text-xs font-semibold text-white">{dayLabel}</div>
+        <div className="text-xs text-gray-text mt-1">{dateLabel}</div>
+        <div className="text-xs text-gray-text mt-1">{timeLabel}</div>
       </div>
 
-      <div className="flex items-center justify-between">
-        <div className="text-xs text-gray-text">{name}</div>
-        <div className="text-xs text-white font-semibold">{Math.round(probA)}% / {Math.round(probB)}%</div>
+      {/* Right side: content */}
+      <div className="flex-1 flex flex-col">
+        {selectedId === id && (
+          <span className="absolute top-2 right-2 flex items-center gap-2">
+            <span className="h-2 w-2 rounded-full bg-red-500 shadow-md" />
+            <span className="text-xs text-white">▾</span>
+          </span>
+        )}
+        <div className="flex items-center gap-3 mb-2">
+          <div className="flex items-center gap-2">
+            <div className="h-10 w-10 rounded bg-dark-lighter flex items-center justify-center text-sm overflow-hidden">
+              {teamA?.imageUrl || teamA?.logoUrl ? (
+                <img src={(teamA.imageUrl || teamA.logoUrl).toString()} alt={teamA.name} className="h-10 w-10 object-cover" onError={(e)=>{(e.currentTarget as HTMLImageElement).style.display='none'}} />
+              ) : (
+                <span className="text-sm">{(teamA?.abbreviation || teamA?.shortName || teamA?.name || 'A')[0]}</span>
+              )}
+            </div>
+            <div className="text-sm text-white font-medium line-clamp-1">{teamA?.shortName || 'Team A'}</div>
+          </div>
+
+          <div className="flex-1 text-center text-xs text-gray-text">vs</div>
+
+          <div className="flex items-center gap-2 justify-end">
+            <div className="text-sm text-white font-medium line-clamp-1">{teamB?.shortName || 'Team B'}</div>
+            <div className="h-10 w-10 rounded bg-dark-lighter flex items-center justify-center text-sm overflow-hidden">
+              {teamB?.imageUrl || teamB?.logoUrl ? (
+                <img src={(teamB.imageUrl || teamB.logoUrl).toString()} alt={teamB.name} className="h-10 w-10 object-cover" onError={(e)=>{(e.currentTarget as HTMLImageElement).style.display='none'}} />
+              ) : (
+                <span className="text-sm">{(teamB?.abbreviation || teamB?.shortName || teamB?.name || 'B')[0]}</span>
+              )}
+            </div>
+          </div>
+        </div>
+
+          <div className="text-xs text-gray-text text-center">{sportName}</div>
+        <div className="flex items-center justify-between mt-1">
+          {/* <div className="text-xs text-gray-text">{sportName}</div> */}
+          <div className="text-xs text-gray-text">{teamsStr}</div>
+          <div className="text-xs text-white font-semibold">{Math.round(probA)}% / {Math.round(probB)}%</div>
+        </div>
       </div>
     </button>
   );
 };
 
+
 // Horizontal strip of thumbnails
-const EventThumbnailStrip = ({ events, onSelect, selectedId }: { events: any[]; onSelect: (id: string) => void; selectedId?: string | null }) => {
+const EventThumbnailStrip = ({
+  events,
+  onSelect,
+  selectedId,
+}: {
+  events: any[];
+  onSelect: (id: string) => void;
+  selectedId?: string | null;
+}) => {
   const scrollContainerRef = React.useRef<HTMLDivElement>(null);
   const [canScrollLeft, setCanScrollLeft] = React.useState(false);
   const [canScrollRight, setCanScrollRight] = React.useState(true);
@@ -439,71 +461,115 @@ const EventThumbnailStrip = ({ events, onSelect, selectedId }: { events: any[]; 
     if (scrollContainerRef.current) {
       setCanScrollLeft(scrollContainerRef.current.scrollLeft > 0);
       setCanScrollRight(
-        scrollContainerRef.current.scrollLeft < 
-        scrollContainerRef.current.scrollWidth - scrollContainerRef.current.clientWidth - 10
+        scrollContainerRef.current.scrollLeft <
+          scrollContainerRef.current.scrollWidth -
+            scrollContainerRef.current.clientWidth -
+            10
       );
     }
   };
 
-  const scroll = (direction: 'left' | 'right') => {
-    if (scrollContainerRef.current) {
-      const scrollAmount = 400;
-      if (direction === 'left') {
-        scrollContainerRef.current.scrollBy({ left: -scrollAmount, behavior: 'smooth' });
-      } else {
-        scrollContainerRef.current.scrollBy({ left: scrollAmount, behavior: 'smooth' });
-      }
-      setTimeout(checkScroll, 300);
-    }
+  const scroll = (direction: "left" | "right") => {
+    if (!scrollContainerRef.current) return;
+
+    const scrollAmount = 400;
+    scrollContainerRef.current.scrollBy({
+      left: direction === "left" ? -scrollAmount : scrollAmount,
+      behavior: "smooth",
+    });
+
+    setTimeout(checkScroll, 300);
   };
 
   React.useEffect(() => {
     checkScroll();
     const container = scrollContainerRef.current;
-    if (container) {
-      container.addEventListener('scroll', checkScroll);
-      return () => container.removeEventListener('scroll', checkScroll);
-    }
+    if (!container) return;
+
+    container.addEventListener("scroll", checkScroll);
+    return () => container.removeEventListener("scroll", checkScroll);
   }, []);
 
   if (!events || events.length === 0) return null;
 
   return (
-    <div className="relative group">
-      {/* Left Arrow */}
+    <div className="relative group h-full">
+      {/* LEFT ARROW */}
       {canScrollLeft && (
         <button
-          onClick={() => scroll('left')}
-          className="absolute left-0 top-1/2 -translate-y-1/2 z-20 bg-dark-card/90 hover:bg-dark-card border border-white/20 hover:border-primary rounded-full p-2 transition-all"
+          onClick={() => scroll("left")}
+          className="
+            absolute left-0 top-0 h-full z-20
+            bg-dark-card/90 hover:bg-dark-card
+            border border-white/20 hover:border-primary
+            rounded-r-lg px-3
+            transition-all flex items-center
+          "
         >
-          <svg className="w-5 h-5 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+          <svg
+            className="w-8 h-8 text-primary"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+          >
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth={2}
+              d="M15 19l-7-7 7-7"
+            />
           </svg>
         </button>
       )}
 
-      {/* Right Arrow */}
+      {/* RIGHT ARROW */}
       {canScrollRight && (
         <button
-          onClick={() => scroll('right')}
-          className="absolute right-0 top-1/2 -translate-y-1/2 z-20 bg-dark-card/90 hover:bg-dark-card border border-white/20 hover:border-primary rounded-full p-2 transition-all"
+          onClick={() => scroll("right")}
+          className="
+            absolute right-0 top-0 h-full z-20
+            bg-dark-card/90 hover:bg-dark-card
+            border border-white/20 hover:border-primary
+            rounded-l-lg px-3
+            transition-all flex items-center
+          "
         >
-          <svg className="w-5 h-5 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+          <svg
+            className="w-8 h-8 text-primary"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+          >
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth={2}
+              d="M9 5l7 7-7 7"
+            />
           </svg>
         </button>
       )}
 
-      <div className="overflow-x-auto -mx-4 sm:-mx-6 lg:-mx-8 py-4 px-4 sm:px-6 lg:px-8" ref={scrollContainerRef}>
-        <div className="max-w-[1400px] mx-auto flex gap-3">
+      {/* SCROLL CONTAINER */}
+      <div
+        ref={scrollContainerRef}
+        className="overflow-x-auto py-4 scrollbar-hide"
+      >
+        <div className="flex gap-2">
           {events.slice(0, 20).map((ev, idx) => (
-            <EventThumbnail key={String(ev.id ?? ev.eventId ?? idx)} event={ev} onSelect={onSelect} selectedId={selectedId} />
+            <EventThumbnail
+              key={String(ev.id ?? ev.eventId ?? idx)}
+              event={ev}
+              onSelect={onSelect}
+              selectedId={selectedId}
+            />
           ))}
         </div>
       </div>
     </div>
   );
 };
+
 
 // Event Card Component
 const EventCard = ({ 

@@ -59,12 +59,18 @@ export type UserPrediction = {
 // --- /prediction/v1/add ---
 export type AddPredictionPayload = {
   userId: string;
-  questionId: string;
   eventId: string;
+  questionId: string;
   selectedOutcomeId: string;
-  stakeAmount?: number;
+
+  // 🔴 REQUIRED BY PROTO
+  percentage: string;
+  invested_amount: string;
+  prediction_cost: string;
+
   meta?: Record<string, any>;
 };
+
 
 // --- /prediction/v1/get ---
 export type GetUserPredictionsPayload = {

@@ -49,13 +49,17 @@ export type GetEventPayload = {
 };
 
 export type ListEventsPayload = {
-  pageRequest?: PageRequest;
   filter?: {
-    eventType?: string;
-    fromDate?: string;
-    toDate?: string;
+    status?: string[];
+    category?: string;
+    eventHierarchy?: string;
+  };
+  pageRequest?: {
+    pageNumber?: number;
+    pageSize?: number;
   };
 };
+
 
 export type SearchQuestionPayload = {
   searchText: string; // wildcard search
@@ -84,10 +88,11 @@ export type GetEventResponse = {
 };
 
 export type ListEventsResponse = {
-  status?: ApiStatus;
-  eventCount?: number;
-  events?: EventInfo[];
+  events: any[];
+  status?: { type: string };
+  totalCount?: number;
 };
+
 
 export type SearchQuestionResponse = {
   status?: ApiStatus;

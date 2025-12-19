@@ -1,8 +1,14 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { LineChart, Line, XAxis, YAxis, ResponsiveContainer, Tooltip, BarChart, Bar, PieChart, Pie, Cell } from 'recharts';
 import { PageHeader } from '../components/PageHeader';
 
 const Portfolio: React.FC = () => {
+  const [profile, setProfile] = useState({
+    name: 'John Doe',
+    email: 'john.doe@example.com',
+    phone: '+1 (555) 123-4567',
+  });
+
   const chartData = [
     { name: 'Jan', value: 4000 },
     { name: 'Feb', value: 3000 },
@@ -55,33 +61,75 @@ const Portfolio: React.FC = () => {
           <div className="flex flex-col lg:flex-row gap-8">
             {/* Main Content Area */}
             <div className="flex-1 lg:flex-[3] space-y-8">
-              {/* Header and Value Cards */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-                <div className="relative bg-dark-card border border-white/5 rounded-2xl p-6 hover:border-white/10 transition-all duration-300 overflow-hidden">
+              {/* Profile Section */}
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                {/* Profile Section */}
+                <div className="relative bg-dark-card border border-white/5 rounded-2xl p-8 hover:border-white/10 transition-all duration-300 overflow-hidden">
                   <div className="absolute top-0 right-0 w-32 h-32 bg-[#00ff73]/30 rounded-full -mr-16 -mt-16 pointer-events-none blur-lg"></div>
                   <div className="relative z-10">
-                    <h2 className="text-sm font-medium text-gray-text mb-3">Total Portfolio Value</h2>
-                    <p className="text-4xl font-bold text-white mb-2">$12,450.37</p>
-                    <span className="text-primary font-semibold flex items-center gap-1">
-                    <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
-                      <path fillRule="evenodd" d="M12 17a1 1 0 01-1.447.894l-4-2A1 1 0 0115 15.382V5.618a1 1 0 00-1.447-.894l-4 2A1 1 0 009 7.618v9.764z" clipRule="evenodd" />
-                    </svg>
-                    $412 Today
-                  </span>
+                    <h2 className="text-2xl font-bold text-white mb-6">Profile</h2>
+                    <div className="space-y-4">
+                      <div>
+                        <label className="block text-sm font-medium text-primary mb-2">Name</label>
+                        <input
+                          type="text"
+                          value={profile.name}
+                          onChange={(e) => setProfile({ ...profile, name: e.target.value })}
+                          className="w-full bg-dark-bg border border-white/5 rounded-lg px-4 py-2.5 text-white focus:outline-none focus:border-white/10 focus:ring-1 focus:ring-white/10 transition-all"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium text-primary mb-2">Email</label>
+                        <input
+                          type="email"
+                          value={profile.email}
+                          onChange={(e) => setProfile({ ...profile, email: e.target.value })}
+                          className="w-full bg-dark-bg border border-white/5 rounded-lg px-4 py-2.5 text-white focus:outline-none focus:border-white/10 focus:ring-1 focus:ring-white/10 transition-all"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium text-primary mb-2">Phone Number</label>
+                        <input
+                          type="tel"
+                          value={profile.phone}
+                          onChange={(e) => setProfile({ ...profile, phone: e.target.value })}
+                          className="w-full bg-dark-bg border border-white/5 rounded-lg px-4 py-2.5 text-white focus:outline-none focus:border-white/10 focus:ring-1 focus:ring-white/10 transition-all"
+                        />
+                      </div>
+                    </div>
                   </div>
                 </div>
-                
-                <div className="relative bg-dark-card border border-white/5 rounded-2xl p-6 hover:border-white/10 transition-all duration-300 overflow-hidden">
-                  <div className="absolute top-0 right-0 w-32 h-32 bg-[#00ff73]/30 rounded-full -mr-16 -mt-16 pointer-events-none blur-lg"></div>
-                  <div className="relative z-10">
-                    <h2 className="text-sm font-medium text-gray-text mb-3">Available Balance</h2>
-                    <p className="text-4xl font-bold text-white mb-2">$11,300.00</p>
-                    <span className="text-primary font-semibold flex items-center gap-1">
-                    <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
-                      <path fillRule="evenodd" d="M12 17a1 1 0 01-1.447.894l-4-2A1 1 0 0115 15.382V5.618a1 1 0 00-1.447-.894l-4 2A1 1 0 009 7.618v9.764z" clipRule="evenodd" />
-                    </svg>
-                    $8,590
-                  </span>
+
+                {/* Value Cards Column */}
+                <div className="space-y-6">
+                  {/* Total Portfolio Value Card */}
+                  <div className="relative bg-dark-card border border-white/5 rounded-2xl p-6 hover:border-white/10 transition-all duration-300 overflow-hidden">
+                    <div className="absolute top-0 right-0 w-32 h-32 bg-[#00ff73]/30 rounded-full -mr-16 -mt-16 pointer-events-none blur-lg"></div>
+                    <div className="relative z-10">
+                      <h2 className="text-sm font-medium text-gray-text mb-3">Total Portfolio Value</h2>
+                      <p className="text-4xl font-bold text-white mb-2">$12,450.37</p>
+                      <span className="text-primary font-semibold flex items-center gap-1">
+                        <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                          <path fillRule="evenodd" d="M12 17a1 1 0 01-1.447.894l-4-2A1 1 0 0115 15.382V5.618a1 1 0 00-1.447-.894l-4 2A1 1 0 009 7.618v9.764z" clipRule="evenodd" />
+                        </svg>
+                        $412 Today
+                      </span>
+                    </div>
+                  </div>
+
+                  {/* Available Balance Card */}
+                  <div className="relative bg-dark-card border border-white/5 rounded-2xl p-6 hover:border-white/10 transition-all duration-300 overflow-hidden">
+                    <div className="absolute top-0 right-0 w-32 h-32 bg-[#00ff73]/30 rounded-full -mr-16 -mt-16 pointer-events-none blur-lg"></div>
+                    <div className="relative z-10">
+                      <h2 className="text-sm font-medium text-gray-text mb-3">Available Balance</h2>
+                      <p className="text-4xl font-bold text-white mb-2">$11,300.00</p>
+                      <span className="text-primary font-semibold flex items-center gap-1">
+                        <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                          <path fillRule="evenodd" d="M12 17a1 1 0 01-1.447.894l-4-2A1 1 0 0115 15.382V5.618a1 1 0 00-1.447-.894l-4 2A1 1 0 009 7.618v9.764z" clipRule="evenodd" />
+                        </svg>
+                        $8,590
+                      </span>
+                    </div>
                   </div>
                 </div>
               </div>
@@ -109,6 +157,36 @@ const Portfolio: React.FC = () => {
                     <Line type="monotone" dataKey="value" stroke="#00FF73" strokeWidth={3} dot={false} fill="url(#colorValue)" />
                   </LineChart>
                 </ResponsiveContainer>
+                </div>
+              </div>
+   {/* P&L Sections */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+                <div className="relative bg-dark-card border border-white/5 rounded-2xl p-8 hover:border-white/10 transition-all duration-300 overflow-hidden">
+                  <div className="absolute top-0 right-0 w-32 h-32 bg-[#00ff73]/30 rounded-full -mr-16 -mt-16 pointer-events-none blur-lg"></div>
+                  <div className="relative z-10">
+                    <h2 className="text-2xl font-bold text-white mb-2">Unrealized P&L</h2>
+                    <p className="text-gray-text text-sm mb-4">Current open positions</p>
+                    <p className="text-4xl font-bold text-primary mb-6">+$1,320.00</p>
+                  <ResponsiveContainer width="100%" height={60}>
+                    <BarChart data={unrealizedPnlData}>
+                      <Bar dataKey="value" fill="#00FF73" radius={[4, 4, 0, 0]} />
+                    </BarChart>
+                  </ResponsiveContainer>
+                  </div>
+                </div>
+
+                <div className="relative bg-dark-card border border-white/5 rounded-2xl p-8 hover:border-white/10 transition-all duration-300 overflow-hidden">
+                  <div className="absolute top-0 right-0 w-32 h-32 bg-[#00ff73]/30 rounded-full -mr-16 -mt-16 pointer-events-none blur-lg"></div>
+                  <div className="relative z-10">
+                    <h2 className="text-2xl font-bold text-white mb-2">Realized P&L</h2>
+                    <p className="text-gray-text text-sm mb-4">Closed positions</p>
+                    <p className="text-4xl font-bold text-primary mb-6">+$2,640.70</p>
+                  <ResponsiveContainer width="100%" height={60}>
+                    <BarChart data={realizedPnlData}>
+                      <Bar dataKey="value" fill="#00FF73" radius={[4, 4, 0, 0]} />
+                    </BarChart>
+                  </ResponsiveContainer>
+                  </div>
                 </div>
               </div>
 
@@ -152,37 +230,7 @@ const Portfolio: React.FC = () => {
                 </div>
               </div>
 
-              {/* P&L Sections */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-                <div className="relative bg-dark-card border border-white/5 rounded-2xl p-8 hover:border-white/10 transition-all duration-300 overflow-hidden">
-                  <div className="absolute top-0 right-0 w-32 h-32 bg-[#00ff73]/30 rounded-full -mr-16 -mt-16 pointer-events-none blur-lg"></div>
-                  <div className="relative z-10">
-                    <h2 className="text-2xl font-bold text-white mb-2">Unrealized P&L</h2>
-                    <p className="text-gray-text text-sm mb-4">Current open positions</p>
-                    <p className="text-4xl font-bold text-primary mb-6">+$1,320.00</p>
-                  <ResponsiveContainer width="100%" height={60}>
-                    <BarChart data={unrealizedPnlData}>
-                      <Bar dataKey="value" fill="#00FF73" radius={[4, 4, 0, 0]} />
-                    </BarChart>
-                  </ResponsiveContainer>
-                  </div>
-                </div>
-
-                <div className="relative bg-dark-card border border-white/5 rounded-2xl p-8 hover:border-white/10 transition-all duration-300 overflow-hidden">
-                  <div className="absolute top-0 right-0 w-32 h-32 bg-[#00ff73]/30 rounded-full -mr-16 -mt-16 pointer-events-none blur-lg"></div>
-                  <div className="relative z-10">
-                    <h2 className="text-2xl font-bold text-white mb-2">Realized P&L</h2>
-                    <p className="text-gray-text text-sm mb-4">Closed positions</p>
-                    <p className="text-4xl font-bold text-primary mb-6">+$2,640.70</p>
-                  <ResponsiveContainer width="100%" height={60}>
-                    <BarChart data={realizedPnlData}>
-                      <Bar dataKey="value" fill="#00FF73" radius={[4, 4, 0, 0]} />
-                    </BarChart>
-                  </ResponsiveContainer>
-                  </div>
-                </div>
-              </div>
-
+           
               {/* Activity Section */}
               <div className="relative bg-dark-card border border-white/5 rounded-2xl p-8 hover:border-white/10 transition-all duration-300 overflow-hidden">
                 <div className="absolute top-0 right-0 w-32 h-32 bg-[#00ff73]/30 rounded-full -mr-16 -mt-16 pointer-events-none blur-lg"></div>

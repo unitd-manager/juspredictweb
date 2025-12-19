@@ -665,7 +665,7 @@ export const UpcomingEvents = () => {
 
         <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
           {filteredEvents.map((event) => (
-            <div key={event.id} className="bg-dark-card border border-white/5 rounded-xl p-4 hover:border-primary/30 transition-all duration-300 group relative overflow-hidden flex flex-col justify-between h-full">
+            <div key={event.id} className="bg-[#0D0D10] border border-white/5 rounded-xl p-4 hover:border-primary/30 transition-all duration-300 group relative overflow-hidden flex flex-col justify-between h-full">
               {/* Top row: sport badge + timer badge + status indicator */}
               <div className="flex justify-between items-start mb-2">
                 {/* Left item */}
@@ -691,7 +691,7 @@ export const UpcomingEvents = () => {
                   <div className="text-gray-300">38%</div>
                 </div>
               </div>
-
+<div className="text-gray-300 text-xs">$100 → $150</div>
               
 
               {/* Middle block: use whitespace for extra info */}
@@ -701,7 +701,7 @@ export const UpcomingEvents = () => {
                 <div className="flex items-center gap-1"><Calendar size={12} className="text-[#FEDE39]" /><span>{event.date}</span></div>
                 {/* <div className="flex items-center gap-1"><Clock size={12} className={`${event.status === 'live' ? 'text-red-500' : 'text-primary'}`} /><span>{event.timer}</span></div> */}
                 {/* <div className="flex items-center gap-1 col-span-2"><MapPin size={12} className="text-[#FEDE39]" /><span>{event.venue}</span></div> */}
-                <Button onClick={() => openModal(event)} size="sm" className={`${event.status === 'live' ? 'bg-red-600 hover:bg-red-700' : 'bg-primary hover:bg-primary/90'} text-black border-transparent font-bold px-3`}>Predict</Button>
+<Button onClick={() => openModal(event)} size="sm" className={`${event.status === 'live' ? 'bg-red-600 hover:bg-red-700' : 'bg-primary hover:bg-primary/90'} text-black border-transparent font-bold px-3 shadow-none`}>Predict</Button>
               </div>
 
               {/* Bottom row: date row with predict button on the right */}

@@ -45,7 +45,7 @@ function App() {
               {allowedHosts.includes(hostname) && (
               <>
                 <Route
-                  path="/clanlist"
+                  path="/clan"
                   element={<Suspense fallback={null}><ClanList /></Suspense>}
                 />
                 <Route
@@ -53,25 +53,25 @@ function App() {
                   element={<Suspense fallback={null}><ClanDetailDyn /></Suspense>}
                 />
                 <Route
-                  path="/sportsDyn"
+                  path="/sports"
                   element={<Suspense fallback={null}><SportsDyn /></Suspense>}
                   />
               </>
             )}
             
             <Route path="/" element={<Home />} />
-            <Route path="/portfolio" element={<Portfolio />} />
-            <Route path="/portfoliodyn" element={<PortfolioDyn />} />
-            <Route path="/clan" element={<Clan />} />
+            <Route path="/portfoliodyn" element={<Portfolio />} />
+            <Route path="/portfolio" element={<PortfolioDyn />} />
+            <Route path="/clanlist" element={<Clan />} />
             <Route path="/clan/:clanId" element={<ClanDetail onBack={function (): void {
               throw new Error('Function not implemented.');
             } } />} />
-            <Route path="/sports" element={<Sports selectedSport={selectedSport} />} />
+            <Route path="/sportsDyn" element={<Sports selectedSport={selectedSport} />} />
             <Route path="/about" element={<About />} />
             <Route path="/faq" element={<Faq />} />
             <Route path="/contact" element={<Contact />} />
-            <Route path="/transactions" element={<Transactions />} />
-            <Route path="/transactionsdyn" element={<TransactionsDyn />} />
+            <Route path="/transactionsdyn" element={<Transactions />} />
+            <Route path="/transactions" element={<TransactionsDyn />} />
             <Route path="/order-details/:orderId" element={<OrderDetails />} />
             <Route path="/login" element={<Login />} />
             <Route path="/signup" element={<Signup />} />

@@ -6,6 +6,7 @@ import { useEffect, useState } from "react";
 import { useHostname } from "../lib/useHostname";
 import { api } from "../api/api";
 import { toast } from "./../components/ui/sonner";
+import NotificationDropDown from "./NotificationDropDown";
 
 interface Notification {
   notificationId: string;
@@ -210,25 +211,14 @@ const Navbar = () => {
                       </span>
                     )}
                   </Button>
-                  {showNotifications && (
-                    <div className="absolute right-0 mt-2 w-80 bg-background border border-border rounded-md shadow-lg z-10 max-h-60 overflow-y-auto">
-                      <div className="p-4 border-b border-border">
-                        <h5 className="text-sm font-medium">Notifications</h5>
-                      </div>
-                      {
-                        notifications.length > 0 ? (
-                          notifications.map(notification => (
-                            <div key={notification.notificationId} className="p-4 border-b border-border flex justify-between items-center">
-                              <p className="text-sm">{notification.notificationMessage}</p>
-                              <Button variant="ghost" size="sm" onClick={() => markAsRead(notification.notificationId)}>Mark as Read</Button>
-                            </div>
-                          ))
-                        ) : (
-                          <p className="p-4 text-sm text-muted-foreground">No new notifications.</p>
-                        )
-                      }
-                    </div>
-                  )}
+                {showNotifications && (
+  <NotificationDropDown
+    notifications={notifications}
+    onMarkAsRead={markAsRead}
+    onClose={() => setShowNotifications(false)}
+  />
+)}
+
                 </div>
                 <Button variant="ghost" className="hidden sm:inline-flex" onClick={onLogout}>
                   Logout
