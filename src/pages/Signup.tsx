@@ -334,58 +334,107 @@ export const Signup = () => {
                   </div>
 
                   {/* Date of Birth */}
-                  <div>
-                    <Label>Date of Birth</Label>
-                    <div className="grid grid-cols-3 gap-2">
-                      <select
-                        className="flex h-10 rounded-md border border-input bg-black px-3 py-2 text-base ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
-                        value={dateOfBirth.day}
-                        onChange={(e) =>
-                          setDateOfBirth({ ...dateOfBirth, day: parseInt(e.target.value) })
-                        }
-                        required
-                      >
-                        {days.map((day) => (
-                          <option key={day} value={day}>
-                            {day}
-                          </option>
-                        ))}
-                      </select>
+                  {/* Date of Birth */}
+<div>
+  <Label>Date of Birth</Label>
 
-                      <select
-                        className="flex h-10 rounded-md border border-input bg-black px-3 py-2 text-base ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
-                        value={dateOfBirth.month}
-                        onChange={(e) =>
-                          setDateOfBirth({ ...dateOfBirth, month: parseInt(e.target.value) })
-                        }
-                        required
-                      >
-                        {months.map((month, idx) => (
-                          <option key={month} value={idx + 1}>
-                            {month}
-                          </option>
-                        ))}
-                      </select>
+  <div className="grid grid-cols-3 gap-2">
+    {/* DAY */}
+    <select
+      value={dateOfBirth.day}
+      onChange={(e) =>
+        setDateOfBirth({ ...dateOfBirth, day: Number(e.target.value) })
+      }
+      required
+      className="
+        h-10 w-full rounded-md
+        border border-[#2A3942]
+        bg-[#1F2C34] text-[#E9EDF1]
+        px-3 py-2 text-sm
+        focus:outline-none
+        focus:ring-2 focus:ring-[#25D366]
+      "
+    >
+      <option value="" disabled className="bg-[#1F2C34] text-[#AEBAC1]">
+        Day
+      </option>
+      {days.map((day) => (
+        <option
+          key={day}
+          value={day}
+          className="bg-[#1F2C34] text-[#E9EDF1]"
+        >
+          {day}
+        </option>
+      ))}
+    </select>
 
-                      <select
-                        className="flex h-10 rounded-md border border-input bg-black px-3 py-2 text-base ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
-                        value={dateOfBirth.year}
-                        onChange={(e) =>
-                          setDateOfBirth({ ...dateOfBirth, year: parseInt(e.target.value) })
-                        }
-                        required
-                      >
-                        {years.map((year) => (
-                          <option key={year} value={year}>
-                            {year}
-                          </option>
-                        ))}
-                      </select>
-                    </div>
-                    <p className="text-xs text-muted-foreground mt-1">
-                      Must be at least 13 years old
-                    </p>
-                  </div>
+    {/* MONTH */}
+    <select
+      value={dateOfBirth.month}
+      onChange={(e) =>
+        setDateOfBirth({ ...dateOfBirth, month: Number(e.target.value) })
+      }
+      required
+      className="
+        h-10 w-full rounded-md
+        border border-[#2A3942]
+        bg-[#1F2C34] text-[#E9EDF1]
+        px-3 py-2 text-sm
+        focus:outline-none
+        focus:ring-2 focus:ring-[#25D366]
+      "
+    >
+      <option value="" disabled className="bg-[#1F2C34] text-[#AEBAC1]">
+        Month
+      </option>
+      {months.map((month, idx) => (
+        <option
+          key={month}
+          value={idx + 1}
+          className="bg-[#1F2C34] text-[#E9EDF1]"
+        >
+          {month}
+        </option>
+      ))}
+    </select>
+
+    {/* YEAR */}
+    <select
+      value={dateOfBirth.year}
+      onChange={(e) =>
+        setDateOfBirth({ ...dateOfBirth, year: Number(e.target.value) })
+      }
+      required
+      className="
+        h-10 w-full rounded-md
+        border border-[#2A3942]
+        bg-[#1F2C34] text-[#E9EDF1]
+        px-3 py-2 text-sm
+        focus:outline-none
+        focus:ring-2 focus:ring-[#25D366]
+      "
+    >
+      <option value="" disabled className="bg-[#1F2C34] text-[#AEBAC1]">
+        Year
+      </option>
+      {years.map((year) => (
+        <option
+          key={year}
+          value={year}
+          className="bg-[#1F2C34] text-[#E9EDF1]"
+        >
+          {year}
+        </option>
+      ))}
+    </select>
+  </div>
+
+  <p className="text-xs text-[#AEBAC1] mt-1">
+    Must be at least 13 years old
+  </p>
+</div>
+
 
                   {/* Password */}
                   <div>

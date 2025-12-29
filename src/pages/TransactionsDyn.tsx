@@ -221,8 +221,8 @@ const userId = getUserIdFromToken();
                     <tr>
                       <th className="px-4 py-2 text-left text-xs text-gray-text uppercase">Date</th>
                       <th className="px-4 py-2 text-left text-xs text-gray-text uppercase">Description</th>
-                      <th className="px-4 py-2 text-left text-xs text-gray-text uppercase">Type</th>
-                      <th className="px-4 py-2 text-left text-xs text-gray-text uppercase">Subtype</th>
+                      <th className="px-4 py-2 text-left text-xs text-gray-text uppercase">Category</th>
+                      <th className="px-4 py-2 text-left text-xs text-gray-text uppercase">Activity</th>
                       <th className="px-4 py-2 text-right text-xs text-gray-text uppercase">Amount</th>
                     </tr>
                   </thead>

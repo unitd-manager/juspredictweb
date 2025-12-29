@@ -1,6 +1,6 @@
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import { useState, lazy, Suspense } from 'react';
-import { useHostname } from './lib/useHostname';
+//import { useHostname } from './lib/useHostname';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import Navbar from './components/Navbar';
 import { Home } from './pages/Home';
@@ -28,11 +28,11 @@ import TransactionsDyn from './pages/TransactionsDyn';
 
 function App() {
   const [ selectedSport ] = useState<string | undefined>();
-  const hostname = useHostname();
-  const allowedHosts = [
-    'localhost',
-    '127.0.0.1',
-  ];
+  // const hostname = useHostname();
+  // const allowedHosts = [
+  //   'localhost',
+  //   '127.0.0.1',
+  // ];
   const queryClient = new QueryClient();
 
   return (
@@ -42,9 +42,20 @@ function App() {
         <Navbar />
         <main>
           <Routes>
-              {allowedHosts.includes(hostname) && (
+              {/* {allowedHosts.includes(hostname) && (
               <>
-                <Route
+                
+              </>
+            )} */}
+            
+            <Route path="/" element={<Home />} />
+            <Route path="/portfoliodyn" element={<Portfolio />} />
+            <Route path="/portfolio" element={<PortfolioDyn />} />
+            <Route path="/clanlist" element={<Clan />} />
+            <Route path="/clan/:clanId" element={<ClanDetail onBack={function (): void {
+              throw new Error('Function not implemented.');
+            } } />} />
+            <Route
                   path="/clan"
                   element={<Suspense fallback={null}><ClanList /></Suspense>}
                 />
@@ -56,16 +67,6 @@ function App() {
                   path="/sports"
                   element={<Suspense fallback={null}><SportsDyn /></Suspense>}
                   />
-              </>
-            )}
-            
-            <Route path="/" element={<Home />} />
-            <Route path="/portfoliodyn" element={<Portfolio />} />
-            <Route path="/portfolio" element={<PortfolioDyn />} />
-            <Route path="/clanlist" element={<Clan />} />
-            <Route path="/clan/:clanId" element={<ClanDetail onBack={function (): void {
-              throw new Error('Function not implemented.');
-            } } />} />
             <Route path="/sportsDyn" element={<Sports selectedSport={selectedSport} />} />
             <Route path="/about" element={<About />} />
             <Route path="/faq" element={<Faq />} />

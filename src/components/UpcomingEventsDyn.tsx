@@ -1,6 +1,8 @@
 "use client"
 
 import { Calendar, CheckCircle } from "lucide-react"
+import { FaFootballBall } from "react-icons/fa";
+import { GiBaseballBat, GiBasketballBall, GiCricketBat, GiHockey, GiTennisBall } from "react-icons/gi";
 import { Button } from "./ui/Button"
 import { useEffect, useState } from "react"
 import { api } from "../api/api"
@@ -407,7 +409,7 @@ export const UpcomingEventsDyn = () => {
       await Promise.all(
         events.map(async (event) => {
           try {
-            const res = await api.post<any>("/event/v1/getevent", {
+            const res = await api.post<any>("/event/v1/getquestions", {
               eventId: event.id,
               getEventQuestions: true,
               questionsPageInfo: { pageNumber: 1, pageSize: 1 },
@@ -483,14 +485,22 @@ export const UpcomingEventsDyn = () => {
             return (
               <div
                 key={event.id}
-                className="bg-[#0D0D10] border border-white/5 rounded-xl p-4
+                className="bg-[#1F2C34] border border-white/5 rounded-xl p-4
                   hover:border-primary/30 transition-all duration-300
                   group relative overflow-hidden flex flex-col justify-between"
               >
                 {/* Header */}
                 <div className="flex justify-between mb-2">
-                  <span className="px-2 py-1 rounded-md bg-gray-500 text-white text-[10px] font-medium border border-gray-400">
-                    {event.sport}
+                  {/* Sport icon instead of text */}
+                  <span className="px-2 py-1 rounded-md bg-gray-500 text-white text-[10px] font-medium border border-gray-400 flex items-center gap-1">
+                    {event.sport === "CRICKET" && <GiCricketBat />}
+                    {event.sport === "FOOTBALL" && <FaFootballBall />}
+                    {event.sport === "TENNIS" && <GiTennisBall />}
+                    {event.sport === "BASKETBALL" && <GiBasketballBall />}
+                    {event.sport === "BASEBALL" && <GiBaseballBat />}
+                    {event.sport === "HOCKEY" && <GiHockey />}
+                    {/* fallback text if no icon mapped */}
+                    {!["CRICKET","FOOTBALL","TENNIS","BASKETBALL","BASEBALL","HOCKEY"].includes(event.sport) && event.sport}
                   </span>
 
                   <span
@@ -507,7 +517,10 @@ export const UpcomingEventsDyn = () => {
 
                 {/* Title */}
                 <p
-                  className={`text-sm font-semibold mb-1 transition-colors
+                  className={`.bg-\[\#0D0D10\] {
+    --tw-bg-opacity: .1;
+    background-color: rgb(255 255 255 / var(--tw-bg-opacity, .1));
+}
                     ${
                       event.status === "live"
                         ? "text-red-400 group-hover:text-red-300"
@@ -519,7 +532,7 @@ export const UpcomingEventsDyn = () => {
 
                 {/* Question */}
                 <p className="text-sm text-gray-300 mb-3 leading-tight font-medium h-10 flex items-center">
-                  {q?.questionText ?? "Loading market..."}
+                  {q?.questionText ?? "Loading ..."}
                 </p>
 
                 {/* Options */}
@@ -550,15 +563,24 @@ export const UpcomingEventsDyn = () => {
 
                   <Button
                     size="sm"
-                    className="bg-green-500 text-black"
-                    onClick={() =>
+                    className=".bg-\[\#0D0D10\] {
+    --tw-bg-opacity: .1;
+    background-color: rgb(255 255 255 / var(--tw-bg-opacity, .1));
+}"
+                    onClick={() => {
+                      const token = localStorage.getItem("auth_token");
+                      if (!token) {
+                        alert("Please login to make predictions");
+                        window.location.href = "/login";
+                        return;
+                      }
                       setSelectedMatch({
                         ...event,
                         question: q?.questionText!,
                         questionId: q?.questionId!,
                         options: q?.options!,
-                      })
-                    }
+                      });
+                    }}
                   >
                     Predict
                   </Button>

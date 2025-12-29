@@ -86,7 +86,7 @@ const mapPerformance = (api: any) => {
 function getUserIdFromToken(): string | null {
   if (typeof window === "undefined") return null;
 
-  const token = localStorage.getItem("token");
+  const token = localStorage.getItem("auth_token");
   if (!token) return null;
 
   try {

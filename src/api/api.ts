@@ -1,6 +1,6 @@
 const API_BASE =
   (import.meta.env.VITE_API_BASE_URL as string) ??
-  (import.meta.env.DEV ? "/api" : "https://api.predictyourgame.com");
+  (import.meta.env.DEV ? "/api" : "https://test-api.predictyourgame.com/swagger-ui/");
 
 type JsonBody = Record<string, unknown> | Array<unknown> | undefined;
 

@@ -21,6 +21,7 @@ import { api } from "../api/api";
 
 import { GoogleLogin } from "@react-oauth/google";
 import { jwtDecode } from "jwt-decode";
+import AppleSignInButton from "react-apple-signin-auth";
 
 /* -------------------------------------------------------------------
    TYPES
@@ -208,90 +209,159 @@ console.log(claims);
      UI
   --------------------------------------------- */
   return (
-    <div className="min-h-screen flex items-center justify-center bg-background">
+    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-background via-background to-muted/30">
       <div className="w-full max-w-md px-4 sm:px-6 lg:px-8 py-10">
-          <Card className="embossed">
-            <CardHeader>
-              <CardTitle>Login</CardTitle>
-              <CardDescription>Access your JusPredict account</CardDescription>
-            </CardHeader>
+        <Card className="border border-border/40 shadow-2xl shadow-primary/10 rounded-2xl bg-card/90 backdrop-blur-sm">
+          <CardHeader className="text-center pb-6">
+            <CardTitle className="text-3xl font-extrabold tracking-tight bg-gradient-to-r from-primary to-primary/70 bg-clip-text text-transparent">
+              Welcome Back
+            </CardTitle>
+            <CardDescription className="text-base text-muted-foreground mt-2">
+              Sign in to continue to JusPredict
+            </CardDescription>
+          </CardHeader>
 
-            <form onSubmit={onSubmit}>
-              <CardContent className="space-y-4">
-                <Tabs value={mode} onValueChange={(v: string) => setMode(v as "email" | "social")}>
-                  <TabsList>
-                    <TabsTrigger value="email">Email Login</TabsTrigger>
-                    <TabsTrigger value="social">Google Login</TabsTrigger>
-                  </TabsList>
+          <form onSubmit={onSubmit}>
+            <CardContent className="space-y-5">
+              <Tabs
+                value={mode}
+                onValueChange={(v: string) => setMode(v as "email" | "social")}
+              >
+                <TabsList className="grid w-full grid-cols-2 rounded-xl bg-muted/50 p-1">
+                  <TabsTrigger
+                    value="email"
+                    className="rounded-lg text-sm font-semibold transition-all data-[state=active]:bg-background data-[state=active]:text-primary data-[state=active]:shadow"
+                  >
+                    Email
+                  </TabsTrigger>
+                  <TabsTrigger
+                    value="social"
+                    className="rounded-lg text-sm font-semibold transition-all data-[state=active]:bg-background data-[state=active]:text-primary data-[state=active]:shadow"
+                  >
+                    Social
+                  </TabsTrigger>
+                </TabsList>
 
-                  {/* EMAIL LOGIN */}
-                  <TabsContent value="email" className="space-y-4">
-                    <div>
-                      <Label>Email</Label>
+                {/* EMAIL LOGIN */}
+                <TabsContent value="email" className="space-y-5 mt-6">
+                  <div className="space-y-2">
+                    <Label className="text-sm font-medium text-foreground/80">
+                      Email address
+                    </Label>
+                    <Input
+                      type="email"
+                      placeholder="you@example.com"
+                      value={email}
+                      onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+                        setEmail(e.target.value)
+                      }
+                      className="rounded-lg border-border/60 focus:border-primary focus:ring-primary/30"
+                    />
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label className="text-sm font-medium text-foreground/80">
+                      Password
+                    </Label>
+                    <div className="relative">
                       <Input
-                        type="email"
-                        placeholder="you@example.com"
-                        value={email}
-                        onChange={(e: React.ChangeEvent<HTMLInputElement>) => setEmail(e.target.value)}
+                        type={showPassword ? "text" : "password"}
+                        placeholder="••••••••"
+                        value={password}
+                        onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+                          setPassword(e.target.value)
+                        }
+                        className="rounded-lg border-border/60 focus:border-primary focus:ring-primary/30 pr-10"
                       />
+                      <button
+                        type="button"
+                        onClick={() => setShowPassword(!showPassword)}
+                        className="absolute inset-y-0 right-3 flex items-center text-muted-foreground hover:text-foreground transition-colors"
+                      >
+                        {showPassword ? (
+                          <EyeOff size={18} />
+                        ) : (
+                          <Eye size={18} />
+                        )}
+                      </button>
                     </div>
+                  </div>
+                </TabsContent>
 
-                    <div>
-                      <Label>Password</Label>
-                      <div className="relative">
-                        <Input
-                          type={showPassword ? "text" : "password"}
-                          placeholder="••••••••"
-                          value={password}
-                          onChange={(e: React.ChangeEvent<HTMLInputElement>) => setPassword(e.target.value)}
-                        />
-                        <button
-                          type="button"
-                          onClick={() => setShowPassword(!showPassword)}
-                          className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
-                        >
-                          {showPassword ? (
-                            <EyeOff size={18} />
-                          ) : (
-                            <Eye size={18} />
-                          )}
-                        </button>
-                      </div>
-                    </div>
-                  </TabsContent>
+                {/* SOCIAL LOGIN (Google + Apple) */}
+                <TabsContent value="social" className="mt-6 space-y-4">
+                  <p className="text-center text-sm text-muted-foreground">
+                    One-tap sign-in with your social account
+                  </p>
 
-                  {/* GOOGLE LOGIN */}
-                  <TabsContent value="social" className="space-y-4">
-                    <p className="text-sm text-muted-foreground">
-                      Continue with Google
-                    </p>
-
+                  {/* Google Login */}
+                  <div className="flex justify-center">
                     <GoogleLogin
                       onSuccess={(cred: { credential?: string }) =>
                         handleGoogleResponse(cred.credential as string)
                       }
                       onError={() => toast.error("Google login failed")}
+                      useOneTap
+                      theme="filled_black"
+                      size="large"
+                      text="signin_with"
+                      shape="rectangular"
                     />
-                  </TabsContent>
-                </Tabs>
-              </CardContent>
+                  </div>
 
-              <CardFooter className="flex flex-col gap-3">
-                {mode === "email" && (
-                  <Button disabled={loading} type="submit" className="w-full embossed-button">
-                    {loading ? "Logging in..." : "Login"}
-                  </Button>
-                )}
+                  {/* Apple Login */}
+                  <div className="flex justify-center">
+                    <AppleSignInButton
+                      authOptions={{
+                        clientId: "com.your.serviceid",
+                        scope: "email name",
+                        redirectURI: "https://yourdomain.com/auth/apple/callback",
+                        state: "state123",
+                        nonce: "nonce123",
+                        usePopup: true,
+                      }}
+                      uiType="dark"
+                      className="apple-btn"
+                      buttonExtraChildren="Sign in with Apple"
+                      onSuccess={(response: any) => {
+                        // TODO: implement Apple login success flow
+                        console.log("Apple login success:", response);
+                        toast.success("Apple login successful");
+                      }}
+                      onError={(error: any) => {
+                        // TODO: implement Apple login error handling
+                        console.error("Apple login error:", error);
+                        toast.error("Apple login failed");
+                      }}
+                    />
+                  </div>
+                </TabsContent>
+              </Tabs>
+            </CardContent>
 
-                <div className="text-sm text-muted-foreground text-center">
-                  Don't have an account?{" "}
-                  <a href="/signup" className="text-primary hover:underline font-semibold">
-                    Sign up here
-                  </a>
-                </div>
-              </CardFooter>
-            </form>
-          </Card>
+            <CardFooter className="flex flex-col gap-4 pt-4">
+              {mode === "email" && (
+                <Button
+                  disabled={loading}
+                  type="submit"
+                  className="w-full rounded-xl font-semibold shadow-md hover:shadow-lg transition-shadow"
+                >
+                  {loading ? "Logging in..." : "Login"}
+                </Button>
+              )}
+
+              <div className="text-sm text-muted-foreground text-center">
+                Don’t have an account?{" "}
+                <a
+                  href="/signup"
+                  className="text-primary hover:underline font-semibold"
+                >
+                  Sign up
+                </a>
+              </div>
+            </CardFooter>
+          </form>
+        </Card>
       </div>
     </div>
   );
