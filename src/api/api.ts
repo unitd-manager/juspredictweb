@@ -81,5 +81,5 @@ async function del<T>(path: string): Promise<T> {
 }
 
 export const api = { request, get, post, put, del };
-export const swaggerUrl = "https://api.predictyourgame.com/swagger-ui/";
+export const swaggerUrl = "https://test-api.predictyourgame.com/swagger-ui/";
 export const apiBase = API_BASE;

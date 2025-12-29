@@ -410,9 +410,9 @@ export const UpcomingEventsDyn = () => {
         events.map(async (event) => {
           try {
             const res = await api.post<any>("/event/v1/getquestions", {
+               category: 'EVENT_CATEGORY_SPORTS',
               eventId: event.id,
-              getEventQuestions: true,
-              questionsPageInfo: { pageNumber: 1, pageSize: 1 },
+              questionsPageInfo: { pageNumber: 1, pageSize: 50 },
             })
 
             if (res.status?.type !== "SUCCESS") return
