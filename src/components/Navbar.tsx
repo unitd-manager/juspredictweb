@@ -31,26 +31,78 @@ const Navbar = () => {
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const hostname = useHostname();
 
-  useEffect(() => {
-    const syncAuth = () => {
-      const token = localStorage.getItem("auth_token");
-      setIsLoggedIn(!!token);
+function isTokenExpired(): boolean {
+  const expiry = localStorage.getItem("token_expiry");
 
-      const userProfile = localStorage.getItem("user_profile");
-      if (userProfile) {
-        try {
-          const user = JSON.parse(userProfile);
-          const name = user.firstName || user.userName || null;
-          setUserName(name);
-        } catch (e) {
-          console.error("Failed to parse user profile from localStorage", e);
-          setUserName(null);
-        }
-      } else {
-        setUserName(null);
-      }
-    };
-    syncAuth();
+  // ✅ If expiry is missing, DO NOT force logout
+  if (!expiry) return false;
+
+  const expiryTime = Number(expiry);
+
+  // ✅ Guard against invalid values (NaN, 0)
+  if (!expiryTime || Number.isNaN(expiryTime)) return false;
+
+  return Date.now() >= expiryTime;
+}
+
+
+  useEffect(() => {
+//     const syncAuth = () => {
+//       const token = localStorage.getItem("auth_token");
+//       if (!token || isTokenExpired()) {
+//   setIsLoggedIn(false);
+//   setUserName(null);
+
+//   if (token) {
+//     localStorage.removeItem("auth_token");
+//     localStorage.removeItem("refresh_token");
+//     localStorage.removeItem("token_expiry");
+//     localStorage.removeItem("user_profile");
+
+//     toast.error("Session expired. Please sign in again.");
+//   }
+//   return;
+// }
+
+//       setIsLoggedIn(!!token);
+
+//       const userProfile = localStorage.getItem("user_profile");
+//       if (userProfile) {
+//         try {
+//           const user = JSON.parse(userProfile);
+//           const name = user.firstName || user.userName || null;
+//           setUserName(name);
+//         } catch (e) {
+//           console.error("Failed to parse user profile from localStorage", e);
+//           setUserName(null);
+//         }
+//       } else {
+//         setUserName(null);
+//       }
+//     };
+const syncAuth = () => {
+  const token = localStorage.getItem("auth_token");
+
+  if (!token || isTokenExpired()) {
+    setIsLoggedIn(false);
+    setUserName(null);
+    return;
+  }
+
+  setIsLoggedIn(true);
+
+  const userProfile = localStorage.getItem("user_profile");
+  if (userProfile) {
+    try {
+      const user = JSON.parse(userProfile);
+      setUserName(user.firstName || user.userName || null);
+    } catch {
+      setUserName(null);
+    }
+  }
+};
+    
+syncAuth();
 
     // Sync across tabs
     window.addEventListener("storage", syncAuth);
@@ -118,10 +170,45 @@ const Navbar = () => {
       fetchNotifications();
     }
   };
+useEffect(() => {
+  const interval = setInterval(() => {
+    const token = localStorage.getItem("auth_token");
 
-  const markAsRead = async (id: string) => {
+    if (!token || isTokenExpired()) {
+      // 🔒 Hard logout
+      localStorage.removeItem("auth_token");
+      localStorage.removeItem("refresh_token");
+      localStorage.removeItem("token_expiry");
+      localStorage.removeItem("user_profile");
+
+      setIsLoggedIn(false);
+      setUserName(null);
+
+      toast.error("Session expired. Please sign in again.");
+
+      window.dispatchEvent(
+        new CustomEvent("local-storage", {
+          detail: { key: "auth_token", newValue: null },
+        })
+      );
+    }
+  }, 5000); // ⏱ check every 5 seconds
+
+  return () => clearInterval(interval);
+}, []);
+
+  // const markAllAsRead = async (id: string) => {
+  //   try {
+  //     await api.post("/notification/v1/markmessages", { messageIds: [id], status: "NOTIFICATION_STATUS_READ" });
+  //     setNotifications(prev => prev.filter(n => n.notificationId !== id));
+  //     setUnreadCount(prev => Math.max(0, prev - 1));
+  //   } catch (error) {
+  //     console.error("Failed to mark notification as read", error);
+  //   }
+  // };
+ const markAsRead = async (id: string) => {
     try {
-      await api.post("/notification/v1/markmessages", { messageIds: [id], status: "NOTIFICATION_STATUS_READ" });
+      await api.post("/notification/v1/update", { notificationId: id, status: "NOTIFICATION_STATUS_READ" });
       setNotifications(prev => prev.filter(n => n.notificationId !== id));
       setUnreadCount(prev => Math.max(0, prev - 1));
     } catch (error) {

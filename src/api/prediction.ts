@@ -71,7 +71,6 @@ export type AddPredictionPayload = {
   meta?: Record<string, any>;
 };
 
-
 // --- /prediction/v1/get ---
 export type GetUserPredictionsPayload = {
   userId: string;
@@ -162,6 +161,15 @@ export type SettlePredictionResponse = {
   success?: boolean;
 };
 
+export interface GetPnLPayload {
+  pnlType: "PNLTYPE_REALIZED" | "PNLTYPE_UNREALIZED";
+  timeSince?: string; // optional – if omitted, inception PnL
+}
+
+export interface GetPnLResponse {
+  pnl: number;
+}
+
 // -------------------------------------------------------------
 // API Calls
 // -------------------------------------------------------------
@@ -213,6 +221,14 @@ async function settlePrediction(payload: SettlePredictionPayload) {
   return api.post<SettlePredictionResponse>("/prediction/v1/settle", payload);
 }
 
+// Get PnL
+async function getPnL(payload: GetPnLPayload) {
+  return api.post<GetPnLResponse>("/prediction/v1/pnl", {
+    pnlType: payload.pnlType,
+    ...(payload.timeSince ? { timeSince: payload.timeSince } : {}),
+  });
+}
+
 // -------------------------------------------------------------
 // Export API Object
 // -------------------------------------------------------------
@@ -225,4 +241,5 @@ export const predictionApi = {
   getPredictionPerformance,
   searchPredictions,
   settlePrediction,
+  getPnL,
 };
