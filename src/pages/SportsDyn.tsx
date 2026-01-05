@@ -542,16 +542,16 @@ const EventCard = ({
   }, [event?.id, event?.eventId]);
 
   return (
-    <div className="rounded-2xl border border-white/10 bg-dark-card p-6 overflow-hidden relative">
-      <div className="absolute top-0 right-0 w-32 h-32 bg-[#00ff73]/30 rounded-full -mr-16 -mt-16 pointer-events-none blur-lg"></div>
+    <div className="rounded-2xl border border-white/10 bg-dark-card p-4 overflow-hidden relative">
+      <div className="absolute top-0 right-0 w-24 h-24 bg-[#00ff73]/30 rounded-full -mr-12 -mt-12 pointer-events-none blur-lg"></div>
       
       <div className="relative z-10">
-        <div className="flex justify-between mb-4">
+        <div className="flex justify-between mb-3">
           <div className="text-sm text-gray-text font-medium">{eventName}</div>
-          <div className="text-sm bg-dark-lighter px-3 py-1 rounded-full text-white">{date}</div>
+          <div className="text-sm bg-dark-lighter px-2 py-1 rounded-full text-white">{date}</div>
         </div>
 
-        <div className="flex items-center justify-between mb-4 gap-4">
+        <div className="flex items-center justify-between mb-3 gap-3">
           <div className="text-sm flex-1">
             {isQLoading ? (
               <span className="text-gray-text">Loading latest question...</span>
@@ -579,8 +579,10 @@ const EventCard = ({
           </Button>
         </div>
 
-        <TeamRow team={teamA} probability={probA} />
-        <TeamRow team={teamB} probability={probB} />
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+          <TeamRow team={teamA} probability={Math.round(probA)} />
+          <TeamRow team={teamB} probability={Math.round(probB)} />
+        </div>
       </div>
     </div>
   );
@@ -595,13 +597,20 @@ const EventDetails: React.FC<{
   const [event, setEvent] = useState<any | null>(null);
   const [questions, setQuestions] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [searchTerm, setSearchTerm] = useState("");
+
+  // Debounce search input
+  const [debouncedSearchTerm, setDebouncedSearchTerm] = useState("");
+  useEffect(() => {
+    const handler = setTimeout(() => setDebouncedSearchTerm(searchTerm), 300);
+    return () => clearTimeout(handler);
+  }, [searchTerm]);
 
   useEffect(() => {
     const fetchEventDetails = async () => {
       setIsLoading(true);
       try {
-       
-           const response = await api.post<{
+        const response = await api.post<{
           event: any;
           questions: any[];
           status: { type: string };
@@ -627,6 +636,33 @@ const EventDetails: React.FC<{
 
     fetchEventDetails();
   }, [eventId]);
+
+  // Search questions via API when debounced search term changes
+  useEffect(() => {
+    if (!debouncedSearchTerm.trim()) return; // Do nothing if search is empty
+
+    const searchQuestions = async () => {
+      // No loading indicator shown as per requirement
+      try {
+        const res = await api.post<{
+          questions: any[];
+          status: { type: string };
+        }>("/event/v1/searchquestion", {
+          eventId,
+          questionWildCardSearch: debouncedSearchTerm.trim(),
+          pageRequest: { pageNumber: 1, pageSize: 50 },
+        });
+
+        if (res?.status?.type === 'SUCCESS') {
+          setQuestions(res.questions || []);
+        }
+      } catch (err) {
+        console.error("Question search failed:", err);
+      }
+    };
+
+    searchQuestions();
+  }, [debouncedSearchTerm, eventId]);
 
   if (isLoading) {
     return (
@@ -674,14 +710,25 @@ const EventDetails: React.FC<{
   return (
     <div className="rounded-xl border border-white/10 bg-dark-card p-6 mt-2">
       <div className="mb-4 grid grid-cols-1 md:grid-cols-2 gap-4">
-        <TeamRow team={teamA} probability={probA} />
-        <TeamRow team={teamB} probability={probB} />
+        <TeamRow team={teamA} probability={parseFloat(probA.toFixed(2))} />
+        <TeamRow team={teamB} probability={parseFloat(probB.toFixed(2))} />
       </div>
       <div className="flex items-center justify-between mb-4">
         <h2 className="text-lg font-bold text-white">Available Predictions</h2>
         <button onClick={onBack} className="flex items-center text-gray-text hover:text-white transition-colors">
           <ArrowLeft className="w-5 h-5 mr-2" /> Back
         </button>
+      </div>
+
+      {/* SEARCH BAR */}
+      <div className="mb-4">
+        <input
+          type="text"
+          placeholder="Search questions...Atleast 3 characters"
+          value={searchTerm}
+          onChange={(e) => setSearchTerm(e.target.value)}
+          className="w-full rounded-lg border border-white/10 bg-dark-lighter px-4 py-2 text-white placeholder-gray-text focus:outline-none focus:ring-2 focus:ring-primary"
+        />
       </div>
 
       {questions.length === 0 ? (
@@ -694,6 +741,7 @@ const EventDetails: React.FC<{
           {questions.map((question: any) => (
             <div
               key={question.questionId}
+              data-question-card
               className="bg-dark-lighter rounded-xl border border-white/10 p-6 hover:border-primary/30 transition-all"
             >
               <div className="flex items-start justify-between mb-4">
@@ -1092,6 +1140,14 @@ const CompletedPredictionsList: React.FC<{ onOpen: (p: any, event: any) => void;
   const [eventsMap, setEventsMap] = React.useState<Record<string, any>>({});
   const [isLoading, setIsLoading] = React.useState<boolean>(true);
   const [period, setPeriod] = React.useState<string>("PREDICTIONTIMEINFORCE_COMPLETED_ALLTIME");
+  const [searchTerm, setSearchTerm] = React.useState<string>("");
+
+  // Debounce search input
+  const [debouncedSearchTerm, setDebouncedSearchTerm] = React.useState(searchTerm);
+  React.useEffect(() => {
+    const handler = setTimeout(() => setDebouncedSearchTerm(searchTerm), 300);
+    return () => clearTimeout(handler);
+  }, [searchTerm]);
 
   React.useEffect(() => {
     let mounted = true;
@@ -1107,16 +1163,32 @@ const CompletedPredictionsList: React.FC<{ onOpen: (p: any, event: any) => void;
           }
           return;
         }
-        const res = await api.post<any>("/prediction/v1/get", {
-          day: 0,
-          month: 0,
-          year: 0,
-          pageRequest: { pageNumber: 1, pageSize: 200 },
-          timeInForce: period,
-        });
+
+        let res: any;
+        if (debouncedSearchTerm.trim()) {
+          // Use search API when there is a search term
+          res = await api.post<any>("/prediction/v1/search", {
+            eventWildCardSearch: debouncedSearchTerm.trim(),
+            pageRequest: { pageNumber: 1, pageSize: 200 },
+            timeInForce: period,
+            day: 0,
+            month: 0,
+            year: 0,
+          });
+        } else {
+          // Use regular fetch API when no search term
+          res = await api.post<any>("/prediction/v1/get", {
+            day: 0,
+            month: 0,
+            year: 0,
+            pageRequest: { pageNumber: 1, pageSize: 200 },
+            timeInForce: period,
+          });
+        }
+
         const preds = Array.isArray(res?.predictions) ? res.predictions : [];
         if (mounted) setItems(preds);
-        
+
         // Fetch event details for filtering
         const idsSet = new Set<string>(
           preds
@@ -1154,38 +1226,48 @@ const CompletedPredictionsList: React.FC<{ onOpen: (p: any, event: any) => void;
       mounted = false;
       window.clearInterval(interval);
     };
-  }, [period]);
+  }, [period, debouncedSearchTerm]);
 
   // Filter items by selected sport and tournament
-  const filteredItems = items.filter((p: any) => {
-    const event = eventsMap[String(p?.eventId || "")] || {};
-    
-    // Filter by tournament if selected
-    if (selectedTournamentId) {
-      const parentId = String(event?.parentEventId || "");
-      if (parentId !== selectedTournamentId) return false;
-    }
-    
-    // Filter by sport if selected
-    if (selectedSport) {
-      let raw = event?.sportEvent?.sportType || event?.category || event?.sport || event?.name || 'Other';
-      if (typeof raw === 'string') {
-        raw = raw.replace(/^SPORT_TYPE_/, '').replace(/_/g, ' ').trim();
-      } else {
-        raw = String(raw);
-      }
-      const eventSport = raw || 'Other';
-      if (eventSport !== selectedSport) return false;
-    }
-    
-    return true;
-  });
+  const filteredItems = Array.isArray(items)
+    ? items.filter((p: any) => {
+        const event = eventsMap[String(p?.eventId || "")] || {};
 
-  if (isLoading) return <div className="text-gray-text text-center py-8">Loading completed predictions...</div>;
-  if (!filteredItems || filteredItems.length === 0) return <div className="text-gray-text text-center py-8">No completed predictions</div>;
+        // Filter by tournament if selected
+        if (selectedTournamentId) {
+          const parentId = String(event?.parentEventId || "");
+          if (parentId !== selectedTournamentId) return false;
+        }
+
+        // Filter by sport if selected
+        if (selectedSport) {
+          let raw = event?.sportEvent?.sportType || event?.category || event?.sport || event?.name || 'Other';
+          if (typeof raw === 'string') {
+            raw = raw.replace(/^SPORT_TYPE_/, '').replace(/_/g, ' ').trim();
+          } else {
+            raw = String(raw);
+          }
+          const eventSport = raw || 'Other';
+          if (eventSport !== selectedSport) return false;
+        }
+
+        return true;
+      })
+    : [];
 
   return (
     <div className="space-y-4">
+      {/* Search bar */}
+      <div className="mb-4">
+        <input
+          type="text"
+          placeholder="Search completed predictions...Atleast 3 characters"
+          value={searchTerm}
+          onChange={(e) => setSearchTerm(e.target.value)}
+          className="w-full rounded-lg border border-white/10 bg-dark-lighter px-4 py-2 text-white placeholder-gray-text focus:outline-none focus:ring-2 focus:ring-primary"
+        />
+      </div>
+
       <div className="mb-4 inline-flex rounded-lg border border-white/10 bg-dark-card p-1">
         {[
           { code: "PREDICTIONTIMEINFORCE_COMPLETED_ALLTIME", label: "All Time" },
@@ -1207,66 +1289,72 @@ const CompletedPredictionsList: React.FC<{ onOpen: (p: any, event: any) => void;
         ))}
       </div>
 
-      <div className="space-y-3">
-        {filteredItems.map((p: any, idx: number) => {
-          const eventName = p?.eventName || p?.eventShortName || "Event";
-          const eventShortName = p?.eventShortName || "";
-          const eventDesc = p?.eventDescription || "";
-          const eventStatus = p?.eventStatus || "";
-          const question = p?.question || "Question";
-          const predictedOutcome = p?.predictedOutcome || p?.predictedOutcomeChoice || "";
-          const percentage = Number(p?.percentage || 0);
-          const investmentAmt = Number(p?.investmentAmt || 0);
-          const potentialReturns = Number(p?.potentialReturns || 0);
-          const earnings = Number(p?.earnings || 0);
-          const predictionOutcome = String(p?.predictionOutcome || "");
-          const daysAgo = p?.eventStartDate ? Math.floor((Date.now() - new Date(p.eventStartDate).getTime()) / (1000 * 60 * 60 * 24)) : 0;
-          
-          const isWin = predictionOutcome === "PREDICTIONOUTCOME_SUCCESS" || earnings > 0;
-          const statusLabel = eventStatus === "PREDICTION_EVENT_STATUS_CLOSED" ? "Event Closed" : "Active";
-          const outcomeLabel = isWin ? "Winnings" : "Lost";
-          const outcomeColor = isWin ? "bg-green-500/20 text-green-400" : "bg-red-500/20 text-red-400";
+      {isLoading ? (
+        <div className="text-gray-text text-center py-8">Loading completed predictions...</div>
+      ) : filteredItems.length === 0 ? (
+        <div className="text-gray-text text-center py-8">No completed predictions</div>
+      ) : (
+        <div className="space-y-3">
+          {filteredItems.map((p: any, idx: number) => {
+            const eventName = p?.eventName || p?.eventShortName || "Event";
+            const eventShortName = p?.eventShortName || "";
+            const eventDesc = p?.eventDescription || "";
+            const eventStatus = p?.eventStatus || "";
+            const question = p?.question || "Question";
+            const predictedOutcome = p?.predictedOutcome || p?.predictedOutcomeChoice || "";
+            const percentage = Number(p?.percentage || 0);
+            const investmentAmt = Number(p?.investmentAmt || 0);
+            const potentialReturns = Number(p?.potentialReturns || 0);
+            const earnings = Number(p?.earnings || 0);
+            const predictionOutcome = String(p?.predictionOutcome || "");
+            const daysAgo = p?.eventStartDate ? Math.floor((Date.now() - new Date(p.eventStartDate).getTime()) / (1000 * 60 * 60 * 24)) : 0;
 
-          return (
-            <div key={p?.predictionId || idx} className="rounded-xl border border-white/10 bg-dark-card p-5 hover:border-primary/30 transition-all">
-              {/* Header: Event name and status */}
-              <div className="flex items-center justify-between mb-4">
-                <div>
-                  <h3 className="text-white font-semibold">{eventShortName} {eventDesc}</h3>
-                  <p className="text-xs text-gray-text mt-1">{question}</p>
+            const isWin = predictionOutcome === "PREDICTIONOUTCOME_SUCCESS" || earnings > 0;
+            const statusLabel = eventStatus === "PREDICTION_EVENT_STATUS_CLOSED" ? "Event Closed" : "Active";
+            const outcomeLabel = isWin ? "Winnings" : "Lost";
+            const outcomeColor = isWin ? "bg-green-500/20 text-green-400" : "bg-red-500/20 text-red-400";
+
+            return (
+              <div key={p?.predictionId || idx} className="rounded-xl border border-white/10 bg-dark-card p-5 hover:border-primary/30 transition-all">
+                {/* Header: Event name and status */}
+                <div className="flex items-center justify-between mb-4">
+                  <div>
+                    <h3 className="text-white font-semibold">{eventShortName} {eventDesc}</h3>
+                    <p className="text-xs text-gray-text mt-1">{question}</p>
+                  </div>
+                  <Badge variant="outline" className="text-xs text-gray-text">{statusLabel}</Badge>
                 </div>
-                <Badge variant="outline" className="text-xs text-gray-text">{statusLabel}</Badge>
-              </div>
 
-              {/* Prediction details row */}
-              <div className="flex items-center gap-3 mb-4 text-sm">
-                <span className="text-gray-text">{predictedOutcome}</span>
-                <span className="text-gray-text">•</span>
-                <span className="text-white font-medium">{percentage}%</span>
-                <span className="text-gray-text">•</span>
-                <span className="text-gray-text inline-flex items-center gap-1">
-                  <DollarSign className="w-3 h-3" />
-                  {investmentAmt}
-                </span>
-              </div>
+                {/* Prediction details row */}
+                <div className="flex items-center gap-3 mb-4 text-sm">
+                  <span className="text-gray-text">{predictedOutcome}</span>
+                  <span className="text-gray-text">•</span>
+                  <span className="text-white font-medium">{percentage}%</span>
+                  <span className="text-gray-text">•</span>
+                  <span className="text-gray-text inline-flex items-center gap-1">
+                    <DollarSign className="w-3 h-3" />
+                    {investmentAmt}
+                  </span>
+                </div>
 
-              {/* Outcome bar */}
-              <div className={`rounded-lg p-3 flex items-center justify-between ${outcomeColor}`}>
-                <span className="font-medium">{outcomeLabel}</span>
-                <span className="font-bold inline-flex items-center gap-1">
-                  <DollarSign className="w-4 h-4" />
-                  {Math.abs(earnings)}
-                </span>
-              </div>
+                {/* Outcome bar */}
+                <div className={`rounded-lg p-3 flex items-center justify-between ${outcomeColor}`}>
+                  <span className="font-medium">{outcomeLabel}</span>
+                  <span className="font-bold inline-flex items-center gap-1">
+                    <DollarSign className="w-4 h-4" />
+                    {Math.abs(earnings)}
+                  </span>
+                </div>
 
-              {/* Time ago indicator */}
-              <div className="mt-3 text-xs text-gray-text text-right">
-                <Badge className="text-blue-300">Settled</Badge> {daysAgo}d ago
+                {/* Time ago indicator */}
+                <div className="mt-3 text-xs text-gray-text text-right">
+                  <Badge className="text-blue-300">Settled</Badge> {daysAgo}d ago
+                </div>
               </div>
-            </div>
-          );
-        })}
-      </div>
+            );
+          })}
+        </div>
+      )}
     </div>
   );
 };

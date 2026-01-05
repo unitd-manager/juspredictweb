@@ -118,18 +118,39 @@ export const CreateClanDialog = ({ trigger, onCreated }: CreateClanDialogProps) 
             />
           </div>
 
-          <div className="space-y-2">
-            <Label>Clan mode</Label>
-            <Select value={mode} onValueChange={(value) => setMode(value as GroupMode)}>
-              <SelectTrigger>
-                <SelectValue placeholder="Select mode" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="PUBLIC">Public - anyone can join</SelectItem>
-                <SelectItem value="PRIVATE">Private - invite only</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
+         <div className="space-y-2">
+  <Label htmlFor="mode">Clan mode</Label>
+
+ <Select value={mode} onValueChange={(value) => setMode(value as GroupMode)}>
+  <SelectTrigger id="mode">
+    <SelectValue placeholder="Select mode" />
+  </SelectTrigger>
+
+  {/* ✅ FIXED */}
+  <SelectContent
+    position="popper"
+    side="bottom"
+    sideOffset={8}
+    align="start"
+    className="
+      z-[1000]
+      bg-dark-card
+      text-white
+      border border-white/10
+      rounded-lg
+      shadow-xl
+    "
+  >
+    <SelectItem value="PUBLIC">
+      Public - anyone can join
+    </SelectItem>
+    <SelectItem value="PRIVATE">
+      Private - invite only
+    </SelectItem>
+  </SelectContent>
+</Select>
+
+</div>
 
           <div className="flex items-center justify-between rounded-lg border border-border/60 p-3">
             <div>
@@ -173,4 +194,3 @@ export const CreateClanDialog = ({ trigger, onCreated }: CreateClanDialogProps) 
 };
 
 export default CreateClanDialog;
-

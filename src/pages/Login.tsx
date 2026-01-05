@@ -105,7 +105,22 @@ const persistSession = (token: string, data: LoginResponse) => {
   );
 
   if (data.refreshToken) localStorage.setItem("refresh_token", data.refreshToken);
-  if (data.tokenExpiry) localStorage.setItem("token_expiry", data.tokenExpiry);
+  if (data.tokenExpiry) {
+  const expiryMs =
+    typeof data.tokenExpiry === "string"
+      ? Date.parse(data.tokenExpiry) // ISO string
+      : Number(data.tokenExpiry) * 1000; // seconds → ms
+
+  localStorage.setItem("token_expiry", String(expiryMs));
+}
+if (!data.tokenExpiry) {
+  // 1 hour fallback (adjust if needed)
+  localStorage.setItem(
+    "token_expiry",
+    String(Date.now() + 60 * 60 * 1000)
+  );
+}
+
 
   if (data.userProfile)
     localStorage.setItem("user_profile", JSON.stringify(data.userProfile));

@@ -6,7 +6,8 @@ import { Button } from "./ui/Button"
 export interface Notification {
   notificationId: string
   notificationMessage: string
-  isRead?: boolean
+  notificationStatus?: string
+  isRead?:boolean
   timestamp?: Date
 }
 
@@ -16,32 +17,32 @@ interface NotificationsDropdownProps {
   onClose: () => void
 }
 
-const dummyNotifications: Notification[] = [
-  {
-    notificationId: "1",
-    notificationMessage: "Your order has been shipped!",
-    isRead: false,
-    timestamp: new Date(Date.now() - 1000 * 60 * 5),
-  },
-  {
-    notificationId: "2",
-    notificationMessage: "Welcome to our platform.",
-    isRead: true,
-    timestamp: new Date(Date.now() - 1000 * 60 * 60 * 2),
-  },
-  {
-    notificationId: "3",
-    notificationMessage: "New feature available: Dark mode.",
-    isRead: false,
-    timestamp: new Date(Date.now() - 1000 * 60 * 30),
-  },
-  {
-    notificationId: "4",
-    notificationMessage: "Payment received successfully.",
-    isRead: true,
-    timestamp: new Date(Date.now() - 1000 * 60 * 60 * 24),
-  },
-]
+// const dummyNotifications: Notification[] = [
+//   {
+//     notificationId: "1",
+//     notificationMessage: "Your order has been shipped!",
+//     isRead: false,
+//     timestamp: new Date(Date.now() - 1000 * 60 * 5),
+//   },
+//   {
+//     notificationId: "2",
+//     notificationMessage: "Welcome to our platform.",
+//     isRead: true,
+//     timestamp: new Date(Date.now() - 1000 * 60 * 60 * 2),
+//   },
+//   {
+//     notificationId: "3",
+//     notificationMessage: "New feature available: Dark mode.",
+//     isRead: false,
+//     timestamp: new Date(Date.now() - 1000 * 60 * 30),
+//   },
+//   {
+//     notificationId: "4",
+//     notificationMessage: "Payment received successfully.",
+//     isRead: true,
+//     timestamp: new Date(Date.now() - 1000 * 60 * 60 * 24),
+//   },
+// ]
 
 const NotificationsDropdown: React.FC<NotificationsDropdownProps> = ({
   notifications: propNotifications,
@@ -54,11 +55,11 @@ const NotificationsDropdown: React.FC<NotificationsDropdownProps> = ({
   useEffect(() => {
     // Use dummy notifications if none provided
     const finalNotifications =
-      propNotifications.length === 0 ? dummyNotifications : propNotifications
+      propNotifications
     // Ensure all have timestamp and isRead
     const enriched = finalNotifications.map((n) => ({
       ...n,
-      isRead: n.isRead ?? false,
+      isRead: n.notificationStatus === "NOTIFICATION_STATUS_READ",
       timestamp: n.timestamp ?? new Date(),
     }))
     setNotifications(enriched)
@@ -80,7 +81,7 @@ const NotificationsDropdown: React.FC<NotificationsDropdownProps> = ({
     }
   }, [onClose])
 
-  const unreadCount = notifications.filter((n) => !n.isRead).length
+  const unreadCount = notifications.filter((n) => n.notificationStatus === "NOTIFICATION_STATUS_UNREAD").length
 
   const formatTime = (date: Date) => {
     const now = new Date()
