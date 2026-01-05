@@ -2,7 +2,7 @@
 import React, { useEffect, useState } from "react";
 import { balanceApi } from "../api/balanceDyn";
 import { predictionApi } from "../api/prediction";
-import { activityApi } from "../api/activity";
+// import { activityApi } from "../api/activity";
 import {
   LineChart,
   Line,
@@ -51,24 +51,12 @@ const mapPortfolioResponse = (api: any) => ({
   realizedPnlData: [{ name: "Realized", value: Number(api?.realizedPnl ?? 0) }],
 
   // Important: annotate as any[] to avoid 'never[]' inference issues
-  activity: [] as any[],
+  // activity: [] as any[],
 
   longestWin: Number(api?.longestWin ?? 0),
 });
 
-const mapActivity = (api: any) => {
-  const list = api?.activities ?? api?.data?.activities ?? api ?? [];
-  if (!Array.isArray(list)) return [];
 
-  return list.map((a: any) => ({
-    activityId: a.activityId ?? a.id ?? Math.random().toString(36).slice(2),
-    activityType: a.activityType ?? "",
-    activitySubType: a.activitySubType ?? "",
-    activityDescription: a.activityDescription ?? a.description ?? "",
-    activityAmount: a.activityAmount ?? a.amount ?? 0,
-    activityTime: a.activityTime ?? a.time ?? a.createdAt ?? "",
-  }));
-};
 
 
 const mapPerformance = (api: any) => {
@@ -102,32 +90,18 @@ const PortfolioDyn: React.FC = () => {
   const [data, setData] = useState<any | null>(null);
   const [performanceChart, setPerformanceChart] = useState<any[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
+  const [initialLoad, setInitialLoad] = useState(true);
 
-  const loadPortfolio = async () => {
+  const loadPortfolio = async (isInitial = false) => {
     try {
-      setLoading(true);
+            if (isInitial) setLoading(true);
 
       // 1) Balance - assume balanceApi.getBalance() returns final payload (no .data)
       const balanceRes = await balanceApi.getBalance();
       const balancePayload = balanceRes ?? {};
       const mapped = mapPortfolioResponse(balancePayload);
 const userId = getUserIdFromToken() ||"undefined";
-      // 2) Activity - pass userId if available (from localStorage or your auth)
-     // const userId = (typeof window !== "undefined" && localStorage.getItem("userId")) ?? undefined;
-      let activityRes: any;
-      try {
-        // call with argument if api expects payload; use safe any
-        activityRes = await (activityApi as any).getUserActivity(userId ? { userId } : {});
-      } catch (err) {
-        // fallback: try without payload
-        try {
-          activityRes = await (activityApi as any).getUserActivity();
-        } catch (err2) {
-          console.warn("Activity API call failed, continuing without activity", err2);
-          activityRes = [];
-        }
-      }
-      mapped.activity = mapActivity(activityRes);
+
 
       // set data early so UI shows top-cards while performance loads
       setData(mapped);
@@ -164,13 +138,14 @@ console.log('userid',userId);
       setData(mapPortfolioResponse(null));
       setPerformanceChart([]);
     } finally {
-      setLoading(false);
+      if (isInitial) setLoading(false);
+      setInitialLoad(false);
     }
   };
 
   useEffect(() => {
-    loadPortfolio();
-    const interval = setInterval(loadPortfolio, 30000);
+    loadPortfolio(true);
+    const interval = setInterval(() => loadPortfolio(false), 30000);
     return () => clearInterval(interval);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
@@ -202,8 +177,8 @@ console.log('userid',userId);
           <div className="flex-1 lg:flex-[3] space-y-8">
 
             {/* ===== TOP PROFILE + CARDS ===== */}
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
 
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
               {/* TOTAL VALUE */}
               <div className="relative bg-dark-card border border-white/5 rounded-2xl p-8 overflow-hidden">
                 <div className="absolute top-0 right-0 w-32 h-32 bg-primary/30 rounded-full -mr-16 -mt-16 blur-lg" />
@@ -222,6 +197,24 @@ console.log('userid',userId);
                 <h2 className="text-sm text-gray-text mb-3">Available Balance</h2>
                 <p className="text-4xl font-bold text-white">
                   ${Number(data.availableBalance).toLocaleString(undefined,{minimumFractionDigits:2})}
+                </p>
+              </div>
+
+              {/* UNREALIZED P&L */}
+              <div className="relative bg-dark-card border border-white/5 rounded-2xl p-8 overflow-hidden flex flex-col justify-center">
+                <div className="absolute top-0 right-0 w-32 h-32 bg-primary/30 rounded-full -mr-16 -mt-16 blur-lg" />
+                <h2 className="text-sm text-gray-text mb-3">Unrealized P&amp;L</h2>
+                <p className="text-4xl font-bold text-primary mb-2">
+                  {data.unrealizedPnl >= 0 ? "+" : "-"}${Math.abs(data.unrealizedPnl)}
+                </p>
+              </div>
+
+              {/* REALIZED P&L */}
+              <div className="relative bg-dark-card border border-white/5 rounded-2xl p-8 overflow-hidden flex flex-col justify-center">
+                <div className="absolute top-0 right-0 w-32 h-32 bg-primary/30 rounded-full -mr-16 -mt-16 blur-lg" />
+                <h2 className="text-sm text-gray-text mb-3">Realized P&amp;L</h2>
+                <p className="text-4xl font-bold text-primary mb-2">
+                  {data.realizedPnl >= 0 ? "+" : "-"}${Math.abs(data.realizedPnl)}
                 </p>
               </div>
             </div>
@@ -298,154 +291,12 @@ console.log('userid',userId);
               </div>
             </div>
 
-            {/* ===== ACTIVITY ===== */}
-          {/* ACTIVITY */}
-<div className="relative bg-dark-card border border-white/5 rounded-2xl p-8 hover:border-white/10 transition-all duration-300 overflow-hidden">
-  <div className="absolute top-0 right-0 w-32 h-32 bg-primary/30 rounded-full -mr-16 -mt-16 blur-lg" />
-  <div className="relative z-10">
-    <h2 className="text-2xl font-bold text-white mb-6">Activity</h2>
-
-    <div className="overflow-x-auto">
-      <table className="w-full">
-        <thead>
-          <tr className="border-b border-white/10 text-gray-text text-sm">
-            <th className="py-4 px-4 text-left">Type</th>
-            <th className="py-4 px-4 text-left">Sub Type</th>
-            <th className="py-4 px-4 text-left">Description</th>
-            <th className="py-4 px-4 text-left">Amount</th>
-            <th className="py-4 px-4 text-left">Time</th>
-          </tr>
-        </thead>
-
-        <tbody>
-          {(data.activity ?? []).map((a: any) => (
-            <tr
-              key={a.activityId}
-              className="border-b border-white/5 hover:bg-dark-lighter/50 transition-colors"
-            >
-              <td className="py-4 px-4 max-w-[140px] truncate">
-                {a.activityType}
-              </td>
-
-              <td className="py-4 px-4 max-w-[140px] truncate">
-                {a.activitySubType}
-              </td>
-
-              <td className="py-4 px-4 max-w-[260px] truncate">
-                {a.activityDescription}
-              </td>
-
-              <td className="py-4 px-4 text-white">
-                ${Number(a.activityAmount ?? 0).toFixed(2)}
-              </td>
-
-              <td className="py-4 px-4 text-gray-muted">
-                {a.activityTime
-                  ? new Date(a.activityTime).toLocaleString()
-                  : "-"}
-              </td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
-    </div>
-  </div>
-</div>
-
           </div>
-
-          {/* ================= SIDEBAR ================= */}
-         {/* SIDEBAR */}
-<div className="w-full lg:w-80 space-y-6">
-
-  {/* ADVANCED FILTERS */}
-  <div className="relative bg-dark-card border border-white/5 rounded-2xl p-8 hover:border-white/10 transition-all duration-300 overflow-hidden">
-    <div className="absolute top-0 right-0 w-32 h-32 bg-primary/30 rounded-full -mr-16 -mt-16 blur-lg" />
-    <div className="relative z-10">
-      <h2 className="text-2xl font-bold text-white mb-6">
-        Advanced Filters
-      </h2>
-
-      <div className="space-y-4 mb-6">
-        {[
-          { label: "Market Type", options: ["Politics"] },
-          { label: "Position Type", options: ["Yes", "No"] },
-          { label: "Sort By", options: ["Value", "Date"] },
-          { label: "Date Entered", options: ["Market End Date"] },
-        ].map((f) => (
-          <div key={f.label}>
-            <label className="block text-sm font-medium text-primary mb-2">
-              {f.label}
-            </label>
-            <select className="w-full bg-dark-bg border border-white/5 rounded-lg px-4 py-2.5 text-white focus:outline-none focus:border-white/10 focus:ring-1 focus:ring-white/10 transition-all">
-              {f.options.map((o) => (
-                <option key={o}>{o}</option>
-              ))}
-            </select>
-          </div>
-        ))}
-
-        {/* STATUS */}
-        <div>
-          <label className="block text-sm font-medium text-primary mb-3">
-            Status
-          </label>
-          <div className="space-y-2">
-            {["Open", "Settled", "High"].map((s) => (
-              <button
-                key={s}
-                className="w-full bg-dark-bg border border-white/5 rounded-lg px-4 py-2.5 text-white hover:border-white/10 hover:bg-white/[0.02] transition-all"
-              >
-                {s}
-              </button>
-            ))}
-          </div>
-        </div>
-
-        {/* RISK */}
-        <div>
-          <label className="block text-sm font-medium text-primary mb-3">
-            Risk Level
-          </label>
-          <div className="space-y-2">
-            {["Low", "Medium", "High"].map((r) => (
-              <button
-                key={r}
-                className="w-full bg-dark-bg border border-white/5 rounded-lg px-4 py-2.5 text-white hover:border-white/10 hover:bg-white/[0.02] transition-all"
-              >
-                {r}
-              </button>
-            ))}
-          </div>
-        </div>
-      </div>
-
-      <button className="w-full bg-gradient-to-r from-primary to-primary/80 text-dark-bg font-bold py-3 rounded-lg hover:from-primary/90 hover:to-primary/70 transition-all shadow-lg shadow-primary/30">
-        Apply Filters
-      </button>
-    </div>
-  </div>
-
-  {/* PERFORMANCE ANALYTICS */}
-  <div className="relative bg-dark-card border border-white/5 rounded-2xl p-8 overflow-hidden">
-    <div className="absolute top-0 right-0 w-32 h-32 bg-primary/30 rounded-full -mr-16 -mt-16 blur-lg" />
-    <h2 className="text-2xl font-bold text-white mb-2">
-      Performance Analytics
-    </h2>
-    <p className="text-sm text-gray-text mb-2">
-      Total Earnings
-    </p>
-    <h3 className="text-4xl font-bold text-primary">
-      ${totalEarnings}
-    </h3>
-  </div>
-</div>
-
 
         </div>
       </div>
     </div>
-  </div>
+</div>
 );
 
 };
