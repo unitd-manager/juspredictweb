@@ -306,7 +306,7 @@ const PortfolioDyn: React.FC = () => {
           </div>
 
           {/* ===== PORTFOLIO CHART ===== */}
-          <div className="relative bg-dark-card border border-white/5 rounded-2xl p-8 overflow-hidden">
+          <div className="relative bg-dark-card border border-white/5 rounded-2xl p-8 overflow-hidden mb-12">
             <div className="absolute top-0 right-0 w-32 h-32 bg-primary/30 rounded-full -mr-16 -mt-16 blur-lg" />
             <h2 className="text-2xl font-bold text-white mb-2">Portfolio Value</h2>
             <p className="text-gray-text text-sm mb-6">12-month performance overview</p>
@@ -353,7 +353,7 @@ const PortfolioDyn: React.FC = () => {
           </div>
 
           {/* ===== POSITIONS ===== */}
-          <div className="relative bg-dark-card border border-white/5 rounded-2xl p-8 overflow-hidden">
+          <div className="relative bg-dark-card border border-white/5 rounded-2xl p-8 overflow-hidden mt-8">
             <h2 className="text-2xl font-bold text-white mb-6">Positions</h2>
             {/* Outcome Filter */}
             <div className="mb-4 flex flex-wrap items-center gap-2">
