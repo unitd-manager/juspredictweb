@@ -184,7 +184,7 @@ useEffect(() => {
       setIsLoggedIn(false);
       setUserName(null);
 
-      toast.error("Session expired. Please sign in again.");
+     // toast.error("Session expired. Please sign in again.");
 
       window.dispatchEvent(
         new CustomEvent("local-storage", {
@@ -262,6 +262,9 @@ useEffect(() => {
                 <NavLink to="/portfolio" className={({ isActive }) => `text-sm font-medium transition-colors ${
                     isActive ? 'text-primary font-bold' : 'text-gray-light hover:text-primary'
                   }`}>Portfolio</NavLink>
+                   <NavLink to="/predictions" className={({ isActive }) => `text-sm font-medium transition-colors ${
+                    isActive ? 'text-primary font-bold' : 'text-gray-light hover:text-primary'
+                  }`}>Predictions</NavLink>
                 <NavLink to="/clan" className={({ isActive }) => `text-sm font-medium transition-colors ${
                     isActive ? 'text-primary font-bold' : 'text-gray-light hover:text-primary'
                   }`}>Clan</NavLink>

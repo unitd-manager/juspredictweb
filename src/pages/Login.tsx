@@ -2,7 +2,6 @@ import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Eye, EyeOff } from "lucide-react";
 
-
 import {
   Card,
   CardHeader,
@@ -15,7 +14,6 @@ import {
 import { Label } from "../components/ui/Label";
 import { Input } from "../components/ui/Input";
 import { Button } from "../components/ui/Button";
-import { Tabs, TabsList, TabsTrigger, TabsContent } from "../components/ui/tabs";
 import { toast } from "../components/ui/sonner";
 import { api } from "../api/api";
 
@@ -106,21 +104,20 @@ const persistSession = (token: string, data: LoginResponse) => {
 
   if (data.refreshToken) localStorage.setItem("refresh_token", data.refreshToken);
   if (data.tokenExpiry) {
-  const expiryMs =
-    typeof data.tokenExpiry === "string"
-      ? Date.parse(data.tokenExpiry) // ISO string
-      : Number(data.tokenExpiry) * 1000; // seconds → ms
+    const expiryMs =
+      typeof data.tokenExpiry === "string"
+        ? Date.parse(data.tokenExpiry) // ISO string
+        : Number(data.tokenExpiry) * 1000; // seconds → ms
 
-  localStorage.setItem("token_expiry", String(expiryMs));
-}
-if (!data.tokenExpiry) {
-  // 1 hour fallback (adjust if needed)
-  localStorage.setItem(
-    "token_expiry",
-    String(Date.now() + 60 * 60 * 1000)
-  );
-}
-
+    localStorage.setItem("token_expiry", String(expiryMs));
+  }
+  if (!data.tokenExpiry) {
+    // 1 hour fallback (adjust if needed)
+    localStorage.setItem(
+      "token_expiry",
+      String(Date.now() + 60 * 60 * 1000)
+    );
+  }
 
   if (data.userProfile)
     localStorage.setItem("user_profile", JSON.stringify(data.userProfile));
@@ -137,7 +134,6 @@ export const Login = () => {
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
-  const [mode, setMode] = useState<"email" | "social">("email");
 
   /* ---------------------------------------------
      GOOGLE LOGIN HANDLER (new version)
@@ -149,7 +145,7 @@ export const Login = () => {
       if (!googleToken) throw new Error("Invalid Google token");
 
       const claims: any = jwtDecode(googleToken);
-console.log(claims);
+      console.log(claims);
       // Try Login
       try {
         const loginData = (await api.post("/user/v1/login", {
@@ -224,7 +220,8 @@ console.log(claims);
      UI
   --------------------------------------------- */
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-background via-background to-muted/30">
+   <div className="min-h-screen pt-20 flex items-center justify-center bg-gradient-to-br from-background via-background to-muted/30">
+
       <div className="w-full max-w-md px-4 sm:px-6 lg:px-8 py-10">
         <Card className="border border-border/40 shadow-2xl shadow-primary/10 rounded-2xl bg-card/90 backdrop-blur-sm">
           <CardHeader className="text-center pb-6">
@@ -238,132 +235,110 @@ console.log(claims);
 
           <form onSubmit={onSubmit}>
             <CardContent className="space-y-5">
-              <Tabs
-                value={mode}
-                onValueChange={(v: string) => setMode(v as "email" | "social")}
-              >
-                <TabsList className="grid w-full grid-cols-2 rounded-xl bg-muted/50 p-1">
-                  <TabsTrigger
-                    value="email"
-                    className="rounded-lg text-sm font-semibold transition-all data-[state=active]:bg-background data-[state=active]:text-primary data-[state=active]:shadow"
-                  >
-                    Email
-                  </TabsTrigger>
-                  <TabsTrigger
-                    value="social"
-                    className="rounded-lg text-sm font-semibold transition-all data-[state=active]:bg-background data-[state=active]:text-primary data-[state=active]:shadow"
-                  >
-                    Social
-                  </TabsTrigger>
-                </TabsList>
+              {/* EMAIL LOGIN */}
+              <div className="space-y-5">
+                <div className="space-y-2">
+                  <Label className="text-sm font-medium text-foreground/80">
+                    Email address
+                  </Label>
+                  <Input
+                    type="email"
+                    placeholder="you@example.com"
+                    value={email}
+                    onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+                      setEmail(e.target.value)
+                    }
+                    className="rounded-lg border-border/60 focus:border-primary focus:ring-primary/30"
+                  />
+                </div>
 
-                {/* EMAIL LOGIN */}
-                <TabsContent value="email" className="space-y-5 mt-6">
-                  <div className="space-y-2">
-                    <Label className="text-sm font-medium text-foreground/80">
-                      Email address
-                    </Label>
+                <div className="space-y-2">
+                  <Label className="text-sm font-medium text-foreground/80">
+                    Password
+                  </Label>
+                  <div className="relative">
                     <Input
-                      type="email"
-                      placeholder="you@example.com"
-                      value={email}
+                      type={showPassword ? "text" : "password"}
+                      placeholder="••••••••"
+                      value={password}
                       onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
-                        setEmail(e.target.value)
+                        setPassword(e.target.value)
                       }
-                      className="rounded-lg border-border/60 focus:border-primary focus:ring-primary/30"
+                      className="rounded-lg border-border/60 focus:border-primary focus:ring-primary/30 pr-10"
                     />
+                    <button
+                      type="button"
+                      onClick={() => setShowPassword(!showPassword)}
+                      className="absolute inset-y-0 right-3 flex items-center text-muted-foreground hover:text-foreground transition-colors"
+                    >
+                      {showPassword ? (
+                        <EyeOff size={18} />
+                      ) : (
+                        <Eye size={18} />
+                      )}
+                    </button>
                   </div>
+                </div>
+              </div>
 
-                  <div className="space-y-2">
-                    <Label className="text-sm font-medium text-foreground/80">
-                      Password
-                    </Label>
-                    <div className="relative">
-                      <Input
-                        type={showPassword ? "text" : "password"}
-                        placeholder="••••••••"
-                        value={password}
-                        onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
-                          setPassword(e.target.value)
-                        }
-                        className="rounded-lg border-border/60 focus:border-primary focus:ring-primary/30 pr-10"
-                      />
-                      <button
-                        type="button"
-                        onClick={() => setShowPassword(!showPassword)}
-                        className="absolute inset-y-0 right-3 flex items-center text-muted-foreground hover:text-foreground transition-colors"
-                      >
-                        {showPassword ? (
-                          <EyeOff size={18} />
-                        ) : (
-                          <Eye size={18} />
-                        )}
-                      </button>
-                    </div>
-                  </div>
-                </TabsContent>
+              {/* SOCIAL LOGIN (Google + Apple) */}
+              <div className="mt-6 space-y-4">
+                <p className="text-center text-sm text-muted-foreground">
+                  One-tap sign-in with your social account
+                </p>
 
-                {/* SOCIAL LOGIN (Google + Apple) */}
-                <TabsContent value="social" className="mt-6 space-y-4">
-                  <p className="text-center text-sm text-muted-foreground">
-                    One-tap sign-in with your social account
-                  </p>
+                {/* Google Login */}
+                <div className="flex justify-center">
+                  <GoogleLogin
+                    onSuccess={(cred: { credential?: string }) =>
+                      handleGoogleResponse(cred.credential as string)
+                    }
+                    onError={() => toast.error("Google login failed")}
+                    useOneTap
+                    theme="filled_black"
+                    size="large"
+                    text="signin_with"
+                    shape="rectangular"
+                  />
+                </div>
 
-                  {/* Google Login */}
-                  <div className="flex justify-center">
-                    <GoogleLogin
-                      onSuccess={(cred: { credential?: string }) =>
-                        handleGoogleResponse(cred.credential as string)
-                      }
-                      onError={() => toast.error("Google login failed")}
-                      useOneTap
-                      theme="filled_black"
-                      size="large"
-                      text="signin_with"
-                      shape="rectangular"
-                    />
-                  </div>
-
-                  {/* Apple Login */}
-                  <div className="flex justify-center">
-                    <AppleSignInButton
-                      authOptions={{
-                        clientId: "com.your.serviceid",
-                        scope: "email name",
-                        redirectURI: "https://yourdomain.com/auth/apple/callback",
-                        state: "state123",
-                        nonce: "nonce123",
-                        usePopup: true,
-                      }}
-                      uiType="dark"
-                      className="apple-btn"
-                      buttonExtraChildren="Sign in with Apple"
-                      onSuccess={(response: any) => {
-                        // TODO: implement Apple login success flow
-                        console.log("Apple login success:", response);
-                        toast.success("Apple login successful");
-                      }}
-                      onError={(error: any) => {
-                        // TODO: implement Apple login error handling
-                        console.error("Apple login error:", error);
-                        toast.error("Apple login failed");
-                      }}
-                    />
-                  </div>
-                </TabsContent>
-              </Tabs>
+                {/* Apple Login */}
+                <div className="flex justify-center">
+                  <AppleSignInButton
+                    authOptions={{
+                      clientId: "com.your.serviceid",
+                      scope: "email name",
+                      redirectURI: "https://yourdomain.com/auth/apple/callback",
+                      state: "state123",
+                      nonce: "nonce123",
+                      usePopup: true,
+                    }}
+                    uiType="dark"
+                    className="apple-btn"
+                    buttonExtraChildren="Sign in with Apple"
+                    onSuccess={(response: any) => {
+                      // TODO: implement Apple login success flow
+                      console.log("Apple login success:", response);
+                      toast.success("Apple login successful");
+                    }}
+                    onError={(error: any) => {
+                      // TODO: implement Apple login error handling
+                      console.error("Apple login error:", error);
+                      toast.error("Apple login failed");
+                    }}
+                  />
+                </div>
+              </div>
             </CardContent>
 
             <CardFooter className="flex flex-col gap-4 pt-4">
-              {mode === "email" && (
-                <Button
-                  disabled={loading}
-                  type="submit"
-                  className="w-full rounded-xl font-semibold shadow-md hover:shadow-lg transition-shadow"
-                >
-                  {loading ? "Logging in..." : "Login"}
-                </Button>
-              )}
+              <Button
+                disabled={loading}
+                type="submit"
+                className="w-full rounded-xl font-semibold shadow-md hover:shadow-lg transition-shadow"
+              >
+                {loading ? "Logging in..." : "Login"}
+              </Button>
 
               <div className="text-sm text-muted-foreground text-center">
                 Don’t have an account?{" "}

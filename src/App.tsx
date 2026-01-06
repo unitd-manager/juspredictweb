@@ -24,6 +24,7 @@ import OrderDetails from './pages/OrderDetails';
 import Profile from "./pages/Profile";
 import PortfolioDyn from './pages/PortfolioDyn';
 import TransactionsDyn from './pages/TransactionsDyn';
+import Predictions from './pages/Predictions';
 
 
 function App() {
@@ -51,6 +52,7 @@ function App() {
             <Route path="/" element={<Home />} />
             <Route path="/portfoliodyn" element={<Portfolio />} />
             <Route path="/portfolio" element={<PortfolioDyn />} />
+            <Route path="/predictions" element={<Predictions />} />
             <Route path="/clanlist" element={<Clan />} />
             <Route path="/clan/:clanId" element={<ClanDetail onBack={function (): void {
               throw new Error('Function not implemented.');

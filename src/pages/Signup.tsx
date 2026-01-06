@@ -17,6 +17,7 @@ import { Button } from "../components/ui/Button";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "../components/ui/tabs";
 import { toast } from "../components/ui/sonner";
 import { api } from "../api/api";
+import AppleSignInButton from "react-apple-signin-auth";
 
 import { GoogleLogin } from "@react-oauth/google";
 import { jwtDecode } from "jwt-decode";
@@ -137,7 +138,6 @@ const validateDateOfBirth = (dob: DateOfBirth): boolean => {
 export const Signup = () => {
   const navigate = useNavigate();
 
-  // Email signup form
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
@@ -145,22 +145,90 @@ export const Signup = () => {
   const [lastName, setLastName] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
-  const [dateOfBirth, setDateOfBirth] = useState<DateOfBirth>({
+  const [loading, setLoading] = useState(false);
+
+  const [dateOfBirth, setDateOfBirth] = useState({
     day: 1,
     month: 1,
     year: 2000,
   });
+const handleAppleSignup = async (response: any) => {
+  try {
+    setLoading(true);
 
-  const [loading, setLoading] = useState(false);
-  const [mode, setMode] = useState<"email" | "social">("email");
+    const appleToken = response?.authorization?.id_token;
+    if (!appleToken) {
+      throw new Error("Invalid Apple response");
+    }
 
-  /* ---------------------------------------------
-     GOOGLE SIGNUP HANDLER
-  --------------------------------------------- */
+    const signupData = (await api.post("/user/v1/signup", {
+      socialSignup: {
+        platform: "APPLE",
+        token: appleToken,
+      },
+    })) as SignupResponse;
+
+    const token = assertSignupResponseSuccess(signupData);
+    persistSession(token, signupData);
+
+    toast.success("Account created with Apple");
+    navigate("/verify-email");
+  } catch (err: any) {
+    toast.error(err?.message || "Apple signup failed");
+  } finally {
+    setLoading(false);
+  }
+};
+
+  /* ---------------- EMAIL SIGNUP ---------------- */
+  const onSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+
+    if (!email || !password || !confirmPassword || !firstName || !lastName) {
+      return toast.error("Please fill in all fields");
+    }
+
+    if (password !== confirmPassword) {
+      return toast.error("Passwords do not match");
+    }
+
+    const pwd = validatePassword(password);
+    if (!pwd.valid) return toast.error(pwd.message);
+
+    if (!validateDateOfBirth(dateOfBirth)) {
+      return toast.error("You must be at least 13 years old");
+    }
+
+    setLoading(true);
+    try {
+      const signupData = (await api.post("/user/v1/signup", {
+        emailSignup: { password },
+        email,
+        firstName,
+        lastName,
+        dateOfBirth,
+      })) as SignupResponse;
+
+      const token = assertSignupResponseSuccess(signupData);
+      persistSession(token, signupData);
+
+      toast.success("Account created successfully");
+      navigate("/verify-email", { state: { email } });
+    } catch (error) {
+      toast.error(
+        error instanceof Error
+          ? error.message
+          : "Signup failed. Please try again."
+      );
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  /* ---------------- GOOGLE SIGNUP ---------------- */
   const handleGoogleResponse = async (googleToken: string) => {
     try {
       setLoading(true);
-
       if (!googleToken) throw new Error("Invalid Google token");
 
       const claims: any = jwtDecode(googleToken);
@@ -180,354 +248,129 @@ export const Signup = () => {
 
       toast.success("Account created with Google");
       navigate("/verify-email", { state: { email: claims.email } });
-    } catch (err: any) {
-      const statusCode = getStatusCodeFromError(err);
-      if (statusCode === "1011") {
-        toast.error("Email already registered. Please login instead.");
-      } else {
-        toast.error(err?.message || "Google signup failed");
-      }
+    } catch (error) {
+      toast.error(
+        error instanceof Error
+          ? error.message
+          : "Google signup failed"
+      );
     } finally {
       setLoading(false);
     }
   };
 
-  /* ---------------------------------------------
-     EMAIL SIGNUP
-  --------------------------------------------- */
-  const onSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-
-    // Validation
-    if (!email || !password || !confirmPassword || !firstName || !lastName) {
-      return toast.error("Please fill in all fields");
-    }
-
-    if (password !== confirmPassword) {
-      return toast.error("Passwords do not match");
-    }
-
-    const passwordValidation = validatePassword(password);
-    if (!passwordValidation.valid) {
-      return toast.error(passwordValidation.message);
-    }
-
-    if (!validateDateOfBirth(dateOfBirth)) {
-      return toast.error("You must be at least 13 years old to sign up");
-    }
-
-    setLoading(true);
-    try {
-      const signupData = (await api.post("/user/v1/signup", {
-        emailSignup: {
-          password,
-        },
-        email,
-        firstName,
-        lastName,
-        dateOfBirth,
-      })) as SignupResponse;
-
-      const token = assertSignupResponseSuccess(signupData);
-      persistSession(token, signupData);
-
-      toast.success("Account created successfully");
-      navigate("/verify-email", { state: { email } });
-    } catch (error: any) {
-      const statusCode = getStatusCodeFromError(error);
-      if (statusCode === "1011") {
-        toast.error("Email already registered. Please login instead.");
-      } else {
-        toast.error(error?.message || "Signup failed");
-      }
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  /* ---------------------------------------------
-     HELPERS FOR DATE INPUTS
-  --------------------------------------------- */
-  const days = Array.from({ length: 31 }, (_, i) => i + 1);
-  const months = [
-    "January",
-    "February",
-    "March",
-    "April",
-    "May",
-    "June",
-    "July",
-    "August",
-    "September",
-    "October",
-    "November",
-    "December",
-  ];
-  const years = Array.from(
-    { length: 100 },
-    (_, i) => new Date().getFullYear() - i
-  ).reverse();
-
-  /* ---------------------------------------------
-     UI
-  --------------------------------------------- */
+  /* ---------------- UI ---------------- */
   return (
-    <div className="min-h-screen flex items-center justify-center bg-background py-8">
-      <div className="w-full max-w-lg px-4 sm:px-6 lg:px-10">
-        <br/><br/>
+      <div className="min-h-screen pt-20 flex items-center justify-center bg-gradient-to-br from-background via-background to-muted/30">
+  <div className="w-full max-w-lg px-4">
         <Card className="embossed">
           <CardHeader>
             <CardTitle>Create Account</CardTitle>
-            <CardDescription>Join JusPredict today and start predicting</CardDescription>
+            <CardDescription>
+              Join JusPredict and start predicting
+            </CardDescription>
           </CardHeader>
 
           <form onSubmit={onSubmit}>
             <CardContent className="space-y-4">
-              <Tabs value={mode} onValueChange={(v: string) => setMode(v as "email" | "social")}>
-                <TabsList className="grid w-full grid-cols-2">
-                  <TabsTrigger value="email">Email Signup</TabsTrigger>
-                  <TabsTrigger value="social">Google Signup</TabsTrigger>
-                </TabsList>
 
-                {/* EMAIL SIGNUP */}
-                <TabsContent value="email" className="space-y-4">
-                  {/* First Name */}
-                  <div>
-                    <Label>First Name</Label>
-                    <Input
-                      type="text"
-                      placeholder="John"
-                      value={firstName}
-                      onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
-                        setFirstName(e.target.value)
-                      }
-                      required
-                    />
-                  </div>
+              {/* Names */}
+              <Input placeholder="First Name" value={firstName}
+                onChange={(e) => setFirstName(e.target.value)} />
+              <Input placeholder="Last Name" value={lastName}
+                onChange={(e) => setLastName(e.target.value)} />
 
-                  {/* Last Name */}
-                  <div>
-                    <Label>Last Name</Label>
-                    <Input
-                      type="text"
-                      placeholder="Doe"
-                      value={lastName}
-                      onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
-                        setLastName(e.target.value)
-                      }
-                      required
-                    />
-                  </div>
+              {/* Email */}
+              <Input type="email" placeholder="Email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)} />
 
-                  {/* Email */}
-                  <div>
-                    <Label>Email Address</Label>
-                    <Input
-                      type="email"
-                      placeholder="you@example.com"
-                      value={email}
-                      onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
-                        setEmail(e.target.value)
-                      }
-                      required
-                    />
-                  </div>
+              {/* Password */}
+              <div className="relative">
+                <Input
+                  type={showPassword ? "text" : "password"}
+                  placeholder="Password"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                />
+                <button
+                  type="button"
+                  className="absolute right-3 top-1/2 -translate-y-1/2"
+                  onClick={() => setShowPassword(!showPassword)}
+                >
+                  {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                </button>
+              </div>
 
-                  {/* Date of Birth */}
-                  {/* Date of Birth */}
-<div>
-  <Label>Date of Birth</Label>
+              {/* Confirm Password */}
+              <div className="relative">
+                <Input
+                  type={showConfirmPassword ? "text" : "password"}
+                  placeholder="Confirm Password"
+                  value={confirmPassword}
+                  onChange={(e) => setConfirmPassword(e.target.value)}
+                />
+                <button
+                  type="button"
+                  className="absolute right-3 top-1/2 -translate-y-1/2"
+                  onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                >
+                  {showConfirmPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                </button>
+              </div>
 
-  <div className="grid grid-cols-3 gap-2">
-    {/* DAY */}
-    <select
-      value={dateOfBirth.day}
-      onChange={(e) =>
-        setDateOfBirth({ ...dateOfBirth, day: Number(e.target.value) })
-      }
-      required
-      className="
-        h-10 w-full rounded-md
-        border border-[#2A3942]
-        bg-[#1F2C34] text-[#E9EDF1]
-        px-3 py-2 text-sm
-        focus:outline-none
-        focus:ring-2 focus:ring-[#25D366]
-      "
-    >
-      <option value="" disabled className="bg-[#1F2C34] text-[#AEBAC1]">
-        Day
-      </option>
-      {days.map((day) => (
-        <option
-          key={day}
-          value={day}
-          className="bg-[#1F2C34] text-[#E9EDF1]"
-        >
-          {day}
-        </option>
-      ))}
-    </select>
+              {/* SUBMIT */}
+              <Button type="submit" disabled={loading} className="w-full">
+                {loading ? "Creating account..." : "Create Account"}
+              </Button>
 
-    {/* MONTH */}
-    <select
-      value={dateOfBirth.month}
-      onChange={(e) =>
-        setDateOfBirth({ ...dateOfBirth, month: Number(e.target.value) })
-      }
-      required
-      className="
-        h-10 w-full rounded-md
-        border border-[#2A3942]
-        bg-[#1F2C34] text-[#E9EDF1]
-        px-3 py-2 text-sm
-        focus:outline-none
-        focus:ring-2 focus:ring-[#25D366]
-      "
-    >
-      <option value="" disabled className="bg-[#1F2C34] text-[#AEBAC1]">
-        Month
-      </option>
-      {months.map((month, idx) => (
-        <option
-          key={month}
-          value={idx + 1}
-          className="bg-[#1F2C34] text-[#E9EDF1]"
-        >
-          {month}
-        </option>
-      ))}
-    </select>
+              {/* DIVIDER */}
+              <div className="relative my-4">
+                <div className="h-px bg-border" />
+                <span className="absolute left-1/2 -translate-x-1/2 -top-2 bg-background px-2 text-xs text-muted-foreground">
+                  OR
+                </span>
+              </div>
 
-    {/* YEAR */}
-    <select
-      value={dateOfBirth.year}
-      onChange={(e) =>
-        setDateOfBirth({ ...dateOfBirth, year: Number(e.target.value) })
-      }
-      required
-      className="
-        h-10 w-full rounded-md
-        border border-[#2A3942]
-        bg-[#1F2C34] text-[#E9EDF1]
-        px-3 py-2 text-sm
-        focus:outline-none
-        focus:ring-2 focus:ring-[#25D366]
-      "
-    >
-      <option value="" disabled className="bg-[#1F2C34] text-[#AEBAC1]">
-        Year
-      </option>
-      {years.map((year) => (
-        <option
-          key={year}
-          value={year}
-          className="bg-[#1F2C34] text-[#E9EDF1]"
-        >
-          {year}
-        </option>
-      ))}
-    </select>
-  </div>
+              {/* GOOGLE */}
+              <div className="flex justify-center">
+                <GoogleLogin
+                  onSuccess={(cred) =>
+                    handleGoogleResponse(cred.credential as string)
+                  }
+                  onError={() => toast.error("Google signup failed")}
+                />
+              </div>
 
-  <p className="text-xs text-[#AEBAC1] mt-1">
-    Must be at least 13 years old
-  </p>
+              {/* APPLE */}
+<div className="flex justify-center mt-3">
+  <AppleSignInButton
+    authOptions={{
+      clientId: "com.your.serviceid", // Apple Service ID
+      scope: "email name",
+      redirectURI: "https://yourdomain.com/auth/apple/callback",
+      state: "state123",
+      nonce: "nonce123",
+      usePopup: true,
+    }}
+    uiType="dark"
+    className="apple-btn"
+    buttonExtraChildren="Sign up with Apple"
+    onSuccess={handleAppleSignup}
+    onError={(err: any) => {
+      console.error(err);
+      toast.error("Apple signup failed");
+    }}
+  />
 </div>
 
-
-                  {/* Password */}
-                  <div>
-                    <Label>Password</Label>
-                    <div className="relative">
-                      <Input
-                        type={showPassword ? "text" : "password"}
-                        placeholder="••••••••"
-                        value={password}
-                        onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
-                          setPassword(e.target.value)
-                        }
-                        required
-                      />
-                      <button
-                        type="button"
-                        onClick={() => setShowPassword(!showPassword)}
-                        className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
-                      >
-                        {showPassword ? (
-                          <EyeOff size={18} />
-                        ) : (
-                          <Eye size={18} />
-                        )}
-                      </button>
-                    </div>
-                    <p className="text-xs text-muted-foreground mt-1">
-                      Min 8 chars, uppercase, and numbers
-                    </p>
-                  </div>
-
-                  {/* Confirm Password */}
-                  <div>
-                    <Label>Confirm Password</Label>
-                    <div className="relative">
-                      <Input
-                        type={showConfirmPassword ? "text" : "password"}
-                        placeholder="••••••••"
-                        value={confirmPassword}
-                        onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
-                          setConfirmPassword(e.target.value)
-                        }
-                        required
-                      />
-                      <button
-                        type="button"
-                        onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                        className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
-                      >
-                        {showConfirmPassword ? (
-                          <EyeOff size={18} />
-                        ) : (
-                          <Eye size={18} />
-                        )}
-                      </button>
-                    </div>
-                  </div>
-                </TabsContent>
-
-                {/* GOOGLE SIGNUP */}
-                <TabsContent value="social" className="space-y-4">
-                  <p className="text-sm text-muted-foreground">
-                    Sign up with your Google account. Your profile information will be used to
-                    create your JusPredict account.
-                  </p>
-
-                  <GoogleLogin
-                    onSuccess={(cred: { credential?: string }) =>
-                      handleGoogleResponse(cred.credential as string)
-                    }
-                    onError={() => toast.error("Google signup failed")}
-                  />
-                </TabsContent>
-              </Tabs>
             </CardContent>
 
-            <CardFooter className="flex flex-col gap-3">
-              {mode === "email" && (
-                <Button
-                  disabled={loading}
-                  type="submit"
-                  className="w-full embossed-button"
-                >
-                  {loading ? "Creating account..." : "Create Account"}
-                </Button>
-              )}
-
-              <div className="text-sm text-muted-foreground text-center">
-                Already have an account?{" "}
-                <a href="/login" className="text-primary hover:underline font-semibold">
-                  Login here
-                </a>
-              </div>
+            <CardFooter className="text-sm text-center text-muted-foreground">
+              Already have an account?{" "}
+              <a href="/login" className="text-primary font-semibold">
+                Login
+              </a>
             </CardFooter>
           </form>
         </Card>
@@ -535,5 +378,6 @@ export const Signup = () => {
     </div>
   );
 };
+
 
 export default Signup;

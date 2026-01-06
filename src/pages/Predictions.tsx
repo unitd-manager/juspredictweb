@@ -144,318 +144,6 @@ const TeamRow = ({ team, probability }: { team: any; probability: number }) => {
 };
 
 // Thumbnail for a single event (compact)
-const EventThumbnail = ({
-  event,
-  onSelect,
-  selectedId,
-}: {
-  event: any;
-  onSelect: (id: string) => void;
-  selectedId?: string | null;
-}) => {
-  const id = String(event.id ?? event.eventId ?? '');
-
-  /* ---------- Teams (dynamic safe handling) ---------- */
-  const teams = Array.isArray(event?.teams)
-    ? event.teams
-    : Array.isArray(event?.sportEvent?.teams)
-    ? event.sportEvent.teams
-    : [];
-
-  const teamA = teams?.[0] || {};
-  const teamB = teams?.[1] || {};
-
-  /* ---------- Probabilities ---------- */
-  const { probA, probB } = getTeamProbabilities(event, teams);
-
-  /* ---------- Date / Time ---------- */
-  const timestamp = Number(event.startDate) * 1000;
-
-  const dayLabel = (() => {
-    try {
-      return new Date(timestamp)
-        .toLocaleDateString(undefined, { weekday: "short" })
-        .toUpperCase();
-    } catch {
-      return "";
-    }
-  })();
-
-  const dateLabel = (() => {
-    try {
-      return new Date(timestamp).toLocaleDateString(undefined, {
-        month: "short",
-        day: "numeric",
-      });
-    } catch {
-      return "";
-    }
-  })();
-
-  const timeLabel = (() => {
-    try {
-      return new Date(timestamp).toLocaleTimeString(undefined, {
-        hour: "2-digit",
-        minute: "2-digit",
-      });
-    } catch {
-      return "";
-    }
-  })();
-
-  /* ---------- Event Name Split ---------- */
-  const fullName = (
-    event.name ||
-    event.eventName ||
-    event.sportEvent?.name ||
-    ""
-  ).toString();
-
-  const [sportName, teamsStr] = (() => {
-    const parts = fullName.split(" - ");
-    if (parts.length === 2) return [parts[0].trim(), parts[1].trim()];
-
-    const vsIndex = fullName.toLowerCase().indexOf(" vs ");
-    if (vsIndex !== -1) {
-      return [
-        fullName.slice(0, vsIndex).trim(),
-        fullName.slice(vsIndex).trim(),
-      ];
-    }
-    return [fullName, ""];
-  })();
-
-  /* ---------- UI ---------- */
-  return (
-    <button
-      onClick={() => onSelect(id)}
-      aria-pressed={selectedId === id}
-      className={`relative w-64 min-w-[16rem] md:w-72 md:min-w-[18rem]
-        flex-shrink-0 rounded-xl p-3 text-left transition-all flex
-        ${
-          selectedId === id
-            ? "bg-primary/10 border border-primary ring-2 ring-primary/30 shadow-lg"
-            : "bg-dark-card border border-white/6 hover:shadow-lg hover:border-primary/30"
-        }`}
-    >
-      {/* LEFT DATE / TIME BLOCK */}
-      <div className="flex flex-col justify-center items-start pr-3 mr-3
-        border-r border-white/10 bg-primary/20 rounded-lg px-3">
-        <div className="text-xs font-semibold text-white">{dayLabel}</div>
-        <div className="text-xs text-gray-text mt-1">{dateLabel}</div>
-        <div className="text-xs text-gray-text mt-1">{timeLabel}</div>
-      </div>
-
-      {/* RIGHT CONTENT */}
-      <div className="flex-1 flex flex-col">
-        {selectedId === id && (
-          <span className="absolute top-2 right-2 flex items-center gap-2">
-            <span className="h-2 w-2 rounded-full bg-red-500 shadow-md" />
-            <span className="text-xs text-white">▾</span>
-          </span>
-        )}
-
-        {/* TEAMS */}
-        <div className="flex items-center gap-3 mb-2">
-          {/* Team A */}
-          <div className="flex items-center gap-2">
-            <div className="h-10 w-10 rounded bg-dark-lighter flex items-center justify-center overflow-hidden">
-              {teamA?.imageUrl || teamA?.logoUrl ? (
-                <img
-                  src={(teamA.imageUrl || teamA.logoUrl).toString()}
-                  alt={teamA?.name || "Team A"}
-                  className="h-10 w-10 object-cover"
-                  onError={(e) =>
-                    ((e.currentTarget as HTMLImageElement).style.display =
-                      "none")
-                  }
-                />
-              ) : (
-                <span className="text-sm">
-                  {(teamA?.abbreviation ||
-                    teamA?.shortName ||
-                    teamA?.name ||
-                    "A")[0]}
-                </span>
-              )}
-            </div>
-            <div className="text-sm text-white font-medium line-clamp-1">
-              {teamA?.shortName || "Team A"}
-            </div>
-          </div>
-
-          <div className="flex-1 text-center text-xs text-gray-text">vs</div>
-
-          {/* Team B */}
-          <div className="flex items-center gap-2 justify-end">
-            <div className="text-sm text-white font-medium line-clamp-1">
-              {teamB?.shortName || "Team B"}
-            </div>
-            <div className="h-10 w-10 rounded bg-dark-lighter flex items-center justify-center overflow-hidden">
-              {teamB?.imageUrl || teamB?.logoUrl ? (
-                <img
-                  src={(teamB.imageUrl || teamB.logoUrl).toString()}
-                  alt={teamB?.name || "Team B"}
-                  className="h-10 w-10 object-cover"
-                  onError={(e) =>
-                    ((e.currentTarget as HTMLImageElement).style.display =
-                      "none")
-                  }
-                />
-              ) : (
-                <span className="text-sm">
-                  {(teamB?.abbreviation ||
-                    teamB?.shortName ||
-                    teamB?.name ||
-                    "B")[0]}
-                </span>
-              )}
-            </div>
-          </div>
-        </div>
-
-        {/* SPORT / EVENT NAME */}
-        <div className="text-xs text-gray-text text-center">{sportName}</div>
-
-        {/* FOOTER */}
-        <div className="flex items-center justify-between mt-1">
-          <div className="text-xs text-gray-text">{teamsStr}</div>
-          <div className="text-xs text-white font-semibold">
-            {Math.round(probA)}% / {Math.round(probB)}%
-          </div>
-        </div>
-      </div>
-    </button>
-  );
-};
-
-
-// Horizontal strip of thumbnails
-const EventThumbnailStrip = ({
-  events,
-  onSelect,
-  selectedId,
-}: {
-  events: any[];
-  onSelect: (id: string) => void;
-  selectedId?: string | null;
-}) => {
-  const scrollContainerRef = React.useRef<HTMLDivElement>(null);
-  const [canScrollLeft, setCanScrollLeft] = React.useState(false);
-  const [canScrollRight, setCanScrollRight] = React.useState(true);
-
-  const checkScroll = () => {
-    if (scrollContainerRef.current) {
-      setCanScrollLeft(scrollContainerRef.current.scrollLeft > 0);
-      setCanScrollRight(
-        scrollContainerRef.current.scrollLeft <
-          scrollContainerRef.current.scrollWidth -
-            scrollContainerRef.current.clientWidth -
-            10
-      );
-    }
-  };
-
-  const scroll = (direction: "left" | "right") => {
-    if (!scrollContainerRef.current) return;
-
-    const scrollAmount = 400;
-    scrollContainerRef.current.scrollBy({
-      left: direction === "left" ? -scrollAmount : scrollAmount,
-      behavior: "smooth",
-    });
-
-    setTimeout(checkScroll, 300);
-  };
-
-  React.useEffect(() => {
-    checkScroll();
-    const container = scrollContainerRef.current;
-    if (!container) return;
-
-    container.addEventListener("scroll", checkScroll);
-    return () => container.removeEventListener("scroll", checkScroll);
-  }, []);
-
-  if (!events || events.length === 0) return null;
-
-  return (
-    <div className="relative group h-full">
-      {/* LEFT ARROW */}
-      {canScrollLeft && (
-        <button
-          onClick={() => scroll("left")}
-          className="
-            absolute left-0 top-0 h-full z-20
-            bg-dark-card/90 hover:bg-dark-card
-            border border-white/20 hover:border-primary
-            rounded-r-lg px-3
-            transition-all flex items-center
-          "
-        >
-          <svg
-            className="w-8 h-8 text-primary"
-            fill="none"
-            stroke="currentColor"
-            viewBox="0 0 24 24"
-          >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth={2}
-              d="M15 19l-7-7 7-7"
-            />
-          </svg>
-        </button>
-      )}
-
-      {/* RIGHT ARROW */}
-      {canScrollRight && (
-        <button
-          onClick={() => scroll("right")}
-          className="
-            absolute right-0 top-0 h-full z-20
-            bg-dark-card/90 hover:bg-dark-card
-            border border-white/20 hover:border-primary
-            rounded-l-lg px-3
-            transition-all flex items-center
-          "
-        >
-          <svg
-            className="w-8 h-8 text-primary"
-            fill="none"
-            stroke="currentColor"
-            viewBox="0 0 24 24"
-          >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth={2}
-              d="M9 5l7 7-7 7"
-            />
-          </svg>
-        </button>
-      )}
-
-      {/* SCROLL CONTAINER */}
-      <div
-        ref={scrollContainerRef}
-        className="overflow-x-auto py-4 scrollbar-hide"
-      >
-        <div className="flex gap-2">
-          {events.slice(0, 20).map((ev, idx) => (
-            <EventThumbnail
-              key={String(ev.id ?? ev.eventId ?? idx)}
-              event={ev}
-              onSelect={onSelect}
-              selectedId={selectedId}
-            />
-          ))}
-        </div>
-      </div>
-    </div>
-  );
-};
 
 
 // Event Card Component
@@ -810,7 +498,7 @@ const LivePredictionsList: React.FC<{ onExit: (p: any, event: any) => void; sele
   const [items, setItems] = React.useState<any[]>([]);
   const [eventsMap, setEventsMap] = React.useState<Record<string, any>>({});
   const [isLoading, setIsLoading] = React.useState<boolean>(true);
-console.log('items live',items);
+
   const getEventName = (event: any) => (
     (typeof event?.name === "string" && event.name.trim()) ||
     (typeof event?.eventName === "string" && event.eventName.trim()) ||
@@ -1674,7 +1362,7 @@ const ExitedPredictionsList: React.FC<{ onOpen: (p: any, event: any) => void; se
 };
 
 // Main Sports Page
-export const Sports: React.FC<{ selectedSport?: string | null }> = ({ selectedSport: propSelectedSport }) => {
+export const Predictions: React.FC<{ selectedSport?: string | null }> = ({ selectedSport: propSelectedSport }) => {
   const [events, setEvents] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [selectedEventId, setSelectedEventId] = useState<string | null>(null);
@@ -1720,7 +1408,6 @@ export const Sports: React.FC<{ selectedSport?: string | null }> = ({ selectedSp
 
   const tabs = [
     
-    { id: 'all', label: 'All' },
     { id: 'open', label: 'Open' },
     { id: 'live', label: 'Live' },
     { id: 'completed', label: 'Completed' },
@@ -2244,74 +1931,14 @@ export const Sports: React.FC<{ selectedSport?: string | null }> = ({ selectedSp
     }
   };
 
-  
-console.log('selectedPrediction',selectedPrediction);
-const handleExitPrediction = async () => {
-//  if (!selectedPrediction) return;
-  // ✅ validations
-  if (!exitAmount || Number(exitAmount) <= 0) {
-    setErrorMsg("Please enter a valid exit amount");
-    return;
-  }
-
-console.log('selectedPrediction',selectedPrediction);
-  const exitAmt = Number(exitAmount);
-  if (exitAmt > Number(selectedPrediction.amount)) {
-    setErrorMsg("Exit amount cannot exceed invested amount");
-    return;
-  }
-
-  setIsSubmitting(true);
-  setErrorMsg("");
-
-console.log('selectedPrediction',selectedPrediction);
-  try {
-    const res = await api.post("/order/v1/exitorder", {
-      amount: String(exitAmt),
-      eventId: selectedPrediction.eventId,
-      orderId: selectedPrediction.orderId,
-      questionId: selectedPrediction.questionId,
-
-      predictionDetails: {
-        selectedPredictionChoice: true,
-        selectedPredictionOutcome: selectedPrediction.answer,
-      },
-
-      modifiers: {
-        creditDiscount: "0",
-        creditMarkup: "0",
-        percentage: String(selectedPrediction.percentage
-        ),
-        updatedPercentage:  String(
-          exitConfidence
-        ),
-      },
-    });
-
-    if (res?.status?.type === "SUCCESS") {
-      setSuccessMessage("Prediction exited successfully");
-
-      // 🔁 reset exit state
-      setSelectedPrediction(null);
-      setSelectedAction(null);
-      setExitAmount("");
-      setExitConfidence(null);
-
-      // 🔄 refresh balance + lists
-      fetchBalance();
-      setActiveTab("exited");
-    } else {
-      setErrorMsg("Failed to exit prediction");
-    }
-  } catch (err) {
-    console.error("Exit prediction failed", err);
-    setErrorMsg("Exit prediction failed. Please try again.");
-  } finally {
-    setIsSubmitting(false);
-  }
-};
 
 
+  const handleExitPrediction = (id: string) => {
+    setActivePredictions(prev => prev.map(p => (p.id === id ? { ...p, status: 'PREDICTION_STATUS_EXITED' } : p)));
+    setSuccessMessage('Prediction exited');
+    setSelectedAction(null);
+    setSelectedPrediction(null);
+  };
 
   const handleCancelPrediction = (id: string) => {
     setActivePredictions(prev => prev.map(p => (p.id === id ? { ...p, status: 'PREDICTION_STATUS_CANCELLED' } : p)));
@@ -2332,80 +1959,13 @@ console.log('selectedPrediction',selectedPrediction);
       <div className="px-4 sm:px-6 lg:px-8 pb-10">
         <div className="max-w-[1400px] mx-auto">
           {/* Thumbnail strip under header */}
-          <EventThumbnailStrip
-            events={mainEvents}
-            selectedId={selectedEventId}
-            onSelect={(id: string) => {
-              setSelectedEventId(id);
-              // bring the details into view by scrolling a bit
-              try {
-                window.scrollTo({ top: 200, behavior: 'smooth' });
-              } catch {}
-            }}
-          />
-
-          {/* {selectedEventId && (
-            <div className="mb-7">
-              <button
-                onClick={() => {
-                  setSelectedEventId(null);
-                  setSelectedQuestion(null);
-                  setSelectedOutcome(null);
-                  setConfidenceOverride(null);
-                  setAmount('');
-                  setSelectedTeams(null);
-                  setBalance(null);
-                  setErrorMsg('');
-                  setExitAmount('');
-                  setExitConfidence(null);
-                  setIsMobilePanelOpen(false);
-                  setActiveTab('all');
-                }}
-                className="flex items-center text-gray-text hover:text-white mb-4 transition-colors"
-              >
-                <ArrowLeft className="w-5 h-5 mr-2" />
-                Back
-              </button>
-            </div>
-          )} */}
+         
 
           <div className="flex flex-col lg:flex-row gap-8">
             {/* Left Sidebar - Sports */}
             <aside className="w-full lg:w-64 lg:flex-shrink-0">
               <div className="rounded-2xl border border-white/10 bg-white/5 p-4 sticky top-24">
-               {/*<h3 className="text-sm font-semibold text-slate-200 mb-4">Filters</h3>*/}
-          {/* <div className="space-y-2 mb-6">
-            <button 
-              onClick={() => setSelectedEventStatusFilter('live')}
-              className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg font-medium transition-all ${
-                selectedEventStatusFilter === 'live'
-                  ? 'bg-slate-700 text-emerald-300'
-                  : 'text-slate-300 hover:bg-slate-700'
-              }`}
-            >
-              <span className="text-green-400">●</span> Live
-            </button>
-            <button 
-              onClick={() => setSelectedEventStatusFilter('upcoming')}
-              className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg font-medium transition-all ${
-                selectedEventStatusFilter === 'upcoming'
-                  ? 'bg-slate-700 text-emerald-300'
-                  : 'text-slate-300 hover:bg-slate-700'
-              }`}
-            >
-              Upcoming
-            </button>
-            <button 
-              onClick={() => setSelectedEventStatusFilter('trending')}
-              className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg font-medium transition-all ${
-                selectedEventStatusFilter === 'trending'
-                  ? 'bg-slate-700 text-emerald-300'
-                  : 'text-slate-300 hover:bg-slate-700'
-              }`}
-            >
-              Trending
-            </button>
-          </div> */}
+              
 
                 <h3 className="text-sm font-semibold text-white mb-3">Sports</h3>
                 <ul className="space-y-2">
@@ -2538,39 +2098,7 @@ console.log('selectedPrediction',selectedPrediction);
                 
               )}
 
-              {selectedEventId ? (
-                <EventDetails
-                  eventId={String(selectedEventId)}
-                  onBack={() => {
-                    setSelectedEventId(null);
-                    setSelectedQuestion(null);
-                    setSelectedOutcome(null);
-                    setConfidenceOverride(null);
-                    setAmount('');
-                    setSelectedTeams(null);
-                    setBalance(null);
-                    setErrorMsg('');
-                    setExitAmount('');
-                    setExitConfidence(null);
-                    setIsMobilePanelOpen(false);
-                    setActiveTab('all');
-                  }}
-                  onPredict={(question) => {
-                    setSelectedQuestion(question);
-                    setSelectedOutcome(null);
-                    setConfidenceOverride(null);
-                    setAmount('');
-                    setErrorMsg('');
-                    setExitAmount('');
-                    setExitConfidence(null);
-                    setSelectedAction(null);
-                    setSelectedPrediction(null);
-                    setSuccessMessage(null);
-                    fetchBalance();
-                    setIsMobilePanelOpen(true);
-                  }}
-                />
-              ) : activeTab === 'live' ? (
+              { activeTab === 'live' ? (
                 <LivePredictionsList
                   selectedSport={selectedSport}
                   selectedTournamentId={selectedTournamentId}
@@ -2582,12 +2110,10 @@ console.log('selectedPrediction',selectedPrediction);
                     const pctNum = Number(p?.percentage ?? p?.exitPercentage ?? 0);
                     const matchedAmt = Number(p?.matchedAmt ?? 0);
                     const investAmt = Number(p?.investmentAmt ?? 0);
-
+                    
                     setSelectedPrediction({
                       predictionId: String(p?.predictionId || ""),
                       eventId: String(p?.eventId || ""),
-                      orderId: String(p?.orderId || ""),
-                      questionId: String(p?.questionId || ""),
                       eventName: eventDes,
                       eventDescription: p?.eventDescription || "",
                       questionName: qName,
@@ -2676,163 +2202,11 @@ console.log('selectedPrediction',selectedPrediction);
                     fetchBalance();
                   }}
                 />
-              ) : mainLoading ? (
+              ) : mainLoading ?? (
                 <div className="text-center py-12">
                   <p className="text-gray-text">Loading events...</p>
                 </div>
-              ) : mainEvents.length === 0 ? (
-                <div className="text-center py-12">
-                  <p className="text-gray-text">
-                    {selectedTournamentId 
-                      ? 'No events in tournament'
-                      : events.length === 0
-                      ? 'No events available'
-                      : `No ${activeTab} events${selectedSport ? ` for ${selectedSport}` : ''}`}
-                  </p>
-                </div>
-              ) : (
-                <div className="space-y-6">
-                  {mainEvents.map((event, i) => (
-                    <div key={i} className="space-y-3">
-                      <EventCard
-                        event={event}
-                        onViewQuestions={() => {
-                          const id = String(event.id ?? event.eventId ?? '');
-                          setSelectedEventId(id);
-                          setSelectedQuestion(null);
-                          setSelectedOutcome(null);
-                          setConfidenceOverride(null);
-                          setAmount('');
-                          setExitAmount('');
-                          setSelectedAction(null);
-                          setSelectedPrediction(null);
-                          setSuccessMessage(null);
-                           const teams = Array.isArray(event?.teams)
-                        ? event.teams
-                        : Array.isArray(event?.sportEvent?.teams)
-                        ? event.sportEvent.teams
-                        : [];
-                      const getName = (t: any) => [t?.name, t?.shortName, t?.displayName, t?.teamName, t?.abbreviation].find((v: any) => typeof v === "string" && v.trim().length > 0) || "Team";
-                      const aName = getName(teams?.[0] || {});
-                      const bName = getName(teams?.[1] || {});
-                      // Derive probabilities for team A and B from event.stats.result_prediction with robust parsing
-                      const statsStr = typeof event?.stats === "string" ? event.stats : JSON.stringify(event?.stats ?? {});
-                      let aProb = 50;
-                      let bProb = 50;
-                      try {
-                        const statsObj = JSON.parse(statsStr || "{}");
-                        const pred = statsObj?.result_prediction;
-                        const parseProb = (v: any) => {
-                          const raw = typeof v === "string" ? v.replace("%", "").trim() : v;
-                          let n = Number(raw);
-                          if (!isFinite(n) || isNaN(n)) return 50;
-                          if (n <= 1) n = n * 100; // treat fractional
-                          return Math.max(0, Math.min(100, n));
-                        };
-                        if (Array.isArray(pred) && pred.length >= 2) {
-                          aProb = parseProb(pred[0]?.value);
-                          bProb = parseProb(pred[1]?.value);
-                        }
-                      } catch {
-                        // default 50/50
-                      }
-                      setSelectedTeams({ a: { name: aName, prob: aProb }, b: { name: bName, prob: bProb } });
-                        }}
-                        onQuickPredict={(question, eventId) => {
-                          const id = String(event.id ?? event.eventId ?? eventId ?? '');
-                          setSelectedEventId(id);
-                          setSelectedQuestion(question);
-                          setSelectedOutcome(null);
-                          setConfidenceOverride(null);
-                          setAmount('');
-                          setErrorMsg('');
-                          setExitAmount('');
-                          setExitConfidence(null);
-                          setSelectedAction(null);
-                          setSelectedPrediction(null);
-                          setSuccessMessage(null);
-  const teams = Array.isArray(event?.teams)
-                        ? event.teams
-                        : Array.isArray(event?.sportEvent?.teams)
-                        ? event.sportEvent.teams
-                        : [];
-                      const getName = (t: any) => [t?.name, t?.shortName, t?.displayName, t?.teamName, t?.abbreviation].find((v: any) => typeof v === "string" && v.trim().length > 0) || "Team";
-                      const aName = getName(teams?.[0] || {});
-                      const bName = getName(teams?.[1] || {});
-                      const statsStr = typeof event?.stats === "string" ? event.stats : JSON.stringify(event?.stats ?? {});
-                      let aProb = 50;
-                      let bProb = 50;
-                      try {
-                        const statsObj = JSON.parse(statsStr || "{}");
-                        const pred = statsObj?.result_prediction;
-                        const parseProb = (v: any) => {
-                          const raw = typeof v === "string" ? v.replace("%", "").trim() : v;
-                          let n = Number(raw);
-                          if (!isFinite(n) || isNaN(n)) return 50;
-                          if (n <= 1) n = n * 100;
-                          return Math.max(0, Math.min(100, n));
-                        };
-                        if (Array.isArray(pred) && pred.length >= 2) {
-                          aProb = parseProb(pred[0]?.value);
-                          bProb = parseProb(pred[1]?.value);
-                        }
-                      } catch {}
-                      setSelectedTeams({ a: { name: aName, prob: aProb }, b: { name: bName, prob: bProb } });
-                      fetchBalance();                        }}
-                      />
-                      {selectedEventId === String(event.id ?? event.eventId ?? '') && (
-                       
-                        <EventDetails
-                      eventId={String(event.id ?? event.eventId ?? "")}
-                      onBack={() => {
-                        setSelectedEventId(null);
-                        setSelectedQuestion(null);
-                        setSelectedOutcome(null);
-                        setConfidenceOverride(null);
-                        setAmount("");
-                        setSelectedTeams(null);
-                        setBalance(null);
-                        setErrorMsg("");
-                        setSuppressQuestionPredictionFetch(false);
-
-                            setExitAmount('');
-                            setExitConfidence(null);
-                            setIsMobilePanelOpen(false);
-                      }}
-                      onPredict={(question,  predictionId) => {
-                           setSelectedQuestion(question);
-                            setSelectedOutcome(null);
-                            setConfidenceOverride(null);
-                            setAmount('');
-                            setErrorMsg('');
-                            setExitAmount('');
-                            setExitConfidence(null);
-                            setSelectedAction(null);
-                            setSelectedPrediction(null);
-                            setSuccessMessage(null);
-                            fetchBalance();
-                            setIsMobilePanelOpen(true);
-                        if (predictionId) {
-                          setSuppressQuestionPredictionFetch(true);
-                          (async () => {
-                            try {
-                              const byId = await api.post<any>("/prediction/v1/getbyid", { predictionId });
-                              const mine = byId?.prediction || null;
-                              setSelectedQuestionPrediction(mine);
-                            } catch (e) {
-                              setSelectedQuestionPrediction(null);
-                            }
-                          })();
-                        } else {
-                          setSelectedQuestionPrediction(null);
-                        }
-                      }}
-                    />
-                      )}
-                    </div>
-                  ))}
-                </div>
-              )}
+              ) }
             </main>
 
             {/* Right Sidebar - Prediction Panel */}
@@ -2991,7 +2365,7 @@ console.log('selectedPrediction',selectedPrediction);
                     )}
 
                     <button
-                      onClick={() => (selectedAction === 'cancel' ? handleCancelPrediction(selectedPrediction.id) : handleExitPrediction(selectedPrediction))}
+                      onClick={() => (selectedAction === 'cancel' ? handleCancelPrediction(selectedPrediction.id) : handleExitPrediction(selectedPrediction.id))}
                       className={`w-full py-3 rounded-lg font-semibold transition-all ${selectedAction === 'cancel' ? 'bg-dark-card text-white border border-white/10 hover:border-primary/30' : 'bg-yellow-500 text-dark-bg hover:bg-yellow-400'}`}
                     >
                       {selectedAction === 'cancel' ? 'Cancel Prediction' : 'Exit Prediction'}
@@ -3446,4 +2820,4 @@ console.log('selectedPrediction',selectedPrediction);
   );
 };
 
-export default Sports;
+export default Predictions;
