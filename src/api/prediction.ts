@@ -81,6 +81,7 @@ export type GetUserPredictionsPayload = {
 export type GetPredictionByIdPayload = {
   predictionId: string;
   userId: string;
+  
 };
 
 // --- /prediction/v1/getbyquestion ---
@@ -92,7 +93,8 @@ export type GetPredictionsByQuestionPayload = {
 
 // --- /prediction/v1/performance ---
 export type PredictionPerformancePayload = {
-  userId: string;
+ 
+  timeInForce: string;
 };
 
 // --- /prediction/v1/search ---
@@ -184,6 +186,10 @@ async function getUserPredictions(payload: GetUserPredictionsPayload) {
   return api.post<GetUserPredictionsResponse>("/prediction/v1/get", {
     userId: payload.userId,
     ...buildPageRequest(payload.pageRequest),
+      day: 0,
+        month: 0,
+        year: 0,
+        timeInForce: "PREDICTIONTIMEINFORCE_LIVE",
   });
 }
 

@@ -9,8 +9,6 @@ import {
   YAxis,
   ResponsiveContainer,
   Tooltip,
-  BarChart,
-  Bar,
 } from "recharts";
 import { PageHeader } from "../components/PageHeader";
 
@@ -128,9 +126,9 @@ const mapActivity = (api: any): Activity[] => {
 const mapPredictionsToPositions = (predictions: any[]): Position[] =>
   predictions.map((p: any) => ({
     id: p.predictionId ?? crypto.randomUUID(),
-    outcome: p?.meta?.outcomeName ?? "Outcome",
+    outcome: p?.predictionOutcome ?? "Outcome",
     average: p?.isCorrect ? "YES" : "NO",
-    current: Number(p?.potentialReturn ?? 0),
+    current: Number(p?.potentialReturns ?? 0),
     price: Number(p?.stakeAmount ?? 0),
   }));
 
@@ -141,14 +139,33 @@ const mapPredictionsToPositions = (predictions: any[]): Position[] =>
 const PortfolioDyn: React.FC = () => {
   const [data, setData] = useState<PortfolioData | null>(null);
   const [loading, setLoading] = useState(true);
+  const isInitialMount = React.useRef(true);
+  // Outcome filter and pagination state
+  const [outcomeFilter, setOutcomeFilter] = useState<string>("ALL");
+  const [currentPage, setCurrentPage] = useState(1);
+  const pageSize = 5;
+  // Chart filter state
+  const timeInForceOptions = [
+    "PREDICTIONTIMEINFORCE_LIVE",
+    "PREDICTIONTIMEINFORCE_COMPLETED_TODAY",
+    "PREDICTIONTIMEINFORCE_COMPLETED_YESTERDAY",
+    "PREDICTIONTIMEINFORCE_COMPLETED_LASTWEEK",
+    "PREDICTIONTIMEINFORCE_COMPLETED_LASTMONTH",
+    "PREDICTIONTIMEINFORCE_COMPLETED_ALLTIME",
+    "PREDICTIONTIMEINFORCE_COMPLETED_THISMONTH",
+    "PREDICTIONTIMEINFORCE_UPCOMING",
+    "PREDICTIONTIMEINFORCE_PENDING_LIVE",
+    "PREDICTIONTIMEINFORCE_CANCELLED",
+    "PREDICTIONTIMEINFORCE_EXITED"
+  ];
+  const [chartTimeInForce, setChartTimeInForce] = useState<string>("PREDICTIONTIMEINFORCE_COMPLETED_THISMONTH");
 
-  const loadPortfolio = async () => {
-    setLoading(true);
+  const loadPortfolio = async (showLoading = false) => {
+    if (showLoading) setLoading(true);
 
     const userId = getUserIdFromToken();
     const timeSince = getTimeSince();
 
-    /* -------- BALANCE -------- */
     let mapped = mapPortfolioResponse({});
     try {
       const balanceRes = await balanceApi.getBalance();
@@ -157,7 +174,33 @@ const PortfolioDyn: React.FC = () => {
       console.warn("Balance API failed");
     }
 
-    /* -------- ACTIVITY -------- */
+    // Fetch performance data for chart
+    try {
+        const perfRes = await predictionApi.getPredictionPerformance({
+          timeInForce: chartTimeInForce,
+        });
+        // Map performance data to chartData using the performances array if available
+        if (Array.isArray((perfRes as any)?.performances)) {
+          mapped.chartData = (perfRes as any).performances.map((item: any, idx: number) => ({
+            name: item.day ? `Day ${item.day}` : `Day ${idx + 1}`,
+            value: Number(item.earnings ?? 0),
+          }));
+          console.log('Portfolio Chart Data:', mapped.chartData);
+        } else if (perfRes?.performance) {
+          mapped.chartData = [
+            { name: 'Earnings', value: Number(perfRes.performance.earnings ?? 0) },
+            { name: 'Accuracy', value: Number(perfRes.performance.accuracy ?? 0) }
+          ];
+          console.log('Portfolio Chart Data:', mapped.chartData);
+        } else {
+          mapped.chartData = [];
+          console.log('Portfolio Chart Data: EMPTY');
+        }
+    } catch (e) {
+      console.warn("Performance API failed");
+      mapped.chartData = [];
+    }
+
     try {
       const activityRes = await (activityApi as any).getUserActivity(
         userId ? { userId } : {}
@@ -165,7 +208,6 @@ const PortfolioDyn: React.FC = () => {
       mapped.activity = mapActivity(activityRes);
     } catch {}
 
-    /* -------- PnL (OPTIONAL) -------- */
     mapped.unrealizedPnl = await safeGetPnL("PNLTYPE_UNREALIZED", timeSince);
     mapped.realizedPnl = await safeGetPnL("PNLTYPE_REALIZED", timeSince);
 
@@ -176,15 +218,14 @@ const PortfolioDyn: React.FC = () => {
       { name: "Realized", value: mapped.realizedPnl },
     ];
 
-    /* -------- POSITIONS -------- */
     try {
       const posRes = await predictionApi.getUserPredictions({
         userId: userId ?? "",
-        pageRequest: { pageNumber: 1, pageSize: 10 },
+        pageRequest: { pageNumber: 1, pageSize: 20 },
         day: 0,
         month: 0,
         year: 0,
-        timeInForce: "PREDICTIONTIMEINFORCE_COMPLETED_LIVE",
+        timeInForce: "PREDICTIONTIMEINFORCE_LIVE",
       } as any);
 
       mapped.positions = mapPredictionsToPositions(
@@ -197,10 +238,18 @@ const PortfolioDyn: React.FC = () => {
   };
 
   useEffect(() => {
-    loadPortfolio();
-    const interval = setInterval(loadPortfolio, 30000);
+    loadPortfolio(true); // initial load, show loading
+    isInitialMount.current = false;
+    const interval = setInterval(() => {
+      loadPortfolio(false); // background refresh, don't show loading
+    }, 30000);
     return () => clearInterval(interval);
-  }, []);
+  }, [chartTimeInForce]);
+
+  // Reset to first page when filter changes
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [outcomeFilter]);
 
   if (loading || !data) {
     return (
@@ -211,7 +260,6 @@ const PortfolioDyn: React.FC = () => {
   }
 
   /* ---------------- UI BELOW (UNCHANGED) ---------------- */
-
   return (
     <div className="bg-dark-bg text-gray-light">
       <PageHeader
@@ -220,297 +268,183 @@ const PortfolioDyn: React.FC = () => {
         compact
         isSubpage
       />
-
       <div className="px-4 sm:px-6 lg:px-8 pb-10 relative">
         <div className="max-w-[1400px] mx-auto">
-          <div className="flex flex-col lg:flex-row gap-8">
-            {/* ================= MAIN CONTENT ================= */}
-            <div className="flex-1 lg:flex-[3] space-y-8">
-              {/* ===== TOP PROFILE + CARDS ===== */}
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                {/* TOTAL VALUE */}
-                <div className="relative bg-dark-card border border-white/5 rounded-2xl p-8 overflow-hidden">
-                  <div className="absolute top-0 right-0 w-32 h-32 bg-primary/30 rounded-full -mr-16 -mt-16 blur-lg" />
-                  <h2 className="text-sm text-gray-text mb-3">Total Portfolio Value</h2>
-                  <p className="text-4xl font-bold text-white">
-                    ${Number(data.totalValue).toLocaleString(undefined, {
-                      minimumFractionDigits: 2,
-                    })}
-                  </p>
-                  <span className="text-primary font-semibold mt-2 inline-block">
-                    {data.todayChange >= 0 ? "+" : "-"}$
-                    {Math.abs(data.todayChange).toLocaleString(undefined, {
-                      minimumFractionDigits: 2,
-                    })}
-                  </span>
-                </div>
-
-                {/* AVAILABLE BALANCE */}
-                <div className="relative bg-dark-card border border-white/5 rounded-2xl p-8 overflow-hidden">
-                  <div className="absolute top-0 right-0 w-32 h-32 bg-primary/30 rounded-full -mr-16 -mt-16 blur-lg" />
-                  <h2 className="text-sm text-gray-text mb-3">Available Balance</h2>
-                  <p className="text-4xl font-bold text-white">
-                    ${Number(data.availableBalance).toLocaleString(undefined, {
-                      minimumFractionDigits: 2,
-                    })}
-                  </p>
-                </div>
-              </div>
-
-              {/* ===== PORTFOLIO CHART ===== */}
-              <div className="relative bg-dark-card border border-white/5 rounded-2xl p-8 overflow-hidden">
-                <div className="absolute top-0 right-0 w-32 h-32 bg-primary/30 rounded-full -mr-16 -mt-16 blur-lg" />
-                <h2 className="text-2xl font-bold text-white mb-2">Portfolio Value</h2>
-                <p className="text-gray-text text-sm mb-6">12-month performance overview</p>
-
-                <ResponsiveContainer width="100%" height={300}>
-                  <LineChart data={data.chartData}>
-                    <defs>
-                      <linearGradient id="portfolioGrad" x1="0" y1="0" x2="0" y2="1">
-                        <stop offset="5%" stopColor="#00FF73" stopOpacity={0.8} />
-                        <stop offset="95%" stopColor="#00FF73" stopOpacity={0} />
-                      </linearGradient>
-                    </defs>
-                    <XAxis dataKey="name" stroke="#99A1AF" />
-                    <YAxis stroke="#99A1AF" />
-                    <Tooltip
-                      contentStyle={{
-                        background: "#1A1A1D",
-                        border: "1px solid #2A2A2D",
-                      }}
-                    />
-                    <Line
-                      type="monotone"
-                      dataKey="value"
-                      stroke="#00FF73"
-                      strokeWidth={3}
-                      dot={false}
-                      fill="url(#portfolioGrad)"
-                    />
-                  </LineChart>
-                </ResponsiveContainer>
-              </div>
-
-              {/* ===== P&L ===== */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-                {[
-                  {
-                    title: "Unrealized P&L",
-                    value: data.unrealizedPnl,
-                    chart: data.unrealizedPnlData,
-                  },
-                  {
-                    title: "Realized P&L",
-                    value: data.realizedPnl,
-                    chart: data.realizedPnlData,
-                  },
-                ].map((item) => (
-                  <div
-                    key={item.title}
-                    className="relative bg-dark-card border border-white/5 rounded-2xl p-8 overflow-hidden"
-                  >
-                    <div className="absolute top-0 right-0 w-32 h-32 bg-primary/30 rounded-full -mr-16 -mt-16 blur-lg" />
-                    <h2 className="text-2xl font-bold text-white mb-2">
-                      {item.title}
-                    </h2>
-                    <p className="text-4xl font-bold text-primary mb-6">
-                      {item.value >= 0 ? "+" : "-"}$
-                      {Math.abs(item.value).toLocaleString(undefined, {
-                        minimumFractionDigits: 2,
-                      })}
-                    </p>
-                    <ResponsiveContainer width="100%" height={60}>
-                      <BarChart data={item.chart}>
-                        <Bar
-                          dataKey="value"
-                          fill="#00FF73"
-                          radius={[4, 4, 0, 0]}
-                        />
-                      </BarChart>
-                    </ResponsiveContainer>
-                  </div>
-                ))}
-              </div>
-
-              {/* ===== POSITIONS ===== */}
-              <div className="relative bg-dark-card border border-white/5 rounded-2xl p-8 overflow-hidden">
-                <h2 className="text-2xl font-bold text-white mb-6">Positions</h2>
-                <div className="overflow-x-auto">
-                  <table className="w-full">
-                    <thead>
-                      <tr className="border-b border-white/5 text-gray-text">
-                        <th className="py-4 px-4 text-left">Outcome</th>
-                        <th className="py-4 px-4 text-center">Average</th>
-                        <th className="py-4 px-4 text-center">Current</th>
-                        <th className="py-4 px-4 text-center">Price</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {data.positions.map((p: any) => (
-                        <tr
-                          key={p.id}
-                          className="border-b border-white/5 hover:bg-dark-lighter/50"
-                        >
-                          <td className="py-4 px-4 text-left">{p.outcome}</td>
-                          <td
-                            className={`py-4 px-4 text-center font-semibold ${
-                              p.average === "YES" ? "text-primary" : "text-red-400"
-                            }`}
-                          >
-                            {p.average}
-                          </td>
-                          <td className="py-4 px-4 text-center">${p.current.toFixed(2)}</td>
-                          <td className="py-4 px-4 text-center">${p.price.toFixed(2)}</td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-              </div>
-
-              {/* ===== ACTIVITY ===== */}
-              <div className="relative bg-dark-card border border-white/5 rounded-2xl p-8 hover:border-white/10 transition-all duration-300 overflow-hidden">
-                <div className="absolute top-0 right-0 w-32 h-32 bg-primary/30 rounded-full -mr-16 -mt-16 blur-lg" />
-                <div className="relative z-10">
-                  <h2 className="text-2xl font-bold text-white mb-6">Activity</h2>
-
-                  <div className="overflow-x-auto">
-                    <table className="w-full">
-                      <thead>
-                        <tr className="border-b border-white/10 text-gray-text text-sm">
-                          <th className="py-4 px-4 text-left">Type</th>
-                          <th className="py-4 px-4 text-left">Sub Type</th>
-                          <th className="py-4 px-4 text-left">Description</th>
-                          <th className="py-4 px-4 text-left">Amount</th>
-                          <th className="py-4 px-4 text-left">Time</th>
-                        </tr>
-                      </thead>
-
-                      <tbody>
-                        {(data.activity ?? []).map((a: any) => (
-                          <tr
-                            key={a.activityId}
-                            className="border-b border-white/5 hover:bg-dark-lighter/50 transition-colors"
-                          >
-                            <td className="py-4 px-4 max-w-[140px] truncate">
-                              {a.activityType}
-                            </td>
-
-                            <td className="py-4 px-4 max-w-[140px] truncate">
-                              {a.activitySubType}
-                            </td>
-
-                            <td className="py-4 px-4 max-w-[260px] truncate">
-                              {a.activityDescription}
-                            </td>
-
-                            <td className="py-4 px-4 text-white">
-                              ${Number(a.activityAmount ?? 0).toFixed(2)}
-                            </td>
-
-                            <td className="py-4 px-4 text-gray-muted">
-                              {a.activityTime
-                                ? new Date(a.activityTime).toLocaleString()
-                                : "-"}
-                            </td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  </div>
-                </div>
-              </div>
+          {/* ===== TOP STATS ROW ===== */}
+          <div className="flex flex-col md:flex-row gap-6 mb-8">
+            {/* Total Portfolio Value */}
+            <div className="flex-1 min-w-[200px] bg-dark-card border border-white/5 rounded-2xl p-6 flex flex-col items-center justify-center">
+              <h2 className="text-sm text-gray-text mb-2">Total Portfolio Value</h2>
+              <p className="text-2xl font-bold text-white">
+                ${Number(data.totalValue).toLocaleString(undefined, { minimumFractionDigits: 2 })}
+              </p>
+              <span className="text-primary font-semibold mt-1">
+                {data.todayChange >= 0 ? "+" : "-"}${Math.abs(data.todayChange).toLocaleString(undefined, { minimumFractionDigits: 2 })}
+              </span>
             </div>
-
-            {/* ================= SIDEBAR ================= */}
-            <div className="w-full lg:w-80 space-y-6">
-              {/* ADVANCED FILTERS */}
-              <div className="relative bg-dark-card border border-white/5 rounded-2xl p-8 hover:border-white/10 transition-all duration-300 overflow-hidden">
-                <div className="absolute top-0 right-0 w-32 h-32 bg-primary/30 rounded-full -mr-16 -mt-16 blur-lg" />
-                <div className="relative z-10">
-                  <h2 className="text-2xl font-bold text-white mb-6">
-                    Advanced Filters
-                  </h2>
-
-                  <div className="space-y-4 mb-6">
-                    {[
-                      { label: "Market Type", options: ["Politics"] },
-                      { label: "Position Type", options: ["Yes", "No"] },
-                      { label: "Sort By", options: ["Value", "Date"] },
-                      { label: "Date Entered", options: ["Market End Date"] },
-                    ].map((f) => (
-                      <div key={f.label}>
-                        <label className="block text-sm font-medium text-primary mb-2">
-                          {f.label}
-                        </label>
-                        <select className="w-full bg-dark-bg border border-white/5 rounded-lg px-4 py-2.5 text-white focus:outline-none focus:border-white/10 focus:ring-1 focus:ring-white/10 transition-all">
-                          {f.options.map((o) => (
-                            <option key={o}>{o}</option>
-                          ))}
-                        </select>
-                      </div>
-                    ))}
-
-                    {/* STATUS */}
-                    <div>
-                      <label className="block text-sm font-medium text-primary mb-3">
-                        Status
-                      </label>
-                      <div className="space-y-2">
-                        {["Open", "Settled", "High"].map((s) => (
-                          <button
-                            key={s}
-                            className="w-full bg-dark-bg border border-white/5 rounded-lg px-4 py-2.5 text-white hover:border-white/10 hover:bg-white/[0.02] transition-all"
-                          >
-                            {s}
-                          </button>
-                        ))}
-                      </div>
-                    </div>
-
-                    {/* RISK */}
-                    <div>
-                      <label className="block text-sm font-medium text-primary mb-3">
-                        Risk Level
-                      </label>
-                      <div className="space-y-2">
-                        {["Low", "Medium", "High"].map((r) => (
-                          <button
-                            key={r}
-                            className="w-full bg-dark-bg border border-white/5 rounded-lg px-4 py-2.5 text-white hover:border-white/10 hover:bg-white/[0.02] transition-all"
-                          >
-                            {r}
-                          </button>
-                        ))}
-                      </div>
-                    </div>
-                  </div>
-
-                  <button className="w-full bg-gradient-to-r from-primary to-primary/80 text-dark-bg font-bold py-3 rounded-lg hover:from-primary/90 hover:to-primary/70 transition-all shadow-lg shadow-primary/30">
-                    Apply Filters
-                  </button>
-                </div>
-              </div>
-
-              {/* PERFORMANCE ANALYTICS */}
-              <div className="relative bg-dark-card border border-white/5 rounded-2xl p-8 overflow-hidden">
-                <div className="absolute top-0 right-0 w-32 h-32 bg-primary/30 rounded-full -mr-16 -mt-16 blur-lg" />
-                <h2 className="text-2xl font-bold text-white mb-2">
-                  Performance Analytics
-                </h2>
-                <p className="text-sm text-gray-text mb-2">Total Earnings</p>
-                <h3 className="text-4xl font-bold text-primary">
-                  ${(data.totalValue - data.availableBalance).toLocaleString(undefined, {
-                    minimumFractionDigits: 2,
-                  })}
-                </h3>
-              </div>
+            {/* Available Balance */}
+            <div className="flex-1 min-w-[200px] bg-dark-card border border-white/5 rounded-2xl p-6 flex flex-col items-center justify-center">
+              <h2 className="text-sm text-gray-text mb-2">Available Balance</h2>
+              <p className="text-2xl font-bold text-white">
+                ${Number(data.availableBalance).toLocaleString(undefined, { minimumFractionDigits: 2 })}
+              </p>
+            </div>
+            {/* Unrealized P&L */}
+            <div className="flex-1 min-w-[200px] bg-dark-card border border-white/5 rounded-2xl p-6 flex flex-col items-center justify-center">
+              <h2 className="text-sm text-gray-text mb-2">UnRealized P&L</h2>
+              <p className="text-2xl font-bold text-primary">
+                {data.unrealizedPnl >= 0 ? "+" : "-"}${Math.abs(data.unrealizedPnl).toLocaleString(undefined, { minimumFractionDigits: 2 })}
+              </p>
+            </div>
+            {/* Realized P&L */}
+            <div className="flex-1 min-w-[200px] bg-dark-card border border-white/5 rounded-2xl p-6 flex flex-col items-center justify-center">
+              <h2 className="text-sm text-gray-text mb-2">Realized P&L</h2>
+              <p className="text-2xl font-bold text-primary">
+                {data.realizedPnl >= 0 ? "+" : "-"}${Math.abs(data.realizedPnl).toLocaleString(undefined, { minimumFractionDigits: 2 })}
+              </p>
             </div>
           </div>
+
+          {/* ===== PORTFOLIO CHART ===== */}
+          <div className="relative bg-dark-card border border-white/5 rounded-2xl p-8 overflow-hidden">
+            <div className="absolute top-0 right-0 w-32 h-32 bg-primary/30 rounded-full -mr-16 -mt-16 blur-lg" />
+            <h2 className="text-2xl font-bold text-white mb-2">Portfolio Value</h2>
+            <p className="text-gray-text text-sm mb-6">12-month performance overview</p>
+            {/* Chart Filter Dropdown */}
+            <div className="mb-4 flex items-center gap-2">
+              <label htmlFor="chart-timeinforce" className="text-gray-text">Filter:</label>
+              <select
+                id="chart-timeinforce"
+                className="bg-dark-lighter text-white border border-white/10 rounded px-2 py-1"
+                value={chartTimeInForce}
+                onChange={e => setChartTimeInForce(e.target.value)}
+              >
+                {timeInForceOptions.map(opt => (
+                  <option key={opt} value={opt}>{opt.replace("PREDICTIONTIMEINFORCE_", "")}</option>
+                ))}
+              </select>
+            </div>
+            <ResponsiveContainer width="100%" height={300}>
+              <LineChart data={data.chartData}>
+                <defs>
+                  <linearGradient id="portfolioGrad" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="5%" stopColor="#00FF73" stopOpacity={0.8} />
+                    <stop offset="95%" stopColor="#00FF73" stopOpacity={0} />
+                  </linearGradient>
+                </defs>
+                <XAxis dataKey="name" stroke="#99A1AF" />
+                <YAxis stroke="#99A1AF" />
+                <Tooltip
+                  contentStyle={{
+                    background: "#1A1A1D",
+                    border: "1px solid #2A2A2D",
+                  }}
+                />
+                <Line
+                  type="monotone"
+                  dataKey="value"
+                  stroke="#00FF73"
+                  strokeWidth={3}
+                  dot={false}
+                  fill="url(#portfolioGrad)"
+                />
+              </LineChart>
+            </ResponsiveContainer>
+          </div>
+
+          {/* ===== POSITIONS ===== */}
+          <div className="relative bg-dark-card border border-white/5 rounded-2xl p-8 overflow-hidden">
+            <h2 className="text-2xl font-bold text-white mb-6">Positions</h2>
+            {/* Outcome Filter */}
+            <div className="mb-4 flex flex-wrap items-center gap-2">
+              <label htmlFor="outcome-filter" className="text-gray-text mr-2">Filter by Outcome:</label>
+              <select
+                id="outcome-filter"
+                className="bg-dark-lighter text-white border border-white/10 rounded px-2 py-1"
+                value={outcomeFilter}
+                onChange={e => setOutcomeFilter(e.target.value)}
+              >
+                <option value="ALL">All</option>
+                {[...new Set(data.positions.map(p => p.outcome))].map(outcome => (
+                  <option key={outcome} value={outcome}>{outcome}</option>
+                ))}
+              </select>
+            </div>
+            <div className="overflow-x-auto">
+              <table className="w-full">
+                <thead>
+                  <tr className="border-b border-white/5 text-gray-text">
+                    <th className="py-4 px-4 text-left">Outcome</th>
+                    <th className="py-4 px-4 text-center">Average</th>
+                    <th className="py-4 px-4 text-center">Current</th>
+                    <th className="py-4 px-4 text-center">Price</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {(() => {
+                    // Filter and paginate positions
+                    const filtered = outcomeFilter === "ALL"
+                      ? data.positions
+                      : data.positions.filter((p: any) => p.outcome === outcomeFilter);
+                    const startIdx = (currentPage - 1) * pageSize;
+                    const paginated = filtered.slice(startIdx, startIdx + pageSize);
+                    return paginated.map((p: any) => (
+                      <tr
+                        key={p.id}
+                        className="border-b border-white/5 hover:bg-dark-lighter/50"
+                      >
+                        <td className="py-4 px-4 text-left">{p.outcome}</td>
+                        <td
+                          className={`py-4 px-4 text-center font-semibold ${
+                            p.average === "YES" ? "text-primary" : "text-red-400"
+                          }`}
+                        >
+                          {p.average}
+                        </td>
+                        <td className="py-4 px-4 text-center">${p.current.toFixed(2)}</td>
+                        <td className="py-4 px-4 text-center">${p.price.toFixed(2)}</td>
+                      </tr>
+                    ));
+                  })()}
+                </tbody>
+              </table>
+            </div>
+            {/* Pagination Controls */}
+            <div className="flex justify-end items-center mt-4 gap-2">
+              {(() => {
+                const filtered = outcomeFilter === "ALL"
+                  ? data.positions
+                  : data.positions.filter((p: any) => p.outcome === outcomeFilter);
+                const totalPages = Math.ceil(filtered.length / pageSize) || 1;
+                return (
+                  <>
+                    <button
+                      className="px-3 py-1 rounded bg-dark-lighter text-white border border-white/10 disabled:opacity-50"
+                      onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+                      disabled={currentPage === 1}
+                    >
+                      Prev
+                    </button>
+                    <span className="text-gray-text mx-2">
+                      Page {currentPage} of {totalPages}
+                    </span>
+                    <button
+                      className="px-3 py-1 rounded bg-dark-lighter text-white border border-white/10 disabled:opacity-50"
+                      onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
+                      disabled={currentPage === totalPages}
+                    >
+                      Next
+                    </button>
+                  </>
+                );
+              })()}
+            </div>
+          </div>
+        
         </div>
       </div>
     </div>
   );
-};
+}
 
 export default PortfolioDyn;
