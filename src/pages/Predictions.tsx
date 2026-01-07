@@ -6,6 +6,7 @@ import { Button } from '../components/ui/Button';
 import { api } from '../api/api';
 import { Dialog, DialogContent } from '../components/ui/Dialog';
 import { useNavigate } from 'react-router-dom';
+import { PredictionCard } from '../components/PredictionCard';
 
 // Helper function to extract probabilities correctly matched to teams
 const getTeamProbabilities = (event: any, teams: any[]) => {
@@ -592,53 +593,24 @@ const LivePredictionsList: React.FC<{ onExit: (p: any, event: any) => void; sele
 
   return (
     <div className="space-y-4">
-      {filteredItems.map((p: any, idx: number) => {
-        const eventId = String(p?.eventId || "");
-        const event = eventsMap[eventId] || {};
-        // const title = getEventName(event) || `Event ${eventId}`;
-        const eventDate = new Date(p?.eventStartDate);
-        const today = new Date();
-        const diffTime = Math.abs(eventDate.getTime() - today.getTime());
-        const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-        const startsIn = diffDays > 0 ? `${diffDays} day${diffDays > 1 ? "s" : ""}` : "Today";
-        const qName = p?.question || p?.questionName || p?.question?.description || "Prediction";
-        const outcome = String(p?.eventShortName ?? p?.predictionDetails?.selectedPredictionOutcome ?? p?.selectedPredictionOutcome ?? "").trim();
-        const pctNum = Number(p?.percentage ?? p?.exitPercentage ?? 0);
-        const pctText = isFinite(pctNum) ? `${Math.max(0, Math.min(100, Math.round(pctNum)))}%` : "--%";
-        const matched = Number(p?.matchedAmt ?? 0);
-        const invest = Number(p?.investmentAmt ?? 0);
-        const matchedText = isFinite(matched) && isFinite(invest) && invest > 0 ? `${matched.toFixed(2)}/${invest.toFixed(2)} is matched` : "--";
-        return (
-          <div key={p?.predictionId || idx} className="rounded-2xl border border-white/10 bg-dark-card p-4">
-            <div className="flex items-center justify-between">
-              <div className="text-white font-semibold">{outcome || "--"}</div>
-              <Badge variant="secondary" className="text-red-300">Match starts in {startsIn}</Badge>
-            </div>
-            <div className="my-3 border-t border-white/10" />
-            <div className="flex items-start justify-between">
-              <div className="text-white font-medium">{qName}</div>
-            </div>
-            <div className="mt-2 text-gray-text text-sm flex items-center gap-2">
-              <span>{outcome || "--"}</span>
-              <span>•</span>
-              <span>{pctText}</span>
-              <span>•</span>
-              <span className="inline-flex items-center gap-1"><DollarSign className="w-4 h-4" /> {matchedText}</span>
-            </div>
-            <div className="flex gap-3 mt-4">
-              <Button onClick={() => onExit(p, event)} className="flex-1 bg-yellow-500 text-dark-bg hover:bg-yellow-400">
-                Exit
-              </Button>
-              <Button 
-                onClick={() => navigate(`/order-details/${p?.orderId}`)}
-                className="flex-1 bg-primary text-dark-bg hover:bg-primary/90"
-              >
-                Order Details
-              </Button>
-            </div>
-          </div>
-        );
-      })}
+      {filteredItems.map((p: any) => (
+        <PredictionCard
+    key={p.orderId}
+    p={{
+      eventName: p.eventName || p.eventShortName,
+      eventDescription: p.eventDescription,
+      eventShortName: p.eventShortName,
+      eventStartDate: p.eventStartDate,
+      predictedOutcome: p.predictionDetails?.selectedPredictionOutcome,
+      percentage: p.percentage,
+      investmentAmt: p.investmentAmt,
+      potentialReturns: p.potentialReturns,
+      exitPercentage: p.exitPercentage,
+    }}
+    actionLabel="Exit"
+    onAction={() => onExit(p, eventsMap[p.eventId])}
+  />
+      ))}
     </div>
   );
 };
@@ -784,37 +756,19 @@ const OpenPredictionsList: React.FC<{ onOpen: (p: any, event: any) => void; sele
         const matchedText = isFinite(matched) && isFinite(invest) && invest > 0 ? `${matched.toFixed(2)}/${invest.toFixed(2)} is matched` : "--";
         return (
           <div key={p?.predictionId || idx} className="rounded-2xl border border-white/10 bg-dark-card p-4">
-            <div className="flex items-center justify-between">
-              <div className="text-white font-semibold">{outcome || "--"} {eventDes}</div>
-              <Badge variant="secondary" className="text-red-300">Match starts in {startsIn}</Badge>
-            </div>
-            <div className="my-3 border-t border-white/10" />
-            <div className="flex items-start justify-between">
-              <div className="text-white font-medium">{qName}</div>
-              {isAccepted && <Badge className="text-green-300">Accepted</Badge>}
-            </div>
-            <div className="mt-2 text-gray-text text-sm flex items-center gap-2">
-              <span>{outcome || "--"}</span>
-              <span>•</span>
-              <span>{pctText}</span>
-              <span>•</span>
-              <span className="inline-flex items-center gap-1"><DollarSign className="w-4 h-4" /> {matchedText}</span>
-            </div>
-            <div className="flex gap-3 mt-4">
-              <Button 
-                onClick={() => handleCancelOrder(p?.orderId)}
-                disabled={isCancelling === (p?.orderId)}
-                className="flex-1 bg-red-500 text-white hover:bg-red-600 disabled:opacity-50"
-              >
-                {isCancelling === (p?.orderId) ? 'Cancelling...' : 'Cancel'}
-              </Button>
-              <Button 
-                onClick={() => navigate(`/order-details/${p?.orderId}`)}
-                className="flex-1 bg-primary text-dark-bg hover:bg-primary/90"
-              >
-                Order Details
-              </Button>
-            </div>
+          <PredictionCard
+  p={{
+    eventName: p.eventName,
+    eventDescription: p.eventDescription,
+    eventStartDate: p.eventStartDate,
+    predictedOutcome: p.predictionDetails?.selectedPredictionOutcome,
+    percentage: p.percentage,
+    investmentAmt: p.investmentAmt,
+  }}
+  actionLabel="Cancel"
+  onAction={() => handleCancelOrder(p.orderId)}
+/>
+
           </div>
         );
       })}
@@ -2103,6 +2057,7 @@ export const Predictions: React.FC<{ selectedSport?: string | null }> = ({ selec
                   selectedSport={selectedSport}
                   selectedTournamentId={selectedTournamentId}
                   onExit={(p: any) => {
+                    console.log('Predictions:onExit', p);
                     // Show exit prediction panel in right sidebar instead of navigating to details
                     const eventDes = p?.eventDescription || p?.eventName || "Event";
                     const qName = p?.question || p?.questionName || p?.question?.description || "Prediction";
@@ -2128,6 +2083,7 @@ export const Predictions: React.FC<{ selectedSport?: string | null }> = ({ selec
                     setExitConfidence(null);
                     setErrorMsg("");
                     fetchBalance();
+                    setIsMobilePanelOpen(true);
                   }}
                 />
               ) : activeTab === 'open' ? (
@@ -2135,6 +2091,7 @@ export const Predictions: React.FC<{ selectedSport?: string | null }> = ({ selec
                   selectedSport={selectedSport}
                   selectedTournamentId={selectedTournamentId}
                   onOpen={(p: any) => {
+                    console.log('Predictions:onOpen (open)', p);
                     const id = String(p?.eventId || "");
                     setSelectedEventId(id);
                     const q = p?.question || { questionId: p?.questionId, name: p?.questionName };
@@ -2146,6 +2103,7 @@ export const Predictions: React.FC<{ selectedSport?: string | null }> = ({ selec
                     setSuppressQuestionPredictionFetch(true);
                     setSelectedQuestionPrediction(p);
                     fetchBalance();
+                    setIsMobilePanelOpen(true);
                   }}
                 />
               ) : activeTab === 'completed' ? (
@@ -2153,6 +2111,7 @@ export const Predictions: React.FC<{ selectedSport?: string | null }> = ({ selec
                   selectedSport={selectedSport}
                   selectedTournamentId={selectedTournamentId}
                   onOpen={(p: any) => {
+                    console.log('Predictions:onOpen (completed)', p);
                     const id = String(p?.eventId || "");
                     setSelectedEventId(id);
                     const q = p?.question || { questionId: p?.questionId, name: p?.questionName };
@@ -2164,6 +2123,7 @@ export const Predictions: React.FC<{ selectedSport?: string | null }> = ({ selec
                     setSuppressQuestionPredictionFetch(true);
                     setSelectedQuestionPrediction(p);
                     fetchBalance();
+                    setIsMobilePanelOpen(true);
                   }}
                 />
               ) : activeTab === 'cancelled' ? (
@@ -2171,6 +2131,7 @@ export const Predictions: React.FC<{ selectedSport?: string | null }> = ({ selec
                   selectedSport={selectedSport}
                   selectedTournamentId={selectedTournamentId}
                   onOpen={(p: any) => {
+                    console.log('Predictions:onOpen (cancelled)', p);
                     const id = String(p?.eventId || "");
                     setSelectedEventId(id);
                     const q = p?.question || { questionId: p?.questionId, name: p?.questionName };
@@ -2182,6 +2143,7 @@ export const Predictions: React.FC<{ selectedSport?: string | null }> = ({ selec
                     setSuppressQuestionPredictionFetch(true);
                     setSelectedQuestionPrediction(p);
                     fetchBalance();
+                    setIsMobilePanelOpen(true);
                   }}
                 />
               ) : activeTab === 'exited' ? (
@@ -2189,6 +2151,7 @@ export const Predictions: React.FC<{ selectedSport?: string | null }> = ({ selec
                   selectedSport={selectedSport}
                   selectedTournamentId={selectedTournamentId}
                   onOpen={(p: any) => {
+                    console.log('Predictions:onOpen (exited)', p);
                     const id = String(p?.eventId || "");
                     setSelectedEventId(id);
                     const q = p?.question || { questionId: p?.questionId, name: p?.questionName };
@@ -2200,6 +2163,7 @@ export const Predictions: React.FC<{ selectedSport?: string | null }> = ({ selec
                     setSuppressQuestionPredictionFetch(true);
                     setSelectedQuestionPrediction(p);
                     fetchBalance();
+                    setIsMobilePanelOpen(true);
                   }}
                 />
               ) : mainLoading ?? (
@@ -2210,7 +2174,7 @@ export const Predictions: React.FC<{ selectedSport?: string | null }> = ({ selec
             </main>
 
             {/* Right Sidebar - Prediction Panel */}
-            <aside className="w-96 flex-shrink-0 hidden lg:block">
+            {/* <aside className="w-96 flex-shrink-0 hidden lg:block">
               <div className="rounded-2xl border border-white/10 bg-white/5 p-6 sticky top-24 max-h-[calc(100vh-6rem)] overflow-y-auto pr-2">
                 <h3 className="text-sm text-gray-text mb-1">{selectedAction === 'exit' ? 'Exit Prediction' : selectedAction === 'cancel' ? 'Cancel Prediction' : 'Make Your Prediction'}</h3>
                 <p className="text-xs text-gray-muted mb-4">Own your call. Trade with confidence.</p>
@@ -2541,8 +2505,8 @@ export const Predictions: React.FC<{ selectedSport?: string | null }> = ({ selec
                   </div>
                 )}
               </div>
-            </aside>
-            <div className="lg:hidden">
+            </aside> */}
+            <div>
               <Dialog open={isMobilePanelOpen} onOpenChange={setIsMobilePanelOpen}>
                 <DialogContent className="max-w-lg w-full">
                   {successMessage ? (

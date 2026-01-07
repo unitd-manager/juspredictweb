@@ -1433,7 +1433,9 @@ export const Sports: React.FC<{ selectedSport?: string | null }> = ({ selectedSp
                     setIsMobilePanelOpen(false);
                     setActiveTab('all');
                   }}
-                  onPredict={(question) => {
+                  onPredict={(question, evId?: string, predictionId?: string) => {
+                    const id = String(evId ?? selectedEventId ?? '');
+                    setSelectedEventId(id);
                     setSelectedQuestion(question);
                     setSelectedOutcome(null);
                     setConfidenceOverride(null);
@@ -1598,7 +1600,9 @@ export const Sports: React.FC<{ selectedSport?: string | null }> = ({ selectedSp
                             setExitConfidence(null);
                             setIsMobilePanelOpen(false);
                           }}
-                          onPredict={(question) => {
+                          onPredict={(question, evId?: string, predictionId?: string) => {
+                            const id = String(evId ?? event.id ?? event.eventId ?? '');
+                            setSelectedEventId(id);
                             setSelectedQuestion(question);
                             setSelectedOutcome(null);
                             setConfidenceOverride(null);

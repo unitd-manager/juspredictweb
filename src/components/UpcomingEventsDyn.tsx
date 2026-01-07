@@ -409,6 +409,7 @@ export interface QuestionOption {
 
 export interface QuestionCard {
   questionId: string
+  eventId?: string
   question: string
   questionType: string
   options: QuestionOption[]
@@ -434,7 +435,7 @@ export const PredictionModal: React.FC<PredictionModalProps> = ({
   const [amount, setAmount] = useState<number>(100)
   const [showSuccessMessage, setShowSuccessMessage] = useState(false)
   const [balance, setBalance] = useState<any | null>(null)
-
+console.log('question',question);
   /* RESET */
   useEffect(() => {
     if (!open) {
@@ -478,6 +479,7 @@ export const PredictionModal: React.FC<PredictionModalProps> = ({
     try {
       const payload = {
         questionId: question.questionId,
+        eventId: question.eventId,
         amount: amount.toString(),
         predictionDetails: {
           selectedPredictionOutcome: selectedOutcome,
@@ -644,6 +646,7 @@ export const UpcomingEventsDyn = () => {
       const newQuestions: QuestionCard[] = (res.questions ?? []).map(
         (q: any) => ({
           questionId: q.questionId,
+          eventId: String(q.eventId ?? q.event?.id ?? ""),
           question: q.description || q.name || "Prediction Market",
           questionType: q.questionType,
           users: q.activity?.questionUsers ?? 0,

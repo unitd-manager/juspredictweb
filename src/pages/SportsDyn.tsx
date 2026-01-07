@@ -575,7 +575,7 @@ const EventCard = ({
             )}
           </div>
           <Button onClick={onViewQuestions} className="bg-primary text-dark-bg hover:bg-primary/90 flex-shrink-0">
-            View Questions
+            View All Questions
           </Button>
         </div>
 
@@ -2274,13 +2274,14 @@ console.log('selectedPrediction',selectedPrediction);
 
       predictionDetails: {
         selectedPredictionChoice: true,
-        selectedPredictionOutcome: selectedPrediction.answer,
+        //selectedPredictionOutcome: selectedPrediction.answer,
+        selectedPredictionOutcome:"India",
       },
 
       modifiers: {
         creditDiscount: "0",
         creditMarkup: "0",
-        percentage: String(selectedPrediction.percentage
+        percentage: String( exitConfidence?? selectedPrediction.percentage
         ),
         updatedPercentage:  String(
           exitConfidence
@@ -2555,7 +2556,9 @@ console.log('selectedPrediction',selectedPrediction);
                     setIsMobilePanelOpen(false);
                     setActiveTab('all');
                   }}
-                  onPredict={(question) => {
+                  onPredict={(question, evId?: string, predictionId?: string) => {
+                    const id = String(evId ?? selectedEventId ?? '');
+                    setSelectedEventId(id);
                     setSelectedQuestion(question);
                     setSelectedOutcome(null);
                     setConfidenceOverride(null);
@@ -2799,7 +2802,9 @@ console.log('selectedPrediction',selectedPrediction);
                             setExitConfidence(null);
                             setIsMobilePanelOpen(false);
                       }}
-                      onPredict={(question,  predictionId) => {
+                      onPredict={(question, evId?: string, predictionId?: string) => {
+                           const id = String(evId ?? event.id ?? event.eventId ?? "");
+                           setSelectedEventId(id);
                            setSelectedQuestion(question);
                             setSelectedOutcome(null);
                             setConfidenceOverride(null);
