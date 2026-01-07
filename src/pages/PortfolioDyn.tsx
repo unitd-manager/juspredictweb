@@ -126,10 +126,10 @@ const mapActivity = (api: any): Activity[] => {
 const mapPredictionsToPositions = (predictions: any[]): Position[] =>
   predictions.map((p: any) => ({
     id: p.predictionId ?? crypto.randomUUID(),
-    outcome: p?.predictionOutcome ?? "Outcome",
-    average: p?.isCorrect ? "YES" : "NO",
+    outcome: p?.type ?? "Outcome",
+    average: p?.percentage,
     current: Number(p?.potentialReturns ?? 0),
-    price: Number(p?.stakeAmount ?? 0),
+    price: Number(p?.investmentAmt ?? 0),
   }));
 
 /* ---------------------------------------------------
@@ -144,7 +144,7 @@ const PortfolioDyn: React.FC = () => {
   const [outcomeFilter, setOutcomeFilter] = useState<string>("ALL");
   const [currentPage, setCurrentPage] = useState(1);
   const pageSize = 5;
-  // Chart filter state
+  // TimeInForce filter state (shared for chart and positions)
   const timeInForceOptions = [
     "PREDICTIONTIMEINFORCE_LIVE",
     "PREDICTIONTIMEINFORCE_COMPLETED_TODAY",
@@ -159,6 +159,7 @@ const PortfolioDyn: React.FC = () => {
     "PREDICTIONTIMEINFORCE_EXITED"
   ];
   const [chartTimeInForce, setChartTimeInForce] = useState<string>("PREDICTIONTIMEINFORCE_COMPLETED_THISMONTH");
+  const [positionsTimeInForce, setPositionsTimeInForce] = useState<string>("PREDICTIONTIMEINFORCE_LIVE");
 
   const loadPortfolio = async (showLoading = false) => {
     if (showLoading) setLoading(true);
@@ -219,15 +220,12 @@ const PortfolioDyn: React.FC = () => {
     ];
 
     try {
+      const userId = getUserIdFromToken();
       const posRes = await predictionApi.getUserPredictions({
-        userId: userId ?? "",
+        userId: userId || "",
         pageRequest: { pageNumber: 1, pageSize: 20 },
-        day: 0,
-        month: 0,
-        year: 0,
-        timeInForce: "PREDICTIONTIMEINFORCE_LIVE",
+        timeInForce: positionsTimeInForce,
       } as any);
-
       mapped.positions = mapPredictionsToPositions(
         (posRes as any)?.predictions ?? []
       );
@@ -245,6 +243,15 @@ const PortfolioDyn: React.FC = () => {
     }, 30000);
     return () => clearInterval(interval);
   }, [chartTimeInForce]);
+
+  // Update positions when positionsTimeInForce changes, but do not show loading spinner
+  useEffect(() => {
+    if (!isInitialMount.current) {
+      setCurrentPage(1);
+      setData(prev => prev ? { ...prev, positions: [] } : prev); // clear positions instantly
+      loadPortfolio(false); // update positions, no loading spinner
+    }
+  }, [positionsTimeInForce]);
 
   // Reset to first page when filter changes
   useEffect(() => {
@@ -355,29 +362,45 @@ const PortfolioDyn: React.FC = () => {
           {/* ===== POSITIONS ===== */}
           <div className="relative bg-dark-card border border-white/5 rounded-2xl p-8 overflow-hidden mt-8">
             <h2 className="text-2xl font-bold text-white mb-6">Positions</h2>
-            {/* Outcome Filter */}
-            <div className="mb-4 flex flex-wrap items-center gap-2">
-              <label htmlFor="outcome-filter" className="text-gray-text mr-2">Filter by Outcome:</label>
-              <select
-                id="outcome-filter"
-                className="bg-dark-lighter text-white border border-white/10 rounded px-2 py-1"
-                value={outcomeFilter}
-                onChange={e => setOutcomeFilter(e.target.value)}
-              >
-                <option value="ALL">All</option>
-                {[...new Set(data.positions.map(p => p.outcome))].map(outcome => (
-                  <option key={outcome} value={outcome}>{outcome}</option>
-                ))}
-              </select>
+            {/* TimeInForce Filter for Positions */}
+            <div className="mb-4 flex flex-wrap items-center gap-4">
+              <div className="flex items-center gap-2">
+                <label htmlFor="positions-timeinforce" className="text-gray-text">Filter by TimeInForce:</label>
+                <select
+                  id="positions-timeinforce"
+                  className="bg-dark-lighter text-white border border-white/10 rounded px-2 py-1"
+                  value={positionsTimeInForce}
+                  onChange={e => setPositionsTimeInForce(e.target.value)}
+                >
+                  {timeInForceOptions.map(opt => (
+                    <option key={opt} value={opt}>{opt.replace("PREDICTIONTIMEINFORCE_", "")}</option>
+                  ))}
+                </select>
+              </div>
+              {/* Outcome Filter */}
+              <div className="flex items-center gap-2">
+                <label htmlFor="outcome-filter" className="text-gray-text">Filter by Outcome:</label>
+                <select
+                  id="outcome-filter"
+                  className="bg-dark-lighter text-white border border-white/10 rounded px-2 py-1"
+                  value={outcomeFilter}
+                  onChange={e => setOutcomeFilter(e.target.value)}
+                >
+                  <option value="ALL">All</option>
+                  {[...new Set(data.positions.map(p => p.outcome))].map(outcome => (
+                    <option key={outcome} value={outcome}>{outcome}</option>
+                  ))}
+                </select>
+              </div>
             </div>
             <div className="overflow-x-auto">
               <table className="w-full">
                 <thead>
                   <tr className="border-b border-white/5 text-gray-text">
-                    <th className="py-4 px-4 text-left">Outcome</th>
-                    <th className="py-4 px-4 text-center">Average</th>
-                    <th className="py-4 px-4 text-center">Current</th>
-                    <th className="py-4 px-4 text-center">Price</th>
+                    <th className="py-4 px-4 text-left">Type</th>
+                    <th className="py-4 px-4 text-center">Percentage</th>
+                    <th className="py-4 px-4 text-center">Current value of position</th>
+                    <th className="py-4 px-4 text-center">Invested Amount</th>
                   </tr>
                 </thead>
                 <tbody>
