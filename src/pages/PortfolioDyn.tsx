@@ -140,12 +140,11 @@ const PortfolioDyn: React.FC = () => {
   const [data, setData] = useState<PortfolioData | null>(null);
   const [loading, setLoading] = useState(true);
   const isInitialMount = React.useRef(true);
-  // Outcome filter and pagination state
-  const [outcomeFilter, setOutcomeFilter] = useState<string>("ALL");
   const [currentPage, setCurrentPage] = useState(1);
   const pageSize = 5;
   // TimeInForce filter state (shared for chart and positions)
   const timeInForceOptions = [
+    "PREDICTIONTIMEINFORCE_UNSPECIFIED",
     "PREDICTIONTIMEINFORCE_LIVE",
     "PREDICTIONTIMEINFORCE_COMPLETED_TODAY",
     "PREDICTIONTIMEINFORCE_COMPLETED_YESTERDAY",
@@ -159,7 +158,30 @@ const PortfolioDyn: React.FC = () => {
     "PREDICTIONTIMEINFORCE_EXITED"
   ];
   const [chartTimeInForce, setChartTimeInForce] = useState<string>("PREDICTIONTIMEINFORCE_COMPLETED_THISMONTH");
-  const [positionsTimeInForce, setPositionsTimeInForce] = useState<string>("PREDICTIONTIMEINFORCE_LIVE");
+  const [positionsTimeInForce, setPositionsTimeInForce] = useState<string>("");
+
+  // Load positions separately with dependency tracking to prevent race conditions
+  const loadPositions = async (timeInForce: string) => {
+    try {
+      const userId = getUserIdFromToken();
+      const posRes = await predictionApi.getUserPredictions({
+        userId: userId || "",
+        pageRequest: { pageNumber: 1, pageSize: 20 },
+        timeInForce: timeInForce,
+      } as any);
+      
+      // Only update if the current filter still matches the request that was sent
+      setData(prev => {
+        if (!prev) return prev;
+        return {
+          ...prev,
+          positions: mapPredictionsToPositions((posRes as any)?.predictions ?? [])
+        };
+      });
+    } catch (e) {
+      console.warn("Failed to load positions");
+    }
+  };
 
   const loadPortfolio = async (showLoading = false) => {
     if (showLoading) setLoading(true);
@@ -219,18 +241,6 @@ const PortfolioDyn: React.FC = () => {
       { name: "Realized", value: mapped.realizedPnl },
     ];
 
-    try {
-      const userId = getUserIdFromToken();
-      const posRes = await predictionApi.getUserPredictions({
-        userId: userId || "",
-        pageRequest: { pageNumber: 1, pageSize: 20 },
-        timeInForce: positionsTimeInForce,
-      } as any);
-      mapped.positions = mapPredictionsToPositions(
-        (posRes as any)?.predictions ?? []
-      );
-    } catch {}
-
     setData(mapped);
     setLoading(false);
   };
@@ -249,14 +259,14 @@ const PortfolioDyn: React.FC = () => {
     if (!isInitialMount.current) {
       setCurrentPage(1);
       setData(prev => prev ? { ...prev, positions: [] } : prev); // clear positions instantly
-      loadPortfolio(false); // update positions, no loading spinner
+      loadPositions(positionsTimeInForce); // load only positions for the selected filter
     }
   }, [positionsTimeInForce]);
 
   // Reset to first page when filter changes
   useEffect(() => {
     setCurrentPage(1);
-  }, [outcomeFilter]);
+  }, [positionsTimeInForce]);
 
   if (loading || !data) {
     return (
@@ -363,36 +373,24 @@ const PortfolioDyn: React.FC = () => {
           <div className="relative bg-dark-card border border-white/5 rounded-2xl p-8 overflow-hidden mt-8">
             <h2 className="text-2xl font-bold text-white mb-6">Positions</h2>
             {/* TimeInForce Filter for Positions */}
-            <div className="mb-4 flex flex-wrap items-center gap-4">
-              <div className="flex items-center gap-2">
-                <label htmlFor="positions-timeinforce" className="text-gray-text">Filter by TimeInForce:</label>
-                <select
-                  id="positions-timeinforce"
-                  className="bg-dark-lighter text-white border border-white/10 rounded px-2 py-1"
-                  value={positionsTimeInForce}
-                  onChange={e => setPositionsTimeInForce(e.target.value)}
-                >
-                  {timeInForceOptions.map(opt => (
-                    <option key={opt} value={opt}>{opt.replace("PREDICTIONTIMEINFORCE_", "")}</option>
-                  ))}
-                </select>
-              </div>
-              {/* Outcome Filter */}
-              <div className="flex items-center gap-2">
-                <label htmlFor="outcome-filter" className="text-gray-text">Filter by Outcome:</label>
-                <select
-                  id="outcome-filter"
-                  className="bg-dark-lighter text-white border border-white/10 rounded px-2 py-1"
-                  value={outcomeFilter}
-                  onChange={e => setOutcomeFilter(e.target.value)}
-                >
-                  <option value="ALL">All</option>
-                  {[...new Set(data.positions.map(p => p.outcome))].map(outcome => (
-                    <option key={outcome} value={outcome}>{outcome}</option>
-                  ))}
-                </select>
-              </div>
+            <div className="mb-4 flex items-center gap-2">
+              <label htmlFor="positions-timeinforce" className="text-gray-text">Filter by TimeInForce:</label>
+              <select
+                id="positions-timeinforce"
+                className="bg-dark-lighter text-white border border-white/10 rounded px-2 py-1"
+                value={positionsTimeInForce}
+                onChange={e => setPositionsTimeInForce(e.target.value)}
+              >
+                {timeInForceOptions.map(opt => (
+                  <option key={opt} value={opt}>{opt.replace("PREDICTIONTIMEINFORCE_", "")}</option>
+                ))}
+              </select>
             </div>
+            {data.positions.length === 0 ? (
+              <div className="text-center py-8">
+                <p className="text-gray-text text-lg">No predictions found for {positionsTimeInForce.replace("PREDICTIONTIMEINFORCE_", "")}</p>
+              </div>
+            ) : (
             <div className="overflow-x-auto">
               <table className="w-full">
                 <thead>
@@ -405,12 +403,9 @@ const PortfolioDyn: React.FC = () => {
                 </thead>
                 <tbody>
                   {(() => {
-                    // Filter and paginate positions
-                    const filtered = outcomeFilter === "ALL"
-                      ? data.positions
-                      : data.positions.filter((p: any) => p.outcome === outcomeFilter);
+                    // Paginate positions
                     const startIdx = (currentPage - 1) * pageSize;
-                    const paginated = filtered.slice(startIdx, startIdx + pageSize);
+                    const paginated = data.positions.slice(startIdx, startIdx + pageSize);
                     return paginated.map((p: any) => (
                       <tr
                         key={p.id}
@@ -432,13 +427,12 @@ const PortfolioDyn: React.FC = () => {
                 </tbody>
               </table>
             </div>
+            )}
             {/* Pagination Controls */}
+            {data.positions.length > 0 && (
             <div className="flex justify-end items-center mt-4 gap-2">
               {(() => {
-                const filtered = outcomeFilter === "ALL"
-                  ? data.positions
-                  : data.positions.filter((p: any) => p.outcome === outcomeFilter);
-                const totalPages = Math.ceil(filtered.length / pageSize) || 1;
+                const totalPages = Math.ceil(data.positions.length / pageSize) || 1;
                 return (
                   <>
                     <button
@@ -462,6 +456,7 @@ const PortfolioDyn: React.FC = () => {
                 );
               })()}
             </div>
+            )}
           </div>
         
         </div>
