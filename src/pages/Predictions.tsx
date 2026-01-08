@@ -654,11 +654,15 @@ console.log('items',items)
       ) : (
         <div className="space-y-3">
           {filteredItems.map((p: any) => (
+            
             <PredictionCard
               key={p.orderId}
               p={{
+                question: p?.question || p?.questionName || p?.description || "Prediction",
                 eventName: p.eventName || p.eventShortName,
-                eventStartDate: p.eventStartDate,
+                eventStartDate: p?.startDate,
+                eventEndDate: p?.endDate,
+                users: p?.activity?.questionUsers,
                 predictedOutcome:
                   p.predictionDetails?.selectedPredictionOutcome,
                 percentage: p.percentage,
@@ -2282,7 +2286,7 @@ export const Predictions: React.FC<{ selectedSport?: string | null }> = ({ selec
                     <h2 className="text-2xl font-bold text-white mb-2">
                       {sportTournaments[selectedSport || '']?.find((t: any) => String(t.id ?? t.eventId ?? '') === selectedTournamentId)?.name}
                     </h2>
-                    <p className="text-gray-text text-sm">Events from {selectedSport}</p>
+                    {/* <p className="text-gray-text text-sm">Events from {selectedSport}</p> */}
                   </div>
                 </div>
                 

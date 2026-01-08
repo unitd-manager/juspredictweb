@@ -75,6 +75,7 @@ export type AddPredictionPayload = {
 export type GetUserPredictionsPayload = {
   userId: string;
   pageRequest?: PageRequest;
+  timeInForce?: string;
 };
 
 // --- /prediction/v1/getbyid ---
@@ -172,6 +173,7 @@ export interface GetPnLResponse {
   pnl: number;
 }
 
+
 // -------------------------------------------------------------
 // API Calls
 // -------------------------------------------------------------
@@ -184,12 +186,12 @@ async function addPrediction(payload: AddPredictionPayload) {
 // Get all predictions for a user
 async function getUserPredictions(payload: GetUserPredictionsPayload) {
   return api.post<GetUserPredictionsResponse>("/prediction/v1/get", {
-    userId: payload.userId,
     ...buildPageRequest(payload.pageRequest),
-      day: 0,
-        month: 0,
-        year: 0,
-        timeInForce: "PREDICTIONTIMEINFORCE_LIVE",
+    day: 0,
+    month: 0,
+    year: 0,
+    timeInForce: payload.timeInForce,
+    userId: payload.userId,
   });
 }
 
