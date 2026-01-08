@@ -264,7 +264,7 @@ useEffect(() => {
                   }`}>Portfolio</NavLink>
                    <NavLink to="/predictions" className={({ isActive }) => `text-sm font-medium transition-colors ${
                     isActive ? 'text-primary font-bold' : 'text-gray-light hover:text-primary'
-                  }`}>Predictions</NavLink>
+                  }`}>My Predictions</NavLink>
                 <NavLink to="/clan" className={({ isActive }) => `text-sm font-medium transition-colors ${
                     isActive ? 'text-primary font-bold' : 'text-gray-light hover:text-primary'
                   }`}>Clan</NavLink>

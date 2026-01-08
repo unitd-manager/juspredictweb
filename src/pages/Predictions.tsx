@@ -6,7 +6,8 @@ import { Button } from '../components/ui/Button';
 import { api } from '../api/api';
 import { Dialog, DialogContent } from '../components/ui/Dialog';
 import { useNavigate } from 'react-router-dom';
-import { PredictionCard } from '../components/PredictionCard';
+import { PredictionCard } from '../components/PredictionCard';//
+//import { PredictionsCard } from '../components/PredictionsCard';
 
 // Helper function to extract probabilities correctly matched to teams
 const getTeamProbabilities = (event: any, teams: any[]) => {
@@ -494,22 +495,29 @@ const EventDetails: React.FC<{
 };
 
 // Live Predictions List Component
-const LivePredictionsList: React.FC<{ onExit: (p: any, event: any) => void; selectedSport?: string | null; selectedTournamentId?: string | null }> = ({ onExit, selectedSport, selectedTournamentId }) => {
-  const navigate = useNavigate();
+const LivePredictionsList: React.FC<{
+  onExit: (p: any, event: any) => void;
+  selectedSport?: string | null;
+  selectedTournamentId?: string | null;
+}> = ({ onExit, selectedSport, selectedTournamentId }) => {
   const [items, setItems] = React.useState<any[]>([]);
   const [eventsMap, setEventsMap] = React.useState<Record<string, any>>({});
   const [isLoading, setIsLoading] = React.useState<boolean>(true);
 
-  const getEventName = (event: any) => (
-    (typeof event?.name === "string" && event.name.trim()) ||
-    (typeof event?.eventName === "string" && event.eventName.trim()) ||
-    (typeof event?.sportEvent?.name === "string" && event.sportEvent.name.trim()) ||
-    (typeof event?.sportEvent?.eventName === "string" && event.sportEvent.eventName.trim()) ||
-    [event?.sportEvent?.sportType?.replace?.("SPORT_TYPE_", ""), event?.sportEvent?.eventFormat].filter(Boolean).join(" • ")
-  );
+  const [searchTerm, setSearchTerm] = React.useState("");
+  const [debouncedSearchTerm, setDebouncedSearchTerm] =
+    React.useState(searchTerm);
 
+  /* ---------------- DEBOUNCE SEARCH ---------------- */
+  React.useEffect(() => {
+    const handler = setTimeout(() => setDebouncedSearchTerm(searchTerm), 300);
+    return () => clearTimeout(handler);
+  }, [searchTerm]);
+
+  /* ---------------- FETCH LIVE ---------------- */
   React.useEffect(() => {
     let mounted = true;
+
     const fetchLive = async () => {
       setIsLoading(true);
       try {
@@ -522,117 +530,179 @@ const LivePredictionsList: React.FC<{ onExit: (p: any, event: any) => void; sele
           }
           return;
         }
-        const res = await api.post<any>("/prediction/v1/get", {
-          day: 0,
-          month: 0,
-          year: 0,
-          pageRequest: { pageNumber: 1, pageSize: 200 },
-          timeInForce: "PREDICTIONTIMEINFORCE_LIVE",
-        });
+
+        let res: any;
+
+        if (debouncedSearchTerm.trim()) {
+          // 🔍 SEARCH API
+          res = await api.post<any>("/prediction/v1/search", {
+            eventWildCardSearch: debouncedSearchTerm.trim(),
+            pageRequest: { pageNumber: 1, pageSize: 200 },
+            timeInForce: "PREDICTIONTIMEINFORCE_LIVE",
+            day: 0,
+            month: 0,
+            year: 0,
+          });
+        } else {
+          // 📦 NORMAL LIVE FETCH
+          res = await api.post<any>("/prediction/v1/get", {
+            day: 0,
+            month: 0,
+            year: 0,
+            pageRequest: { pageNumber: 1, pageSize: 200 },
+            timeInForce: "PREDICTIONTIMEINFORCE_LIVE",
+          });
+        }
+
         const preds = Array.isArray(res?.predictions) ? res.predictions : [];
         if (mounted) setItems(preds);
+
+        /* -------- FETCH EVENT DETAILS -------- */
         const idsSet = new Set<string>(
           preds
             .map((p: any) => String(p?.eventId || ""))
             .filter((s: string) => s.length > 0)
         );
-        const ids: string[] = Array.from(idsSet);
+
+        const ids = Array.from(idsSet);
         const map: Record<string, any> = {};
+
         await Promise.all(
-          ids.map(async (id: string) => {
+          ids.map(async (id) => {
             try {
               const ev = await api.post<any>("/event/v1/getevent", {
-            eventId: id,
-            getEventQuestions: true,
-            questionsPageInfo: { pageNumber: 1, pageSize: 50 },
-          });
+                eventId: id,
+                getEventQuestions: true,
+                questionsPageInfo: { pageNumber: 1, pageSize: 50 },
+              });
               if (ev?.status?.type === "SUCCESS") map[id] = ev?.event || null;
             } catch {}
           })
         );
+
         if (mounted) setEventsMap(map);
+      } catch (e) {
+        console.error("Failed to fetch live predictions", e);
+        if (mounted) {
+          setItems([]);
+          setEventsMap({});
+        }
       } finally {
         if (mounted) setIsLoading(false);
       }
     };
+
     fetchLive();
     const interval = window.setInterval(fetchLive, 120_000);
+
     return () => {
       mounted = false;
       window.clearInterval(interval);
     };
-  }, []);
-
-  // Filter items by selected sport and tournament
+  }, [debouncedSearchTerm]);
+console.log('items',items)
+  /* ---------------- FILTERS ---------------- */
   const filteredItems = items.filter((p: any) => {
     const event = eventsMap[String(p?.eventId || "")] || {};
-    
-    // Filter by tournament if selected
+
     if (selectedTournamentId) {
       const parentId = String(event?.parentEventId || "");
       if (parentId !== selectedTournamentId) return false;
     }
-    
-    // Filter by sport if selected
+
     if (selectedSport) {
-      let raw = event?.sportEvent?.sportType || event?.category || event?.sport || event?.name || 'Other';
-      if (typeof raw === 'string') {
-        raw = raw.replace(/^SPORT_TYPE_/, '').replace(/_/g, ' ').trim();
-      } else {
-        raw = String(raw);
+      let raw =
+        event?.sportEvent?.sportType ||
+        event?.category ||
+        event?.sport ||
+        event?.name ||
+        "Other";
+
+      if (typeof raw === "string") {
+        raw = raw.replace(/^SPORT_TYPE_/, "").replace(/_/g, " ").trim();
       }
-      const eventSport = raw || 'Other';
-      if (eventSport !== selectedSport) return false;
+
+      if (raw !== selectedSport) return false;
     }
-    
+
     return true;
   });
 
-  if (isLoading) return <div className="text-gray-text">Loading live predictions...</div>;
-  if (!filteredItems || filteredItems.length === 0) return <div className="text-gray-text">No live predictions</div>;
-
+  /* ---------------- UI ---------------- */
   return (
     <div className="space-y-4">
-      {filteredItems.map((p: any) => (
-        <PredictionCard
-    key={p.orderId}
-    p={{
-      eventName: p.eventName || p.eventShortName,
-      eventDescription: p.eventDescription,
-      eventShortName: p.eventShortName,
-      eventStartDate: p.eventStartDate,
-      predictedOutcome: p.predictionDetails?.selectedPredictionOutcome,
-      percentage: p.percentage,
-      investmentAmt: p.investmentAmt,
-      potentialReturns: p.potentialReturns,
-      exitPercentage: p.exitPercentage,
-    }}
-    actionLabel="Exit"
-    onAction={() => onExit(p, eventsMap[p.eventId])}
-  />
-      ))}
+
+      {/* 🔍 SEARCH BAR */}
+      <div>
+        <input
+          type="text"
+          placeholder="Search live predictions... (min 3 characters)"
+          value={searchTerm}
+          onChange={(e) => setSearchTerm(e.target.value)}
+          className="w-full rounded-lg border border-white/10 bg-dark-lighter px-4 py-2 text-white placeholder-gray-text focus:outline-none focus:ring-2 focus:ring-primary"
+        />
+      </div>
+
+      {isLoading ? (
+        <div className="text-gray-text text-center py-6">
+          Loading live predictions...
+        </div>
+      ) : filteredItems.length === 0 ? (
+        <div className="text-gray-text text-center py-6">
+          No live predictions
+        </div>
+      ) : (
+        <div className="space-y-3">
+          {filteredItems.map((p: any) => (
+            <PredictionCard
+              key={p.orderId}
+              p={{
+                eventName: p.eventName || p.eventShortName,
+                eventStartDate: p.eventStartDate,
+                predictedOutcome:
+                  p.predictionDetails?.selectedPredictionOutcome,
+                percentage: p.percentage,
+                investmentAmt: p.investmentAmt,
+                potentialReturns: p.potentialReturns,
+                exitPercentage: p.exitPercentage,
+              }}
+              actionLabel="Exit Prediction"
+              onAction={() => onExit(p, eventsMap[p.eventId])}
+            />
+          ))}
+        </div>
+      )}
     </div>
   );
 };
 
+
 // Open Predictions List Component
-const OpenPredictionsList: React.FC<{ onOpen: (p: any, event: any) => void; selectedSport?: string | null; selectedTournamentId?: string | null }> = ({ onOpen, selectedSport, selectedTournamentId }) => {
-  const navigate = useNavigate();
+const OpenPredictionsList: React.FC<{
+  onOpen: (p: any, event: any) => void;
+  selectedSport?: string | null;
+  selectedTournamentId?: string | null;
+}> = ({ onOpen, selectedSport, selectedTournamentId }) => {
   const [items, setItems] = React.useState<any[]>([]);
   const [eventsMap, setEventsMap] = React.useState<Record<string, any>>({});
   const [isLoading, setIsLoading] = React.useState<boolean>(true);
   const [isCancelling, setIsCancelling] = React.useState<string | null>(null);
 
-  // const getEventName = (event: any) => (
-  //   (typeof event?.name === "string" && event.name.trim()) ||
-  //   (typeof event?.eventName === "string" && event.eventName.trim()) ||
-  //   (typeof event?.sportEvent?.name === "string" && event.sportEvent.name.trim()) ||
-  //   (typeof event?.sportEvent?.eventName === "string" && event.sportEvent.eventName.trim()) ||
-  //   [event?.sportEvent?.sportType?.replace?.("SPORT_TYPE_", ""), event?.sportEvent?.eventFormat].filter(Boolean).join(" • ")
-  // );
+  /* 🔍 SEARCH STATE */
+  const [searchTerm, setSearchTerm] = React.useState("");
+  const [debouncedSearchTerm, setDebouncedSearchTerm] =
+    React.useState(searchTerm);
 
+  /* 🔁 DEBOUNCE */
+  React.useEffect(() => {
+    const handler = setTimeout(() => setDebouncedSearchTerm(searchTerm), 300);
+    return () => clearTimeout(handler);
+  }, [searchTerm]);
+
+  /* ---------------- FETCH OPEN ---------------- */
   React.useEffect(() => {
     let mounted = true;
+
     const fetchOpen = async () => {
       setIsLoading(true);
       try {
@@ -645,136 +715,172 @@ const OpenPredictionsList: React.FC<{ onOpen: (p: any, event: any) => void; sele
           }
           return;
         }
-        const res = await api.post<any>("/prediction/v1/get", {
-          day: 0,
-          month: 0,
-          year: 0,
-          pageRequest: { pageNumber: 1, pageSize: 200 },
-          timeInForce: "PREDICTIONTIMEINFORCE_PENDING_LIVE",
-        });
+
+        let res: any;
+
+        if (debouncedSearchTerm.trim()) {
+          // 🔍 SEARCH API
+          res = await api.post<any>("/prediction/v1/search", {
+            eventWildCardSearch: debouncedSearchTerm.trim(),
+            pageRequest: { pageNumber: 1, pageSize: 200 },
+            timeInForce: "PREDICTIONTIMEINFORCE_PENDING_LIVE",
+            day: 0,
+            month: 0,
+            year: 0,
+          });
+        } else {
+          // 📦 NORMAL FETCH
+          res = await api.post<any>("/prediction/v1/get", {
+            day: 0,
+            month: 0,
+            year: 0,
+            pageRequest: { pageNumber: 1, pageSize: 200 },
+            timeInForce: "PREDICTIONTIMEINFORCE_PENDING_LIVE",
+          });
+        }
+
         const preds = Array.isArray(res?.predictions) ? res.predictions : [];
         if (mounted) setItems(preds);
+
+        /* -------- FETCH EVENT DETAILS -------- */
         const idsSet = new Set<string>(
           preds
             .map((p: any) => String(p?.eventId || ""))
-            .filter((s: string) => s.length > 0)
+            .filter(Boolean)
         );
-        const ids: string[] = Array.from(idsSet);
+
         const map: Record<string, any> = {};
         await Promise.all(
-          ids.map(async (id: string) => {
+          Array.from(idsSet).map(async (id) => {
             try {
               const ev = await api.post<any>("/event/v1/getevent", {
-            eventId: id,
-            getEventQuestions: true,
-            questionsPageInfo: { pageNumber: 1, pageSize: 50 },
-          });
+                eventId: id,
+                getEventQuestions: true,
+                questionsPageInfo: { pageNumber: 1, pageSize: 50 },
+              });
               if (ev?.status?.type === "SUCCESS") map[id] = ev?.event || null;
             } catch {}
           })
         );
+
         if (mounted) setEventsMap(map);
+      } catch (e) {
+        console.error("Failed to fetch open predictions", e);
+        if (mounted) {
+          setItems([]);
+          setEventsMap({});
+        }
       } finally {
         if (mounted) setIsLoading(false);
       }
     };
+
     fetchOpen();
     const interval = window.setInterval(fetchOpen, 120_000);
+
     return () => {
       mounted = false;
       window.clearInterval(interval);
     };
-  }, []);
+  }, [debouncedSearchTerm]);
 
+  /* ---------------- CANCEL ORDER ---------------- */
   const handleCancelOrder = async (orderId: string) => {
     setIsCancelling(orderId);
     try {
-      const response = await api.post<any>('/order/v1/cancelorder', {
-        orderId: orderId,
-      });
-
-      if (response?.status?.type === 'SUCCESS') {
-        // Remove the cancelled item from the list
-        setItems(prevItems => prevItems.filter(p => p?.orderId !== orderId));
+      const response = await api.post<any>("/order/v1/cancelorder", { orderId });
+      if (response?.status?.type === "SUCCESS") {
+        setItems((prev) => prev.filter((p) => p?.orderId !== orderId));
       } else {
-        alert('Failed to cancel order');
+        alert("Failed to cancel order");
       }
     } catch (err) {
-      console.error('Failed to cancel order:', err);
-      alert('Failed to cancel order');
+      console.error("Cancel order failed", err);
+      alert("Failed to cancel order");
     } finally {
       setIsCancelling(null);
     }
   };
 
-  // Filter items by selected sport and tournament
+  /* ---------------- FILTERS ---------------- */
   const filteredItems = items.filter((p: any) => {
     const event = eventsMap[String(p?.eventId || "")] || {};
-    
-    // Filter by tournament if selected
+
     if (selectedTournamentId) {
-      const parentId = String(event?.parentEventId || "");
-      if (parentId !== selectedTournamentId) return false;
+      if (String(event?.parentEventId || "") !== selectedTournamentId)
+        return false;
     }
-    
-    // Filter by sport if selected
+
     if (selectedSport) {
-      let raw = event?.sportEvent?.sportType || event?.category || event?.sport || event?.name || 'Other';
-      if (typeof raw === 'string') {
-        raw = raw.replace(/^SPORT_TYPE_/, '').replace(/_/g, ' ').trim();
-      } else {
-        raw = String(raw);
+      let raw =
+        event?.sportEvent?.sportType ||
+        event?.category ||
+        event?.sport ||
+        event?.name ||
+        "Other";
+
+      if (typeof raw === "string") {
+        raw = raw.replace(/^SPORT_TYPE_/, "").replace(/_/g, " ").trim();
       }
-      const eventSport = raw || 'Other';
-      if (eventSport !== selectedSport) return false;
+
+      if (raw !== selectedSport) return false;
     }
-    
+
     return true;
   });
 
-  if (isLoading) return <div className="text-gray-text">Loading open predictions...</div>;
-  if (!filteredItems || filteredItems.length === 0) return <div className="text-gray-text">No open predictions</div>;
-
+  /* ---------------- UI ---------------- */
   return (
     <div className="space-y-4">
-      {filteredItems.map((p: any, idx: number) => {
-        // const title = getEventName(event) || `Event ${eventId}`;
-        const eventDes = p?.eventDescription;
-        const eventDate = new Date(p?.eventStartDate);
-        const today = new Date();
-        const diffTime = Math.abs(eventDate.getTime() - today.getTime());
-        const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-        const startsIn = diffDays > 0 ? `${diffDays} day${diffDays > 1 ? "s" : ""}` : "Today";
-        const qName = p?.question || p?.questionName || p?.question?.description || "Prediction";
-        const status = String(p?.predictionStatus || "");
-        const isAccepted = status === "PREDICTION_STATUS_ACCEPTED" || status === "PREDICTION_STATUS_CANCEL_REQUESTED";
-        const outcome = String(p?.eventShortName ?? p?.predictionDetails?.selectedPredictionOutcome ?? p?.selectedPredictionOutcome ?? "").trim();
-        const pctNum = Number(p?.percentage ?? p?.exitPercentage ?? 0);
-        const pctText = isFinite(pctNum) ? `${Math.max(0, Math.min(100, Math.round(pctNum)))}%` : "--%";
-        const matched = Number(p?.matchedAmt ?? 0);
-        const invest = Number(p?.investmentAmt ?? 0);
-        const matchedText = isFinite(matched) && isFinite(invest) && invest > 0 ? `${matched.toFixed(2)}/${invest.toFixed(2)} is matched` : "--";
-        return (
-          <div key={p?.predictionId || idx} className="rounded-2xl border border-white/10 bg-dark-card p-4">
-          <PredictionCard
-  p={{
-    eventName: p.eventName,
-    eventDescription: p.eventDescription,
-    eventStartDate: p.eventStartDate,
-    predictedOutcome: p.predictionDetails?.selectedPredictionOutcome,
-    percentage: p.percentage,
-    investmentAmt: p.investmentAmt,
-  }}
-  actionLabel="Cancel"
-  onAction={() => handleCancelOrder(p.orderId)}
-/>
 
-          </div>
-        );
-      })}
+      {/* 🔍 SEARCH BAR */}
+      <div>
+        <input
+          type="text"
+          placeholder="Search open predictions... (min 3 characters)"
+          value={searchTerm}
+          onChange={(e) => setSearchTerm(e.target.value)}
+          className="w-full rounded-lg border border-white/10 bg-dark-lighter px-4 py-2 text-white placeholder-gray-text focus:outline-none focus:ring-2 focus:ring-primary"
+        />
+      </div>
+
+      {isLoading ? (
+        <div className="text-gray-text text-center py-6">
+          Loading open predictions...
+        </div>
+      ) : filteredItems.length === 0 ? (
+        <div className="text-gray-text text-center py-6">
+          No open predictions
+        </div>
+      ) : (
+        <div className="space-y-3">
+          {filteredItems.map((p: any, idx: number) => (
+            <div
+              key={p?.predictionId || idx}
+              className="rounded-2xl border border-white/10 bg-dark-card p-4"
+            >
+              <PredictionCard
+                p={{
+                  eventName: p.eventName,
+                  eventStartDate: p.eventStartDate,
+                  predictedOutcome:
+                    p.predictionDetails?.selectedPredictionOutcome,
+                  percentage: p.percentage,
+                  investmentAmt: p.investmentAmt,
+                }}
+                actionLabel={
+                  isCancelling === p.orderId ? "Cancelling..." : "Cancel"
+                }
+                onAction={() => handleCancelOrder(p.orderId)}
+              />
+            </div>
+          ))}
+        </div>
+      )}
     </div>
   );
 };
+
 
 // Completed Predictions List Component
 const CompletedPredictionsList: React.FC<{ onOpen: (p: any, event: any) => void; selectedSport?: string | null; selectedTournamentId?: string | null }> = ({ onOpen, selectedSport, selectedTournamentId }) => {
@@ -1002,13 +1108,30 @@ const CompletedPredictionsList: React.FC<{ onOpen: (p: any, event: any) => void;
 };
 
 // Cancelled Predictions List Component
-const CancelledPredictionsList: React.FC<{ onOpen: (p: any, event: any) => void; selectedSport?: string | null; selectedTournamentId?: string | null }> = ({ onOpen, selectedSport, selectedTournamentId }) => {
+const CancelledPredictionsList: React.FC<{
+  onOpen: (p: any, event: any) => void;
+  selectedSport?: string | null;
+  selectedTournamentId?: string | null;
+}> = ({ onOpen, selectedSport, selectedTournamentId }) => {
   const [items, setItems] = React.useState<any[]>([]);
   const [eventsMap, setEventsMap] = React.useState<Record<string, any>>({});
   const [isLoading, setIsLoading] = React.useState<boolean>(true);
 
+  /* 🔍 SEARCH STATE */
+  const [searchTerm, setSearchTerm] = React.useState("");
+  const [debouncedSearchTerm, setDebouncedSearchTerm] =
+    React.useState(searchTerm);
+
+  /* 🔁 DEBOUNCE */
+  React.useEffect(() => {
+    const handler = setTimeout(() => setDebouncedSearchTerm(searchTerm), 300);
+    return () => clearTimeout(handler);
+  }, [searchTerm]);
+
+  /* ---------------- FETCH CANCELLED ---------------- */
   React.useEffect(() => {
     let mounted = true;
+
     const fetchCancelled = async () => {
       setIsLoading(true);
       try {
@@ -1021,26 +1144,43 @@ const CancelledPredictionsList: React.FC<{ onOpen: (p: any, event: any) => void;
           }
           return;
         }
-        const res = await api.post<any>("/prediction/v1/get", {
-          day: 0,
-          month: 0,
-          year: 0,
-          pageRequest: { pageNumber: 1, pageSize: 200 },
-          timeInForce: "PREDICTIONTIMEINFORCE_CANCELLED",
-        });
+
+        let res: any;
+
+        if (debouncedSearchTerm.trim()) {
+          // 🔍 SEARCH API
+          res = await api.post<any>("/prediction/v1/search", {
+            eventWildCardSearch: debouncedSearchTerm.trim(),
+            pageRequest: { pageNumber: 1, pageSize: 200 },
+            timeInForce: "PREDICTIONTIMEINFORCE_CANCELLED",
+            day: 0,
+            month: 0,
+            year: 0,
+          });
+        } else {
+          // 📦 NORMAL FETCH
+          res = await api.post<any>("/prediction/v1/get", {
+            day: 0,
+            month: 0,
+            year: 0,
+            pageRequest: { pageNumber: 1, pageSize: 200 },
+            timeInForce: "PREDICTIONTIMEINFORCE_CANCELLED",
+          });
+        }
+
         const preds = Array.isArray(res?.predictions) ? res.predictions : [];
         if (mounted) setItems(preds);
-        
-        // Fetch event details for filtering
+
+        /* -------- FETCH EVENT DETAILS -------- */
         const idsSet = new Set<string>(
           preds
             .map((p: any) => String(p?.eventId || ""))
-            .filter((s: string) => s.length > 0)
+            .filter(Boolean)
         );
-        const ids: string[] = Array.from(idsSet);
+
         const map: Record<string, any> = {};
         await Promise.all(
-          ids.map(async (id: string) => {
+          Array.from(idsSet).map(async (id) => {
             try {
               const ev = await api.post<any>("/event/v1/getevent", {
                 eventId: id,
@@ -1051,9 +1191,10 @@ const CancelledPredictionsList: React.FC<{ onOpen: (p: any, event: any) => void;
             } catch {}
           })
         );
+
         if (mounted) setEventsMap(map);
       } catch (error) {
-        console.error('Failed to fetch cancelled predictions:', error);
+        console.error("Failed to fetch cancelled predictions:", error);
         if (mounted) {
           setItems([]);
           setEventsMap({});
@@ -1062,126 +1203,181 @@ const CancelledPredictionsList: React.FC<{ onOpen: (p: any, event: any) => void;
         if (mounted) setIsLoading(false);
       }
     };
+
     fetchCancelled();
     const interval = window.setInterval(fetchCancelled, 120_000);
+
     return () => {
       mounted = false;
       window.clearInterval(interval);
     };
-  }, []);
+  }, [debouncedSearchTerm]);
 
-  // Filter items by selected sport and tournament
+  /* ---------------- FILTERS ---------------- */
   const filteredItems = items.filter((p: any) => {
     const event = eventsMap[String(p?.eventId || "")] || {};
-    
-    // Filter by tournament if selected
+
+    // Tournament filter
     if (selectedTournamentId) {
-      const parentId = String(event?.parentEventId || "");
-      if (parentId !== selectedTournamentId) return false;
+      if (String(event?.parentEventId || "") !== selectedTournamentId)
+        return false;
     }
-    
-    // Filter by sport if selected
+
+    // Sport filter
     if (selectedSport) {
-      let raw = event?.sportEvent?.sportType || event?.category || event?.sport || event?.name || 'Other';
-      if (typeof raw === 'string') {
-        raw = raw.replace(/^SPORT_TYPE_/, '').replace(/_/g, ' ').trim();
-      } else {
-        raw = String(raw);
+      let raw =
+        event?.sportEvent?.sportType ||
+        event?.category ||
+        event?.sport ||
+        event?.name ||
+        "Other";
+
+      if (typeof raw === "string") {
+        raw = raw.replace(/^SPORT_TYPE_/, "").replace(/_/g, " ").trim();
       }
-      const eventSport = raw || 'Other';
-      if (eventSport !== selectedSport) return false;
+
+      if (raw !== selectedSport) return false;
     }
-    
+
     return true;
   });
 
-  if (isLoading) return <div className="text-gray-text text-center py-8">Loading cancelled predictions...</div>;
-  if (!filteredItems || filteredItems.length === 0) return <div className="text-gray-text text-center py-8">No cancelled predictions</div>;
-
+  /* ---------------- UI ---------------- */
   return (
-    <div className="space-y-3">
-      {filteredItems.map((p: any, idx: number) => {
-        const eventName = p?.eventName || p?.eventShortName || "Event";
-        const eventShortName = p?.eventShortName || "";
-        const eventDesc = p?.eventDescription || "";
-        const eventStatus = p?.eventStatus || "";
-        const question = p?.question || "Question";
-        const predictedOutcome = p?.predictedOutcome || p?.predictedOutcomeChoice || "";
-        const percentage = Number(p?.percentage || 0);
-        const investmentAmt = Number(p?.investmentAmt || 0);
-        const matchedAmt = Number(p?.matchedAmt || 0);
-        const daysAgo = p?.eventStartDate ? Math.floor((Date.now() - new Date(p.eventStartDate).getTime()) / (1000 * 60 * 60 * 24)) : 0;
-        
-        const statusLabel = eventStatus === "PREDICTION_EVENT_STATUS_CLOSED" ? "Event Closed" : "Match starts in";
-        const isClosed = eventStatus === "PREDICTION_EVENT_STATUS_CLOSED";
-        
-        // Calculate exited amount
-        const exitedAmount = investmentAmt - matchedAmt;
+    <div className="space-y-4">
 
-        return (
-          <div key={p?.predictionId || idx} className="rounded-xl border border-white/10 bg-dark-card p-5 hover:border-primary/30 transition-all">
-            {/* Header: Event name and status */}
-            <div className="flex items-center justify-between mb-4">
-              <h3 className="text-white font-semibold">{eventShortName} {eventDesc}</h3>
-              {isClosed ? (
-                <Badge variant="outline" className="text-xs text-gray-text">{statusLabel}</Badge>
-              ) : (
-                <Badge variant="outline" className="text-xs text-red-400 border-red-400/30">Match starts in {daysAgo}d</Badge>
-              )}
-            </div>
+      {/* 🔍 SEARCH BAR */}
+      <div>
+        <input
+          type="text"
+          placeholder="Search cancelled predictions... (min 3 characters)"
+          value={searchTerm}
+          onChange={(e) => setSearchTerm(e.target.value)}
+          className="w-full rounded-lg border border-white/10 bg-dark-lighter px-4 py-2 text-white placeholder-gray-text focus:outline-none focus:ring-2 focus:ring-primary"
+        />
+      </div>
 
-            {/* Question */}
-            <div className="mb-4">
-              <p className="text-white font-medium">{question}</p>
-            </div>
+      {isLoading ? (
+        <div className="text-gray-text text-center py-8">
+          Loading cancelled predictions...
+        </div>
+      ) : filteredItems.length === 0 ? (
+        <div className="text-gray-text text-center py-8">
+          No cancelled predictions
+        </div>
+      ) : (
+        <div className="space-y-3">
+          {filteredItems.map((p: any, idx: number) => {
+            const eventShortName = p?.eventShortName || "";
+            const eventDesc = p?.eventDescription || "";
+            const eventStatus = p?.eventStatus || "";
+            const question = p?.question || "Question";
+            const predictedOutcome =
+              p?.predictedOutcome || p?.predictedOutcomeChoice || "";
+            const percentage = Number(p?.percentage || 0);
+            const investmentAmt = Number(p?.investmentAmt || 0);
+            const matchedAmt = Number(p?.matchedAmt || 0);
 
-            {/* Prediction details row */}
-            <div className="flex items-center gap-3 mb-4 text-sm">
-              <span className="text-gray-text">{predictedOutcome}</span>
-              <span className="text-gray-text">•</span>
-              <span className="text-white font-medium">{percentage}%</span>
-              <span className="text-gray-text">•</span>
-              <span className="text-gray-text inline-flex items-center gap-1">
-                <DollarSign className="w-3 h-3" />
-                {investmentAmt}
-              </span>
-            </div>
+            const daysAgo = p?.eventStartDate
+              ? Math.floor(
+                  (Date.now() -
+                    new Date(p.eventStartDate).getTime()) /
+                    (1000 * 60 * 60 * 24)
+                )
+              : 0;
 
-            {/* Cancelled badge */}
-            <div className="mb-4 inline-flex">
-              <Badge className="bg-orange-500/20 text-orange-400 border-orange-500/30">Cancelled</Badge>
-            </div>
+            const isClosed =
+              eventStatus === "PREDICTION_EVENT_STATUS_CLOSED";
 
-            {/* Info box */}
-            <div className="bg-dark-lighter rounded-lg p-3 border border-white/5 flex items-start gap-3 text-sm text-gray-text">
-              <AlertCircle className="w-4 h-4 flex-shrink-0 mt-0.5 text-orange-400" />
-              <span>
-                You predicted {investmentAmt} JP coins. Out of these, {matchedAmt.toFixed(1)} have been exited, and the remaining have been cancelled.
-              </span>
-            </div>
+            return (
+              <div
+                key={p?.predictionId || idx}
+                className="rounded-xl border border-white/10 bg-dark-card p-5 hover:border-primary/30 transition-all"
+              >
+                {/* Header */}
+                <div className="flex items-center justify-between mb-4">
+                  <h3 className="text-white font-semibold">
+                    {eventShortName} {eventDesc}
+                  </h3>
+                  <Badge
+                    variant="outline"
+                    className={`text-xs ${
+                      isClosed
+                        ? "text-gray-text"
+                        : "text-red-400 border-red-400/30"
+                    }`}
+                  >
+                    {isClosed ? "Event Closed" : `Match starts in ${daysAgo}d`}
+                  </Badge>
+                </div>
 
-            {/* Time ago indicator */}
-            <div className="mt-3 text-xs text-gray-text text-right">
-              {daysAgo}d
-            </div>
-          </div>
-        );
-      })}
+                {/* Question */}
+                <p className="text-white font-medium mb-4">{question}</p>
+
+                {/* Prediction details */}
+                <div className="flex items-center gap-3 mb-4 text-sm">
+                  <span className="text-gray-text">{predictedOutcome}</span>
+                  <span className="text-gray-text">•</span>
+                  <span className="text-white font-medium">{percentage}%</span>
+                  <span className="text-gray-text">•</span>
+                  <span className="text-gray-text">
+                    ₹ {investmentAmt}
+                  </span>
+                </div>
+
+                {/* Cancelled badge */}
+                <Badge className="mb-4 bg-orange-500/20 text-orange-400 border-orange-500/30">
+                  Cancelled
+                </Badge>
+
+                {/* Info */}
+                <div className="bg-dark-lighter rounded-lg p-3 border border-white/5 text-sm text-gray-text">
+                  You predicted ₹{investmentAmt}. Out of these,
+                  ₹{matchedAmt.toFixed(1)} were matched and the rest cancelled.
+                </div>
+
+                {/* Time */}
+                <div className="mt-3 text-xs text-gray-text text-right">
+                  {daysAgo}d ago
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      )}
     </div>
   );
 };
 
 // Exited Predictions List Component
-const ExitedPredictionsList: React.FC<{ onOpen: (p: any, event: any) => void; selectedSport?: string | null; selectedTournamentId?: string | null }> = ({ onOpen, selectedSport, selectedTournamentId }) => {
+const ExitedPredictionsList: React.FC<{
+  onOpen: (p: any, event: any) => void;
+  selectedSport?: string | null;
+  selectedTournamentId?: string | null;
+}> = ({ onOpen, selectedSport, selectedTournamentId }) => {
   const navigate = useNavigate();
+
   const [items, setItems] = React.useState<any[]>([]);
   const [eventsMap, setEventsMap] = React.useState<Record<string, any>>({});
   const [isLoading, setIsLoading] = React.useState<boolean>(true);
 
- 
+  /* ---------------- SEARCH ---------------- */
+  const [searchTerm, setSearchTerm] = React.useState("");
+  const [debouncedSearchTerm, setDebouncedSearchTerm] =
+    React.useState(searchTerm);
 
   React.useEffect(() => {
+    const handler = setTimeout(
+      () => setDebouncedSearchTerm(searchTerm),
+      300
+    );
+    return () => clearTimeout(handler);
+  }, [searchTerm]);
+
+  /* ---------------- FETCH EXITED ---------------- */
+  React.useEffect(() => {
     let mounted = true;
+
     const fetchExited = async () => {
       setIsLoading(true);
       try {
@@ -1194,115 +1390,154 @@ const ExitedPredictionsList: React.FC<{ onOpen: (p: any, event: any) => void; se
           }
           return;
         }
-        const res = await api.post<any>("/prediction/v1/get", {
-          day: 0,
-          month: 0,
-          year: 0,
-          pageRequest: { pageNumber: 1, pageSize: 200 },
-          timeInForce: "PREDICTIONTIMEINFORCE_EXITED",
-        });
+
+        let res: any;
+
+        if (debouncedSearchTerm.trim()) {
+          // 🔍 SEARCH API
+          res = await api.post<any>("/prediction/v1/search", {
+            eventWildCardSearch: debouncedSearchTerm.trim(),
+            pageRequest: { pageNumber: 1, pageSize: 200 },
+            timeInForce: "PREDICTIONTIMEINFORCE_EXITED",
+            day: 0,
+            month: 0,
+            year: 0,
+          });
+        } else {
+          // 📦 NORMAL FETCH
+          res = await api.post<any>("/prediction/v1/get", {
+            day: 0,
+            month: 0,
+            year: 0,
+            pageRequest: { pageNumber: 1, pageSize: 200 },
+            timeInForce: "PREDICTIONTIMEINFORCE_EXITED",
+          });
+        }
+
         const preds = Array.isArray(res?.predictions) ? res.predictions : [];
         if (mounted) setItems(preds);
+
+        /* -------- FETCH EVENT DETAILS -------- */
         const idsSet = new Set<string>(
           preds
             .map((p: any) => String(p?.eventId || ""))
-            .filter((s: string) => s.length > 0)
+            .filter(Boolean)
         );
-        const ids: string[] = Array.from(idsSet);
+
         const map: Record<string, any> = {};
         await Promise.all(
-          ids.map(async (id: string) => {
+          Array.from(idsSet).map(async (id) => {
             try {
               const ev = await api.post<any>("/event/v1/getevent", {
-            eventId: id,
-            getEventQuestions: true,
-            questionsPageInfo: { pageNumber: 1, pageSize: 50 },
-          });
-              if (ev?.status?.type === "SUCCESS") map[id] = ev?.event || null;
+                eventId: id,
+                getEventQuestions: true,
+                questionsPageInfo: { pageNumber: 1, pageSize: 50 },
+              });
+              if (ev?.status?.type === "SUCCESS") {
+                map[id] = ev?.event || null;
+              }
             } catch {}
           })
         );
+
         if (mounted) setEventsMap(map);
+      } catch (e) {
+        if (mounted) {
+          setItems([]);
+          setEventsMap({});
+        }
       } finally {
         if (mounted) setIsLoading(false);
       }
     };
+
     fetchExited();
     const interval = window.setInterval(fetchExited, 120_000);
     return () => {
       mounted = false;
       window.clearInterval(interval);
     };
-  }, []);
+  }, [debouncedSearchTerm]);
 
-  // Filter items by selected sport and tournament
+  /* ---------------- FILTERS ---------------- */
   const filteredItems = items.filter((p: any) => {
     const event = eventsMap[String(p?.eventId || "")] || {};
-    
-    // Filter by tournament if selected
+
     if (selectedTournamentId) {
       const parentId = String(event?.parentEventId || "");
       if (parentId !== selectedTournamentId) return false;
     }
-    
-    // Filter by sport if selected
+
     if (selectedSport) {
-      let raw = event?.sportEvent?.sportType || event?.category || event?.sport || event?.name || 'Other';
-      if (typeof raw === 'string') {
-        raw = raw.replace(/^SPORT_TYPE_/, '').replace(/_/g, ' ').trim();
-      } else {
-        raw = String(raw);
+      let raw =
+        event?.sportEvent?.sportType ||
+        event?.category ||
+        event?.sport ||
+        event?.name ||
+        "Other";
+
+      if (typeof raw === "string") {
+        raw = raw.replace(/^SPORT_TYPE_/, "").replace(/_/g, " ").trim();
       }
-      const eventSport = raw || 'Other';
-      if (eventSport !== selectedSport) return false;
+
+      if (raw !== selectedSport) return false;
     }
-    
+
     return true;
   });
 
-  if (isLoading) return <div className="text-gray-text">Loading exited predictions...</div>;
-  if (!filteredItems || filteredItems.length === 0) return <div className="text-gray-text">No exited predictions</div>;
+  /* ---------------- UI ---------------- */
+  if (isLoading)
+    return <div className="text-gray-text">Loading exited predictions...</div>;
+
+  if (!filteredItems.length)
+    return <div className="text-gray-text">No exited predictions</div>;
 
   return (
     <div className="space-y-4">
+      {/* 🔍 SEARCH BAR */}
+      <div>
+        <input
+          type="text"
+          placeholder="Search exited predictions... (min 3 characters)"
+          value={searchTerm}
+          onChange={(e) => setSearchTerm(e.target.value)}
+          className="w-full rounded-lg border border-white/10 bg-dark-lighter px-4 py-2 text-white placeholder-gray-text focus:outline-none focus:ring-2 focus:ring-primary"
+        />
+      </div>
+
       {filteredItems.map((p: any, idx: number) => {
         const eventId = String(p?.eventId || "");
         const event = eventsMap[eventId] || {};
-        // const title = getEventName(event) || `Event ${eventId}`;
-        const eventDate = new Date(p?.eventStartDate);
-        const today = new Date();
-        const diffTime = Math.abs(eventDate.getTime() - today.getTime());
-        const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-        const startsIn = diffDays > 0 ? `${diffDays} day${diffDays > 1 ? "s" : ""}` : "Today";
-        const qName = p?.question || p?.questionName || p?.question?.description || "Prediction";
-        const status = String(p?.predictionStatus || "");
-        const isExited = status === "PREDICTION_STATUS_EXITED";
-        const eventDes = p?.eventDescription;
-        const outcome = String(p?.eventShortName ?? p?.predictedOutcome ?? p?.predictionDetails?.selectedPredictionOutcome ?? p?.selectedPredictionOutcome ?? "").trim();
+        const qName =
+          p?.question ||
+          p?.questionName ||
+          p?.question?.description ||
+          "Prediction";
+
         const pctNum = Number(p?.percentage ?? p?.exitPercentage ?? 0);
-        const pctText = isFinite(pctNum) ? `${Math.max(0, Math.min(100, Math.round(pctNum)))}%` : "--%";
-        const matched = Number(p?.matchedAmt ?? 0);
-        const invest = Number(p?.investmentAmt ?? 0);
-        const matchedText = isFinite(matched) && isFinite(invest) && invest > 0 ? `${matched.toFixed(2)}/${invest.toFixed(2)} is matched` : "--";
+        const pctText = isFinite(pctNum)
+          ? `${Math.max(0, Math.min(100, Math.round(pctNum)))}%`
+          : "--%";
+
         return (
-          <div key={p?.predictionId || idx} className="rounded-2xl border border-white/10 bg-dark-card p-4">
-            <div className="flex items-center justify-between">
-              <div className="text-white font-semibold">{outcome || "--"} {eventDes}</div>
-              <Badge variant="secondary" className="text-red-300">Match starts in {startsIn}</Badge>
+          <div
+            key={p?.predictionId || idx}
+            className="rounded-2xl border border-white/10 bg-dark-card p-4"
+          >
+            <div className="text-white font-semibold mb-1">
+              {p?.eventShortName || p?.eventName || "Event"}
             </div>
-            <div className="my-3 border-t border-white/10" />
-            <div className="flex items-start justify-between">
-              <div className="text-white font-medium">{qName}</div>
-              {isExited && <Badge className="text-gray-text">Exited</Badge>}
-            </div>
-            <div className="mt-2 text-gray-text text-sm flex items-center gap-2">
-              <span>{outcome || "--"}</span>
+
+            <div className="text-sm text-gray-text mb-2">{qName}</div>
+
+            <div className="text-sm text-gray-text flex items-center gap-2">
+              <span>{p?.predictionDetails?.selectedPredictionOutcome}</span>
               <span>•</span>
               <span>{pctText}</span>
-              <span>•</span>
-              <span className="inline-flex items-center gap-1"><DollarSign className="w-4 h-4" /> {matchedText}</span>
             </div>
-            <Button 
+
+            <Button
               onClick={() => navigate(`/order-details/${p?.orderId}`)}
               className="mt-4 w-full bg-primary text-dark-bg hover:bg-primary/90"
             >
@@ -1314,6 +1549,7 @@ const ExitedPredictionsList: React.FC<{ onOpen: (p: any, event: any) => void; se
     </div>
   );
 };
+
 
 // Main Sports Page
 export const Predictions: React.FC<{ selectedSport?: string | null }> = ({ selectedSport: propSelectedSport }) => {
