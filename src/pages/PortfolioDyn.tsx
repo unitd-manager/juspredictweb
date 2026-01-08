@@ -63,6 +63,9 @@ interface ChartPoint {
 interface Position {
   id: string;
   outcome: string;
+  eventName: string;
+  question: string;
+  answeredAt: string;
   average: string;
   current: number;
   price: number;
@@ -127,6 +130,9 @@ const mapPredictionsToPositions = (predictions: any[]): Position[] =>
   predictions.map((p: any) => ({
     id: p.predictionId ?? crypto.randomUUID(),
     outcome: p?.type ?? "Outcome",
+    eventName: p?.eventName ?? "Event",
+    question: p?.question ?? "Question",
+    answeredAt: p?.predictedOutcome ?? "",
     average: p?.percentage,
     current: Number(p?.potentialReturns ?? 0),
     price: Number(p?.investmentAmt ?? 0),
@@ -241,7 +247,16 @@ const PortfolioDyn: React.FC = () => {
       { name: "Realized", value: mapped.realizedPnl },
     ];
 
-    setData(mapped);
+    // Preserve existing positions data if a filter is active
+    setData(prev => {
+      if (prev && positionsTimeInForce && prev.positions.length > 0) {
+        return {
+          ...mapped,
+          positions: prev.positions // Keep existing filtered positions
+        };
+      }
+      return mapped;
+    });
     setLoading(false);
   };
 
@@ -253,6 +268,14 @@ const PortfolioDyn: React.FC = () => {
     }, 30000);
     return () => clearInterval(interval);
   }, [chartTimeInForce]);
+
+  // Refresh positions data when portfolio updates if a filter is active
+  useEffect(() => {
+    if (positionsTimeInForce && data?.positions.length === 0) {
+      // Only reload if positions were cleared and filter is active
+      loadPositions(positionsTimeInForce);
+    }
+  }, [data?.positions.length]);
 
   // Update positions when positionsTimeInForce changes, but do not show loading spinner
   useEffect(() => {
@@ -396,6 +419,9 @@ const PortfolioDyn: React.FC = () => {
                 <thead>
                   <tr className="border-b border-white/5 text-gray-text">
                     <th className="py-4 px-4 text-left">Type</th>
+                   <th className="py-4 px-4 text-left">Event</th>
+                   <th className="py-4 px-4 text-left">Question</th>
+                   <th className="py-4 px-4 text-left">Predicted Outcome</th>
                     <th className="py-4 px-4 text-center">Percentage</th>
                     <th className="py-4 px-4 text-center">Current value of position</th>
                     <th className="py-4 px-4 text-center">Invested Amount</th>
@@ -412,6 +438,9 @@ const PortfolioDyn: React.FC = () => {
                         className="border-b border-white/5 hover:bg-dark-lighter/50"
                       >
                         <td className="py-4 px-4 text-left">{p.outcome}</td>
+                         <td className="py-4 px-4 text-left">{p.eventName}</td>
+                          <td className="py-4 px-4 text-left">{p.question}</td>
+                           <td className="py-4 px-4 text-left">{p.answeredAt}</td>
                         <td
                           className={`py-4 px-4 text-center font-semibold ${
                             p.average === "YES" ? "text-primary" : "text-red-400"
