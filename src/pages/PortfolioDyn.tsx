@@ -126,10 +126,31 @@ const mapActivity = (api: any): Activity[] => {
   }));
 };
 
+const getTypeLabel = (typeNum: any): string => {
+  const typeMap: { [key: number]: string } = {
+    0: "Unspecified",
+    1: "Prediction",
+    2: "Challenge",
+  };
+  return typeMap[Number(typeNum)] ?? "Unknown";
+};
+
+const formatDate = (dateStr: string): string => {
+  if (!dateStr) return "";
+  try {
+    const date = new Date(dateStr);
+    const options: Intl.DateTimeFormatOptions = { year: "numeric", month: "short", day: "numeric" };
+    return date.toLocaleDateString("en-US", options);
+  } catch {
+    return dateStr;
+  }
+};
+
 const mapPredictionsToPositions = (predictions: any[]): Position[] =>
   predictions.map((p: any) => ({
     id: p.predictionId ?? crypto.randomUUID(),
-    outcome: p?.type ?? "Outcome",
+     date: formatDate(p?.lastActivity ?? ""),
+    outcome: getTypeLabel(p?.type),
     eventName: p?.eventName ?? "Event",
     question: p?.question ?? "Question",
     answeredAt: p?.predictedOutcome ?? "",
@@ -150,7 +171,6 @@ const PortfolioDyn: React.FC = () => {
   const pageSize = 5;
   // TimeInForce filter state (shared for chart and positions)
   const timeInForceOptions = [
-    "PREDICTIONTIMEINFORCE_UNSPECIFIED",
     "PREDICTIONTIMEINFORCE_LIVE",
     "PREDICTIONTIMEINFORCE_COMPLETED_TODAY",
     "PREDICTIONTIMEINFORCE_COMPLETED_YESTERDAY",
@@ -164,7 +184,7 @@ const PortfolioDyn: React.FC = () => {
     "PREDICTIONTIMEINFORCE_EXITED"
   ];
   const [chartTimeInForce, setChartTimeInForce] = useState<string>("PREDICTIONTIMEINFORCE_COMPLETED_THISMONTH");
-  const [positionsTimeInForce, setPositionsTimeInForce] = useState<string>("");
+  const [positionsTimeInForce, setPositionsTimeInForce] = useState<string>("PREDICTIONTIMEINFORCE_LIVE");
 
   // Load positions separately with dependency tracking to prevent race conditions
   const loadPositions = async (timeInForce: string) => {
@@ -263,10 +283,6 @@ const PortfolioDyn: React.FC = () => {
   useEffect(() => {
     loadPortfolio(true); // initial load, show loading
     isInitialMount.current = false;
-    const interval = setInterval(() => {
-      loadPortfolio(false); // background refresh, don't show loading
-    }, 30000);
-    return () => clearInterval(interval);
   }, [chartTimeInForce]);
 
   // Refresh positions data when portfolio updates if a filter is active
@@ -418,6 +434,7 @@ const PortfolioDyn: React.FC = () => {
               <table className="w-full">
                 <thead>
                   <tr className="border-b border-white/5 text-gray-text">
+                   <th className="py-4 px-4 text-left">Date</th>
                     <th className="py-4 px-4 text-left">Type</th>
                    <th className="py-4 px-4 text-left">Event</th>
                    <th className="py-4 px-4 text-left">Question</th>
@@ -437,6 +454,7 @@ const PortfolioDyn: React.FC = () => {
                         key={p.id}
                         className="border-b border-white/5 hover:bg-dark-lighter/50"
                       >
+                         <td className="py-4 px-4 text-left">{p.date}</td>
                         <td className="py-4 px-4 text-left">{p.outcome}</td>
                          <td className="py-4 px-4 text-left">{p.eventName}</td>
                           <td className="py-4 px-4 text-left">{p.question}</td>
