@@ -126,10 +126,39 @@ const mapActivity = (api: any): Activity[] => {
   }));
 };
 
+const getTypeLabel = (typeNum: any): string => {
+  const typeMap: { [key: number]: string } = {
+    0: "Unspecified",
+    1: "Prediction",
+    2: "Challenge",
+  };
+  return typeMap[Number(typeNum)] ?? "Unknown";
+};
+
+const formatDate = (dateStr: string): string => {
+  if (!dateStr) return "";
+  try {
+    const date = new Date(dateStr);
+    const options: Intl.DateTimeFormatOptions = { year: "numeric", month: "short", day: "numeric" };
+    return date.toLocaleDateString("en-US", options);
+  } catch {
+    return dateStr;
+  }
+};
+
+const formatFilterLabel = (filterStr: string): string => {
+  return filterStr
+    .replace("PREDICTIONTIMEINFORCE_", "")
+    .split("_")
+    .map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
+    .join(" ");
+};
+
 const mapPredictionsToPositions = (predictions: any[]): Position[] =>
   predictions.map((p: any) => ({
     id: p.predictionId ?? crypto.randomUUID(),
-    outcome: p?.type ?? "Outcome",
+     date: formatDate(p?.lastActivity ?? ""),
+    outcome: getTypeLabel(p?.type),
     eventName: p?.eventName ?? "Event",
     question: p?.question ?? "Question",
     answeredAt: p?.predictedOutcome ?? "",
@@ -150,7 +179,6 @@ const PortfolioDyn: React.FC = () => {
   const pageSize = 5;
   // TimeInForce filter state (shared for chart and positions)
   const timeInForceOptions = [
-    "PREDICTIONTIMEINFORCE_UNSPECIFIED",
     "PREDICTIONTIMEINFORCE_LIVE",
     "PREDICTIONTIMEINFORCE_COMPLETED_TODAY",
     "PREDICTIONTIMEINFORCE_COMPLETED_YESTERDAY",
@@ -164,7 +192,7 @@ const PortfolioDyn: React.FC = () => {
     "PREDICTIONTIMEINFORCE_EXITED"
   ];
   const [chartTimeInForce, setChartTimeInForce] = useState<string>("PREDICTIONTIMEINFORCE_COMPLETED_THISMONTH");
-  const [positionsTimeInForce, setPositionsTimeInForce] = useState<string>("");
+  const [positionsTimeInForce, setPositionsTimeInForce] = useState<string>("PREDICTIONTIMEINFORCE_LIVE");
 
   // Load positions separately with dependency tracking to prevent race conditions
   const loadPositions = async (timeInForce: string) => {
@@ -263,10 +291,6 @@ const PortfolioDyn: React.FC = () => {
   useEffect(() => {
     loadPortfolio(true); // initial load, show loading
     isInitialMount.current = false;
-    const interval = setInterval(() => {
-      loadPortfolio(false); // background refresh, don't show loading
-    }, 30000);
-    return () => clearInterval(interval);
   }, [chartTimeInForce]);
 
   // Refresh positions data when portfolio updates if a filter is active
@@ -352,7 +376,7 @@ const PortfolioDyn: React.FC = () => {
             <p className="text-gray-text text-sm mb-6">12-month performance overview</p>
             {/* Chart Filter Dropdown */}
             <div className="mb-4 flex items-center gap-2">
-              <label htmlFor="chart-timeinforce" className="text-gray-text">Filter:</label>
+              {/* <label htmlFor="chart-timeinforce" className="text-gray-text">Filter:</label> */}
               <select
                 id="chart-timeinforce"
                 className="bg-dark-lighter text-white border border-white/10 rounded px-2 py-1"
@@ -360,7 +384,7 @@ const PortfolioDyn: React.FC = () => {
                 onChange={e => setChartTimeInForce(e.target.value)}
               >
                 {timeInForceOptions.map(opt => (
-                  <option key={opt} value={opt}>{opt.replace("PREDICTIONTIMEINFORCE_", "")}</option>
+                  <option key={opt} value={opt}>{formatFilterLabel(opt)}</option>
                 ))}
               </select>
             </div>
@@ -397,7 +421,7 @@ const PortfolioDyn: React.FC = () => {
             <h2 className="text-2xl font-bold text-white mb-6">Positions</h2>
             {/* TimeInForce Filter for Positions */}
             <div className="mb-4 flex items-center gap-2">
-              <label htmlFor="positions-timeinforce" className="text-gray-text">Filter by TimeInForce:</label>
+              {/* <label htmlFor="positions-timeinforce" className="text-gray-text">Filter by TimeInForce:</label> */}
               <select
                 id="positions-timeinforce"
                 className="bg-dark-lighter text-white border border-white/10 rounded px-2 py-1"
@@ -405,20 +429,20 @@ const PortfolioDyn: React.FC = () => {
                 onChange={e => setPositionsTimeInForce(e.target.value)}
               >
                 {timeInForceOptions.map(opt => (
-                  <option key={opt} value={opt}>{opt.replace("PREDICTIONTIMEINFORCE_", "")}</option>
+                  <option key={opt} value={opt}>{formatFilterLabel(opt)}</option>
                 ))}
               </select>
             </div>
             {data.positions.length === 0 ? (
               <div className="text-center py-8">
-                <p className="text-gray-text text-lg">No predictions found for {positionsTimeInForce.replace("PREDICTIONTIMEINFORCE_", "")}</p>
+                <p className="text-gray-text text-lg">No predictions found for {formatFilterLabel(positionsTimeInForce)}</p>
               </div>
             ) : (
             <div className="overflow-x-auto">
               <table className="w-full">
                 <thead>
                   <tr className="border-b border-white/5 text-gray-text">
-                    <th className="py-4 px-4 text-left">Type</th>
+                   <th className="py-4 px-4 text-left">Date</th>
                    <th className="py-4 px-4 text-left">Event</th>
                    <th className="py-4 px-4 text-left">Question</th>
                    <th className="py-4 px-4 text-left">Predicted Outcome</th>
@@ -437,7 +461,7 @@ const PortfolioDyn: React.FC = () => {
                         key={p.id}
                         className="border-b border-white/5 hover:bg-dark-lighter/50"
                       >
-                        <td className="py-4 px-4 text-left">{p.outcome}</td>
+                         <td className="py-4 px-4 text-left">{p.date}</td>
                          <td className="py-4 px-4 text-left">{p.eventName}</td>
                           <td className="py-4 px-4 text-left">{p.question}</td>
                            <td className="py-4 px-4 text-left">{p.answeredAt}</td>

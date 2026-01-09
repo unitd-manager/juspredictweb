@@ -663,8 +663,7 @@ console.log('items',items)
                 eventStartDate: p?.startDate,
                 eventEndDate: p?.endDate,
                 users: p?.activity?.questionUsers,
-                predictedOutcome:
-                  p.predictionDetails?.selectedPredictionOutcome,
+                predictedOutcome: p?.predictedOutcome || p?.predictedOutcomeChoice,
                 percentage: p.percentage,
                 investmentAmt: p.investmentAmt,
                 potentialReturns: p.potentialReturns,
@@ -868,8 +867,7 @@ const OpenPredictionsList: React.FC<{
                   question: p?.question || p?.questionName || p?.description || "Prediction",
                   eventName: p.eventName,
                   eventStartDate: p.eventStartDate,
-                  predictedOutcome:
-                    p.predictionDetails?.selectedPredictionOutcome,
+                  predictedOutcome: p?.predictedOutcome || p?.predictedOutcomeChoice,
                   percentage: p.percentage,
                   investmentAmt: p.investmentAmt,
                 }}
@@ -2076,7 +2074,7 @@ console.log('selectedPrediction',selectedPrediction);
       );
       const confPct = confidenceOverride ?? impliedPct ?? defaultPct;
 
-      const res = await api.post<any>('/order/v1/createorder', {
+      const res = await api.post<any>('/order/v1/exitorder', {
         eventId: selectedEventId,
         questionId: selectedQuestion.questionId,
         amount: amount,
@@ -2129,11 +2127,51 @@ console.log('selectedPrediction',selectedPrediction);
 
 
 
-  const handleExitPrediction = (id: string) => {
-    setActivePredictions(prev => prev.map(p => (p.id === id ? { ...p, status: 'PREDICTION_STATUS_EXITED' } : p)));
-    setSuccessMessage('Prediction exited');
-    setSelectedAction(null);
-    setSelectedPrediction(null);
+  const handleExitPrediction = async (id: string) => {
+    if (!selectedPrediction) return;
+    
+    setIsSubmitting(true);
+    try {
+      const exitAmt = Number(exitAmount || 0);
+      const originalPct = Number(selectedPrediction.percentage || 0);
+      const currentPct = Number(exitConfidence ?? originalPct);
+      
+      // updatedPercentage should only be set if confidence changed
+      const updatedPct = currentPct !== originalPct ? String(currentPct) : '0';
+
+      const res = await api.post<any>('/order/v1/exitorder', {
+        orderId: selectedPrediction.orderId,
+        questionId: selectedPrediction.questionId,
+        eventId: selectedPrediction.eventId,
+        amount: String(exitAmt),
+        modifiers: {
+          creditDiscount: '0',
+          creditMarkup: '0',
+          percentage: String( exitConfidence?? selectedPrediction.percentage
+                ),
+                  updatedPercentage: updatedPct,
+        },
+          predictionDetails: {
+          selectedPredictionOutcome: selectedPrediction.answer,
+          selectedPredictionChoice: true,
+        },
+      });
+
+      if (res?.status?.type === 'SUCCESS') {
+        setActivePredictions(prev => prev.map(p => (p.id === id ? { ...p, status: 'PREDICTION_STATUS_EXITED' } : p)));
+        setSuccessMessage('Prediction exited successfully');
+        setSelectedAction(null);
+        setSelectedPrediction(null);
+        fetchBalance();
+      } else {
+        setErrorMsg('Failed to exit prediction');
+      }
+    } catch (e) {
+      console.error('Failed to exit prediction', e);
+      setErrorMsg('Failed to exit prediction. Please try again.');
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   const handleCancelPrediction = (id: string) => {
@@ -2303,14 +2341,16 @@ console.log('selectedPrediction',selectedPrediction);
                     // Show exit prediction panel in right sidebar instead of navigating to details
                     const eventDes = p?.eventDescription || p?.eventName || "Event";
                     const qName = p?.question || p?.questionName || p?.question?.description || "Prediction";
-                    const outcome = String(p?.eventShortName ?? p?.predictionDetails?.selectedPredictionOutcome ?? p?.selectedPredictionOutcome ?? "").trim();
+                    const outcome = String(p?.predictedOutcome ?? p?.predictionDetails?.selectedPredictionOutcome ?? p?.selectedPredictionOutcome ?? "").trim();
                     const pctNum = Number(p?.percentage ?? p?.exitPercentage ?? 0);
                     const matchedAmt = Number(p?.matchedAmt ?? 0);
                     const investAmt = Number(p?.investmentAmt ?? 0);
                     
                     setSelectedPrediction({
                       predictionId: String(p?.predictionId || ""),
+                      orderId: String(p?.orderId || p?.id || ""),
                       eventId: String(p?.eventId || ""),
+                      questionId: String(p?.questionId || p?.question?.questionId || ""),
                       eventName: eventDes,
                       eventDescription: p?.eventDescription || "",
                       questionName: qName,
@@ -2321,7 +2361,7 @@ console.log('selectedPrediction',selectedPrediction);
                       status: p?.predictionStatus || p?.status || "PREDICTION_STATUS_LIVE"
                     });
                     setSelectedAction('exit');
-                    setExitAmount("");
+                    setExitAmount(String(investAmt));
                     setExitConfidence(null);
                     setErrorMsg("");
                     fetchBalance();
@@ -2469,11 +2509,11 @@ console.log('selectedPrediction',selectedPrediction);
                       <div className="grid grid-cols-2 gap-2">
                         <div className={`p-3 rounded-lg border transition-all text-sm font-medium border-white/10 bg-dark-card text-white`}>
                           {selectedPrediction.answer}
-                          <div className="text-xs text-gray-text mt-1">{formatPercent(exitConfidence ?? selectedPrediction.percentage)}</div>
+                          <div className="text-xs text-gray-text mt-1">{formatPercent(selectedPrediction.percentage)}</div>
                         </div>
                         <div className={`p-3 rounded-lg border transition-all text-sm font-medium border-white/10 bg-dark-card text-white`}>
-                          Amount
-                          <div className="text-xs text-gray-text mt-1">{formatCurrency(selectedAction === 'exit' ? Number(exitAmount || 0) : Number(selectedPrediction.amount))}</div>
+                          Invested
+                          <div className="text-xs text-gray-text mt-1">{formatCurrency(Number(selectedPrediction.amount))}</div>
                         </div>
                       </div>
 
@@ -2487,55 +2527,30 @@ console.log('selectedPrediction',selectedPrediction);
 
                       <div>
                         <label className="block text-xs text-gray-text mb-2">Amount</label>
-                        <input className="w-full rounded-lg bg-dark-card border border-white/10 p-3 text-white placeholder:text-gray-muted focus:outline-none focus:border-primary/30 focus:ring-1 focus:ring-primary/20 transition-all" type="number" step="0.01" min="0" value={selectedAction === 'exit' ? exitAmount : String(selectedPrediction.amount ?? '')} onChange={(e) => selectedAction === 'exit' && setExitAmount(e.target.value)} disabled={selectedAction !== 'exit'} placeholder="$100" />
-                        {selectedAction === 'exit' ? (
-                          <div className="mt-2 text-xs text-gray-text">
-                            Remaining: {formatCurrency(Math.max(0, Number(selectedPrediction.amount) - Number(exitAmount || 0)))}
-                          </div>
-                        ) : (
-                          balance && selectedPrediction.amount && Number(selectedPrediction.amount) > 0 && (
-                            <div className="mt-2 text-xs text-gray-text">
-                              Remaining: {formatCurrency(Math.max(0, getAvailableBalance(balance) - Number(selectedPrediction.amount)))}
-                            </div>
-                          )
-                        )}
+                        <input className="w-full rounded-lg bg-dark-card border border-white/10 p-3 text-white placeholder:text-gray-muted focus:outline-none focus:border-primary/30 focus:ring-1 focus:ring-primary/20 transition-all" type="number" step="0.01" min="0" value={exitAmount} onChange={(e) => setExitAmount(e.target.value)} placeholder="$100" />
                       </div>
 
-                      {(selectedAction === 'exit' ? Number(exitAmount) > 0 : Number(selectedPrediction.amount) > 0) && (
-                        <div className="bg-dark-card border border-white/10 rounded-lg p-3">
-                          <h4 className="text-sm text-white font-semibold mb-3">Potential Returns</h4>
-                          {(() => {
-                            const impliedPct = Math.max(0, Math.min(100, Number.parseFloat(String(selectedPrediction.percentage || '0')) || 0));
-                          const confPct = selectedAction === 'exit' ? (exitConfidence ?? impliedPct) : impliedPct;
-                          const amt = Number(selectedAction === 'exit' ? exitAmount || 0 : selectedPrediction.amount);
-                          const profit = (amt * confPct) / 100;
-                          const totalReturn = amt + profit;
-                            return (
-                              <div className="space-y-2 text-xs">
-                                <div className="flex justify-between">
-                                  <span className="text-gray-text">Investment</span>
-                                  <span className="text-white font-medium">{formatCurrency(amt)}</span>
-                                </div>
-                                <div className="flex justify-between">
-                                  <span className="text-gray-text">Prediction</span>
-                                  <span className="text-white font-medium">{formatPercent(confPct)}</span>
-                                </div>
-                                <div className="flex justify-between">
-                                  <span className="text-gray-text">Potential Profit</span>
-                                  <span className="text-primary font-semibold">+{formatCurrency(profit)}</span>
-                                </div>
-                                <div className="flex justify-between pt-2 border-t border-white/10">
-                                  <span className="text-white">Total Return</span>
-                                  <span className="text-white font-semibold">{formatCurrency(totalReturn)}</span>
-                                </div>
-                              </div>
-                            );
-                          })()}
+                      {selectedAction === 'exit' && (
+                        <div className="grid grid-cols-4 gap-2">
+                          {[10, 50, 100, 500].filter(amount => amount <= Number(selectedPrediction.amount)).map((amount) => (
+                            <button
+                              key={amount}
+                              onClick={() => setExitAmount(String(amount))}
+                              className={`py-2 px-2 rounded-lg border transition-all text-sm font-medium ${
+                                Number(exitAmount) === amount
+                                  ? 'border-primary bg-primary/20 text-primary'
+                                  : 'border-white/10 bg-dark-card text-white hover:border-primary/30'
+                              }`}
+                            >
+                              ${amount}
+                            </button>
+                          ))}
                         </div>
                       )}
 
-                      <button onClick={() => (selectedAction === 'cancel' ? handleCancelPrediction(selectedPrediction.id) : handleExitPrediction(selectedPrediction.id))} className={`w-full py-3 rounded-lg font-semibold transition-all ${selectedAction === 'cancel' ? 'bg-dark-card text-white border border-white/10 hover:border-primary/30' : 'bg-yellow-500 text-dark-bg hover:bg-yellow-400'}`}>
-                        {selectedAction === 'cancel' ? 'Cancel Prediction' : 'Exit Prediction'}
+                      <button onClick={() => (selectedAction === 'cancel' ? handleCancelPrediction(selectedPrediction.id) : handleExitPrediction(selectedPrediction.predictionId))} disabled={isSubmitting} className={`w-full py-3 rounded-lg font-semibold transition-all flex items-center justify-center gap-2 ${selectedAction === 'cancel' ? 'bg-dark-card text-white border border-white/10 hover:border-primary/30 disabled:opacity-50' : 'bg-yellow-500 text-dark-bg hover:bg-yellow-400 disabled:opacity-50'}`}>
+                        {isSubmitting && <Loader2 className="w-4 h-4 animate-spin" />}
+                        {isSubmitting ? (selectedAction === 'cancel' ? 'Cancelling...' : 'Exiting...') : (selectedAction === 'cancel' ? 'Cancel Prediction' : 'Exit Prediction')}
                       </button>
                     </div>
                   ) : selectedQuestion ? (
