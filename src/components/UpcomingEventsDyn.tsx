@@ -802,7 +802,7 @@ export const UpcomingEventsDyn = () => {
 
         {/* TABS */}
         <div className="flex flex-wrap gap-2 bg-dark-card p-1 rounded-lg border border-white/10 mb-6">
-          {["all", "live", "upcoming", "cricket", "Nfl"].map((tab) => (
+          {["all", "live", "upcoming", "cricket", "NFL"].map((tab) => (
             <button
               key={tab}
               onClick={() => setActiveTab(tab as any)}
