@@ -247,12 +247,7 @@ const TransactionsDyn: React.FC = () => {
                         <th className="px-4 py-2 text-left text-xs uppercase">
                           Description
                         </th>
-                        <th className="px-4 py-2 text-left text-xs uppercase">
-                          Category
-                        </th>
-                        <th className="px-4 py-2 text-left text-xs uppercase">
-                          Activity
-                        </th>
+                      
                         <th className="px-4 py-2 text-right text-xs uppercase">
                           Amount
                         </th>
@@ -268,12 +263,7 @@ const TransactionsDyn: React.FC = () => {
                           <td className="px-4 py-2 text-sm">
                             {t.description}
                           </td>
-                          <td className="px-4 py-2 text-sm">
-                            {t.typeName}
-                          </td>
-                          <td className="px-4 py-2 text-sm">
-                            {t.subTypeName}
-                          </td>
+                        
                           <td
                             className={`px-4 py-2 text-sm font-bold text-right ${
                               t.type === "credit"

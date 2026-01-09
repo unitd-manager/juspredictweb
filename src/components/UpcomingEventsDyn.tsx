@@ -614,7 +614,7 @@ return (
           step="0.01"
           min="0"
           value={amount}
-          onChange={(e) => setAmount(e.target.value)}
+          onChange={(e) => setAmount(Number(e.target.value))}
           placeholder="$100"
         />
 
@@ -624,7 +624,7 @@ return (
             {formatCurrency(
               Math.max(
                 0,
-                getAvailableBalance(balance) - Number(amount)
+                getAvailableBalance() - Number(amount)
               )
             )}
           </div>
@@ -634,7 +634,7 @@ return (
           {(["10", "50", "100", "500"] as const).map((v) => (
             <button
               key={v}
-              onClick={() => setAmount(v)}
+              onClick={() => setAmount(Number(v))}
               className="py-2 rounded-lg bg-dark-card border border-white/10 text-sm text-white hover:border-primary/30 transition-all"
             >
               ${v}
@@ -713,7 +713,7 @@ export const UpcomingEventsDyn = () => {
     useState<QuestionCard | null>(null)
 
   const [activeTab, setActiveTab] = useState<
-    "all" | "sports" | "live" | "trending" | "upcoming"
+    "all" | "live" | "upcoming" | "cricket" | "NFL"
   >("all")
 
   const [page, setPage] = useState(1)
@@ -802,7 +802,7 @@ export const UpcomingEventsDyn = () => {
 
         {/* TABS */}
         <div className="flex flex-wrap gap-2 bg-dark-card p-1 rounded-lg border border-white/10 mb-6">
-          {["all", "sports", "live", "trending", "upcoming"].map((tab) => (
+          {["all", "live", "upcoming", "cricket", "Nfl"].map((tab) => (
             <button
               key={tab}
               onClick={() => setActiveTab(tab as any)}
