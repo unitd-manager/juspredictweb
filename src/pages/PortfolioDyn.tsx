@@ -146,6 +146,14 @@ const formatDate = (dateStr: string): string => {
   }
 };
 
+const formatFilterLabel = (filterStr: string): string => {
+  return filterStr
+    .replace("PREDICTIONTIMEINFORCE_", "")
+    .split("_")
+    .map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
+    .join(" ");
+};
+
 const mapPredictionsToPositions = (predictions: any[]): Position[] =>
   predictions.map((p: any) => ({
     id: p.predictionId ?? crypto.randomUUID(),
@@ -368,7 +376,7 @@ const PortfolioDyn: React.FC = () => {
             <p className="text-gray-text text-sm mb-6">12-month performance overview</p>
             {/* Chart Filter Dropdown */}
             <div className="mb-4 flex items-center gap-2">
-              <label htmlFor="chart-timeinforce" className="text-gray-text">Filter:</label>
+              {/* <label htmlFor="chart-timeinforce" className="text-gray-text">Filter:</label> */}
               <select
                 id="chart-timeinforce"
                 className="bg-dark-lighter text-white border border-white/10 rounded px-2 py-1"
@@ -376,7 +384,7 @@ const PortfolioDyn: React.FC = () => {
                 onChange={e => setChartTimeInForce(e.target.value)}
               >
                 {timeInForceOptions.map(opt => (
-                  <option key={opt} value={opt}>{opt.replace("PREDICTIONTIMEINFORCE_", "")}</option>
+                  <option key={opt} value={opt}>{formatFilterLabel(opt)}</option>
                 ))}
               </select>
             </div>
@@ -413,7 +421,7 @@ const PortfolioDyn: React.FC = () => {
             <h2 className="text-2xl font-bold text-white mb-6">Positions</h2>
             {/* TimeInForce Filter for Positions */}
             <div className="mb-4 flex items-center gap-2">
-              <label htmlFor="positions-timeinforce" className="text-gray-text">Filter by TimeInForce:</label>
+              {/* <label htmlFor="positions-timeinforce" className="text-gray-text">Filter by TimeInForce:</label> */}
               <select
                 id="positions-timeinforce"
                 className="bg-dark-lighter text-white border border-white/10 rounded px-2 py-1"
@@ -421,13 +429,13 @@ const PortfolioDyn: React.FC = () => {
                 onChange={e => setPositionsTimeInForce(e.target.value)}
               >
                 {timeInForceOptions.map(opt => (
-                  <option key={opt} value={opt}>{opt.replace("PREDICTIONTIMEINFORCE_", "")}</option>
+                  <option key={opt} value={opt}>{formatFilterLabel(opt)}</option>
                 ))}
               </select>
             </div>
             {data.positions.length === 0 ? (
               <div className="text-center py-8">
-                <p className="text-gray-text text-lg">No predictions found for {positionsTimeInForce.replace("PREDICTIONTIMEINFORCE_", "")}</p>
+                <p className="text-gray-text text-lg">No predictions found for {formatFilterLabel(positionsTimeInForce)}</p>
               </div>
             ) : (
             <div className="overflow-x-auto">
@@ -435,7 +443,6 @@ const PortfolioDyn: React.FC = () => {
                 <thead>
                   <tr className="border-b border-white/5 text-gray-text">
                    <th className="py-4 px-4 text-left">Date</th>
-                    <th className="py-4 px-4 text-left">Type</th>
                    <th className="py-4 px-4 text-left">Event</th>
                    <th className="py-4 px-4 text-left">Question</th>
                    <th className="py-4 px-4 text-left">Predicted Outcome</th>
@@ -455,7 +462,6 @@ const PortfolioDyn: React.FC = () => {
                         className="border-b border-white/5 hover:bg-dark-lighter/50"
                       >
                          <td className="py-4 px-4 text-left">{p.date}</td>
-                        <td className="py-4 px-4 text-left">{p.outcome}</td>
                          <td className="py-4 px-4 text-left">{p.eventName}</td>
                           <td className="py-4 px-4 text-left">{p.question}</td>
                            <td className="py-4 px-4 text-left">{p.answeredAt}</td>
