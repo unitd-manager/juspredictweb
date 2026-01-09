@@ -94,7 +94,8 @@ const Faq: React.FC = () => {
       />
 
       <main>
-        <section className="px-4 sm:px-6 lg:px-8 py-10 lg:py-16">
+        <section className="px-4 sm:px-6 lg:px-8 pt-0 pb-4 lg:pb-6">
+
           <div className="max-w-[1400px] mx-auto">
             {loading ? (
               <div className="text-center py-20">

@@ -153,9 +153,9 @@ const EventThumbnail = ({
   onSelect: (id: string) => void;
   selectedId?: string | null;
 }) => {
-  const id = String(event.id ?? event.eventId ?? '');
+  const id = String(event.id ?? event.eventId ?? "");
 
-  /* ---------- Teams (dynamic safe handling) ---------- */
+  /* ---------- Teams ---------- */
   const teams = Array.isArray(event?.teams)
     ? event.teams
     : Array.isArray(event?.sportEvent?.teams)
@@ -232,34 +232,35 @@ const EventThumbnail = ({
       aria-pressed={selectedId === id}
       className={`relative w-64 min-w-[16rem] md:w-72 md:min-w-[18rem]
         flex-shrink-0 rounded-xl p-3 text-left transition-all flex
+        overflow-hidden
         ${
           selectedId === id
             ? "bg-primary/10 border border-primary ring-2 ring-primary/30 shadow-lg"
             : "bg-dark-card border border-white/6 hover:shadow-lg hover:border-primary/30"
         }`}
     >
-      {/* LEFT DATE / TIME BLOCK */}
+      {/* LEFT DATE / TIME */}
       <div className="flex flex-col justify-center items-start pr-3 mr-3
-        border-r border-white/10 bg-primary/20 rounded-lg px-3">
+        border-r border-white/10 bg-primary/20 rounded-lg px-3 flex-shrink-0">
         <div className="text-xs font-semibold text-white">{dayLabel}</div>
         <div className="text-xs text-gray-text mt-1">{dateLabel}</div>
         <div className="text-xs text-gray-text mt-1">{timeLabel}</div>
       </div>
 
       {/* RIGHT CONTENT */}
-      <div className="flex-1 flex flex-col">
+      <div className="flex-1 min-w-0 flex flex-col">
         {selectedId === id && (
-          <span className="absolute top-2 right-2 flex items-center gap-2">
+          <span className="absolute top-2 right-2 flex items-center gap-1">
             <span className="h-2 w-2 rounded-full bg-red-500 shadow-md" />
             <span className="text-xs text-white">▾</span>
           </span>
         )}
 
         {/* TEAMS */}
-        <div className="flex items-center gap-3 mb-2">
+        <div className="flex items-center gap-3 mb-2 min-w-0">
           {/* Team A */}
-          <div className="flex items-center gap-2">
-            <div className="h-10 w-10 rounded bg-dark-lighter flex items-center justify-center overflow-hidden">
+          <div className="flex items-center gap-2 min-w-0">
+            <div className="h-10 w-10 flex-shrink-0 rounded bg-dark-lighter flex items-center justify-center overflow-hidden">
               {teamA?.imageUrl || teamA?.logoUrl ? (
                 <img
                   src={(teamA.imageUrl || teamA.logoUrl).toString()}
@@ -279,7 +280,7 @@ const EventThumbnail = ({
                 </span>
               )}
             </div>
-            <div className="text-sm text-white font-medium line-clamp-1">
+            <div className="text-sm text-white font-medium truncate max-w-[5.5rem]">
               {teamA?.shortName || "Team A"}
             </div>
           </div>
@@ -287,11 +288,11 @@ const EventThumbnail = ({
           <div className="flex-1 text-center text-xs text-gray-text">vs</div>
 
           {/* Team B */}
-          <div className="flex items-center gap-2 justify-end">
-            <div className="text-sm text-white font-medium line-clamp-1">
+          <div className="flex items-center gap-2 justify-end min-w-0">
+            <div className="text-sm text-white font-medium truncate max-w-[5.5rem] text-right">
               {teamB?.shortName || "Team B"}
             </div>
-            <div className="h-10 w-10 rounded bg-dark-lighter flex items-center justify-center overflow-hidden">
+            <div className="h-10 w-10 flex-shrink-0 rounded bg-dark-lighter flex items-center justify-center overflow-hidden">
               {teamB?.imageUrl || teamB?.logoUrl ? (
                 <img
                   src={(teamB.imageUrl || teamB.logoUrl).toString()}
@@ -314,13 +315,17 @@ const EventThumbnail = ({
           </div>
         </div>
 
-        {/* SPORT / EVENT NAME */}
-        <div className="text-xs text-gray-text text-center">{sportName}</div>
+        {/* SPORT NAME */}
+        <div className="text-xs text-gray-text text-center truncate">
+          {sportName}
+        </div>
 
         {/* FOOTER */}
-        <div className="flex items-center justify-between mt-1">
-          <div className="text-xs text-gray-text">{teamsStr}</div>
-          <div className="text-xs text-white font-semibold">
+        <div className="flex items-center justify-between mt-1 min-w-0">
+          <div className="text-xs text-gray-text truncate max-w-[70%]">
+            {teamsStr}
+          </div>
+          <div className="text-xs text-white font-semibold whitespace-nowrap">
             {Math.round(probA)}% / {Math.round(probB)}%
           </div>
         </div>
@@ -328,6 +333,7 @@ const EventThumbnail = ({
     </button>
   );
 };
+
 
 
 // Horizontal strip of thumbnails
@@ -461,7 +467,7 @@ const EventThumbnailStrip = ({
 // Event Card Component
 const EventCard = ({ 
   event, 
-  onViewQuestions, 
+  onViewQuestions,
   onQuickPredict 
 }: { 
   event: any; 
@@ -1689,6 +1695,7 @@ export const Sports: React.FC<{ selectedSport?: string | null }> = ({ selectedSp
     b: { name: string; prob: number };
   } | null>(null);
   console.log(selectedTeams);
+  console.log('selectedQuestion',selectedQuestion)
   const [balance, setBalance] = useState<any | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errorMsg, setErrorMsg] = useState('');
@@ -2557,6 +2564,7 @@ console.log('selectedPrediction',selectedPrediction);
                     setActiveTab('all');
                   }}
                   onPredict={(question, evId?: string, predictionId?: string) => {
+                    console.log('question',question);
                     const id = String(evId ?? selectedEventId ?? '');
                     setSelectedEventId(id);
                     setSelectedQuestion(question);
@@ -3005,7 +3013,7 @@ console.log('selectedPrediction',selectedPrediction);
                 )  : selectedQuestion ? (
                   <div className="space-y-4">
                     <div className="bg-dark-card border border-white/10 p-4 rounded-lg">
-                      <div className="text-sm text-white font-semibold mb-1">{selectedQuestion.name}</div>
+                      <div className="text-sm text-white font-semibold mb-1">{selectedQuestion.description}</div>
                       {selectedQuestion.category && (
                         <div className="text-xs text-gray-text">{selectedQuestion.category}</div>
                       )}

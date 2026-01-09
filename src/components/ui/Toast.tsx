@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useEffect } from 'react';
 import { X } from 'lucide-react';
 
 interface Toast {
@@ -36,30 +36,33 @@ export const toast = {
 export const Toaster: React.FC = () => {
   const [toasts, setToasts] = useState<Toast[]>([]);
 
-  React.useEffect(() => {
+  useEffect(() => {
     return toastStore.subscribe(setToasts);
   }, []);
 
   return (
-    <div className="fixed top-4 right-4 z-50 space-y-2">
+    <div className="fixed top-4 right-4 z-[9999] space-y-2">
       {toasts.map((t) => (
         <div
           key={t.id}
-          className={`flex items-center gap-3 rounded-lg px-4 py-3 text-sm font-medium ${
+          role="status"
+          aria-live="polite"
+          className={`flex items-center justify-between gap-3 rounded-lg px-4 py-3 text-sm font-medium shadow-lg ${
             t.type === 'success'
-              ? 'bg-primary/20 text-primary border border-primary/30'
+              ? 'bg-primary text-black border border-transparent'
               : t.type === 'error'
-                ? 'bg-red-500/20 text-red-300 border border-red-500/30'
-                : 'bg-blue-500/20 text-blue-300 border border-blue-500/30'
+                ? 'bg-red-600 text-white border border-transparent'
+                : 'bg-blue-600 text-white border border-transparent'
           }`}
         >
-          {t.message}
+          <span className="mr-3">{t.message}</span>
           <button
             onClick={() => {
               toastStore.toasts = toastStore.toasts.filter((x) => x.id !== t.id);
               toastStore.listeners.forEach((listener) => listener(toastStore.toasts));
             }}
             className="opacity-70 hover:opacity-100"
+            aria-label="Close notification"
           >
             <X className="w-4 h-4" />
           </button>

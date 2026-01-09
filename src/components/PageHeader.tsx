@@ -19,9 +19,9 @@ export const PageHeader: React.FC<PageHeaderProps> = ({
   //hideHeroBackground = false,
   isSubpage = false
 }) => {
-  const paddingClasses = compact
-    ? "relative pt-20 pb-8 lg:pt-24 overflow-hidden px-4 sm:px-6 lg:px-8 mb-10"
-    : "relative pt-32 pb-20 lg:pt-40 lg:pb-32 overflow-hidden px-4 sm:px-6 lg:px-8";
+ const paddingClasses = compact
+  ? "relative pt-24 pb-4 lg:pt-28 overflow-hidden px-4 sm:px-6 lg:px-8"
+  : "relative pt-36 pb-20 lg:pt-44 lg:pb-32 overflow-hidden px-4 sm:px-6 lg:px-8";
 
   return (
     <section className={paddingClasses}>
