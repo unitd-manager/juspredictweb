@@ -499,7 +499,8 @@ const LivePredictionsList: React.FC<{
   onExit: (p: any, event: any) => void;
   selectedSport?: string | null;
   selectedTournamentId?: string | null;
-}> = ({ onExit, selectedSport, selectedTournamentId }) => {
+  onOrderDetails?: (orderId: string) => void;
+}> = ({ onExit, selectedSport, selectedTournamentId, onOrderDetails }) => {
   const [items, setItems] = React.useState<any[]>([]);
   const [eventsMap, setEventsMap] = React.useState<Record<string, any>>({});
   const [isLoading, setIsLoading] = React.useState<boolean>(true);
@@ -669,8 +670,10 @@ console.log('items',items)
                 potentialReturns: p.potentialReturns,
                 exitPercentage: p.exitPercentage,
               }}
+              orderId={p.orderId}
               actionLabel="Exit Prediction"
               onAction={() => onExit(p, eventsMap[p.eventId])}
+              onOrderDetails={() => onOrderDetails && onOrderDetails(p.orderId)}
             />
           ))}
         </div>
@@ -2180,6 +2183,7 @@ console.log('selectedPrediction',selectedPrediction);
     setSelectedAction(null);
     setSelectedPrediction(null);
   };
+const navigate = useNavigate();
 
   return (
     <div className="min-h-screen bg-dark-bg text-gray-light">
@@ -2366,6 +2370,9 @@ console.log('selectedPrediction',selectedPrediction);
                     setErrorMsg("");
                     fetchBalance();
                     setIsMobilePanelOpen(true);
+                  }}
+                  onOrderDetails={(orderId: string) => {
+                    navigate(`/order-details/${orderId}`);
                   }}
                 />
               ) : activeTab === 'open' ? (
