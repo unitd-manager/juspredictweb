@@ -943,7 +943,7 @@ console.log('items live',items);
         const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
         const startsIn = diffDays > 0 ? `${diffDays} day${diffDays > 1 ? "s" : ""}` : "Today";
         const qName = p?.question || p?.questionName || p?.question?.description || "Prediction";
-        const outcome = String(p?.eventShortName ?? p?.predictionDetails?.selectedPredictionOutcome ?? p?.selectedPredictionOutcome ?? "").trim();
+        const outcome = String(p?.predictedOutcome ?? p?.predictionDetails?.selectedPredictionOutcome ?? p?.selectedPredictionOutcome ?? "").trim();
         const pctNum = Number(p?.percentage ?? p?.exitPercentage ?? 0);
         const pctText = isFinite(pctNum) ? `${Math.max(0, Math.min(100, Math.round(pctNum)))}%` : "--%";
         const matched = Number(p?.matchedAmt ?? 0);
@@ -952,7 +952,7 @@ console.log('items live',items);
         return (
           <div key={p?.predictionId || idx} className="rounded-2xl border border-white/10 bg-dark-card p-4">
             <div className="flex items-center justify-between">
-              <div className="text-white font-semibold">{outcome || "--"}</div>
+              <div className="text-white font-semibold"> <span className="text-gray-text font-medium">Predicted:</span>{outcome || "--"}</div>
               <Badge variant="secondary" className="text-red-300">Match starts in {startsIn}</Badge>
             </div>
             <div className="my-3 border-t border-white/10" />
@@ -960,7 +960,8 @@ console.log('items live',items);
               <div className="text-white font-medium">{qName}</div>
             </div>
             <div className="mt-2 text-gray-text text-sm flex items-center gap-2">
-              <span>{outcome || "--"}</span>
+              <span className="text-gray-text font-medium">Predicted:</span>
+              <span className="truncate">{outcome || "--"}</span>
               <span>•</span>
               <span>{pctText}</span>
               <span>•</span>
@@ -2277,58 +2278,60 @@ export const Sports: React.FC<{ selectedSport?: string | null }> = ({ selectedSp
   
 console.log('selectedPrediction',selectedPrediction);
 const handleExitPrediction = async () => {
-//  if (!selectedPrediction) return;
-  // ✅ validations
-  if (!exitAmount || Number(exitAmount) <= 0) {
-    setErrorMsg("Please enter a valid exit amount");
-    return;
-  }
-
-console.log('selectedPrediction',selectedPrediction);
-  const exitAmt = Number(exitAmount);
-  if (exitAmt > Number(selectedPrediction.amount)) {
-    setErrorMsg("Exit amount cannot exceed invested amount");
-    return;
-  }
+  if (!selectedPrediction) return;
 
   setIsSubmitting(true);
   setErrorMsg("");
 
-console.log('selectedPrediction',selectedPrediction);
-    try {
-    const res = await api.post<any>("/order/v1/exitorder", {
-      amount: String(exitAmt),
+  // 🔑 REAL amount backend validates against
+  const backendPredictionAmount =
+    selectedPrediction.predictionAmount ??
+    selectedPrediction.remainingAmount ??
+    selectedPrediction.matchedAmount ??
+    selectedPrediction.stakeAmount ??
+    selectedPrediction.amount;
+
+  if (
+    backendPredictionAmount === undefined ||
+    backendPredictionAmount === null
+  ) {
+    setErrorMsg("Invalid prediction amount");
+    setIsSubmitting(false);
+    return;
+  }
+
+  try {
+    const res = await api.post("/order/v1/exitorder", {
+      // ✅ MUST MATCH BACKEND STORED VALUE EXACTLY
+      amount: String(backendPredictionAmount),
+
       eventId: selectedPrediction.eventId,
       orderId: selectedPrediction.orderId,
       questionId: selectedPrediction.questionId,
 
       predictionDetails: {
         selectedPredictionChoice: true,
-        //selectedPredictionOutcome: selectedPrediction.answer,
-        selectedPredictionOutcome:"India",
+        // ✅ exact stored outcome (not label)
+        selectedPredictionOutcome: selectedPrediction.answer,
       },
 
       modifiers: {
         creditDiscount: "0",
         creditMarkup: "0",
-        percentage: String( exitConfidence?? selectedPrediction.percentage
-        ),
-        updatedPercentage:  String(
-          exitConfidence
-        ),
+        // ✅ percentage CANNOT be changed during exit
+        percentage: String(exitConfidence ?? selectedPrediction.percentage),
+        updatedPercentage: String(exitConfidence ?? selectedPrediction.percentage),
       },
     });
 
     if (res?.status?.type === "SUCCESS") {
       setSuccessMessage("Prediction exited successfully");
 
-      // 🔁 reset exit state
       setSelectedPrediction(null);
       setSelectedAction(null);
       setExitAmount("");
       setExitConfidence(null);
 
-      // 🔄 refresh balance + lists
       fetchBalance();
       setActiveTab("exited");
     } else {
@@ -2626,7 +2629,7 @@ console.log('selectedPrediction',selectedPrediction);
                     // Show exit prediction panel in right sidebar instead of navigating to details
                     const eventDes = p?.eventDescription || p?.eventName || "Event";
                     const qName = p?.question || p?.questionName || p?.question?.description || "Prediction";
-                    const outcome = String(p?.eventShortName ?? p?.predictionDetails?.selectedPredictionOutcome ?? p?.selectedPredictionOutcome ?? "").trim();
+                    const outcome = String(p?.predictedOutcome ?? p?.predictionDetails?.selectedPredictionOutcome ?? p?.selectedPredictionOutcome ?? "").trim();
                     const pctNum = Number(p?.percentage ?? p?.exitPercentage ?? 0);
                     const matchedAmt = Number(p?.matchedAmt ?? 0);
                     const investAmt = Number(p?.investmentAmt ?? 0);
@@ -2947,7 +2950,7 @@ console.log('selectedPrediction',selectedPrediction);
                       </div>
                       <div className={`p-3 rounded-lg border transition-all text-sm font-medium border-white/10 bg-dark-card text-white`}>
                         Amount
-                        <div className="text-xs text-gray-text mt-1">{formatCurrency(selectedAction === 'exit' ? Number(exitAmount || 0) : Number(selectedPrediction.amount))}</div>
+                        <div className="text-xs text-gray-text mt-1">{formatCurrency(selectedAction === 'exit' ? Number(selectedPrediction.matchedAmt || 0) : Number(selectedPrediction.matchedAmt))}</div>
                       </div>
                     </div>
 
