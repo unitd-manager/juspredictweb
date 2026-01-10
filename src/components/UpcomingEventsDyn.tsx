@@ -614,7 +614,7 @@ return (
           step="0.01"
           min="0"
           value={amount}
-          onChange={(e) => setAmount(e.target.value)}
+          onChange={(e) => setAmount(Number(e.target.value))}
           placeholder="$100"
         />
 
@@ -624,7 +624,7 @@ return (
             {formatCurrency(
               Math.max(
                 0,
-                getAvailableBalance(balance) - Number(amount)
+                getAvailableBalance() - Number(amount)
               )
             )}
           </div>
@@ -634,7 +634,7 @@ return (
           {(["10", "50", "100", "500"] as const).map((v) => (
             <button
               key={v}
-              onClick={() => setAmount(v)}
+              onClick={() => setAmount(Number(v))}
               className="py-2 rounded-lg bg-dark-card border border-white/10 text-sm text-white hover:border-primary/30 transition-all"
             >
               ${v}
@@ -713,8 +713,9 @@ export const UpcomingEventsDyn = () => {
     useState<QuestionCard | null>(null)
 
   const [activeTab, setActiveTab] = useState<
-    "all" | "sports" | "live" | "trending" | "upcoming"
+    "all" | "live" | "upcoming" | "cricket" | "NFL"
   >("all")
+const [searchQuery, setSearchQuery] = useState("");
 
   const [page, setPage] = useState(1)
   const [pageSize] = useState(8)
@@ -802,7 +803,7 @@ export const UpcomingEventsDyn = () => {
 
         {/* TABS */}
         <div className="flex flex-wrap gap-2 bg-dark-card p-1 rounded-lg border border-white/10 mb-6">
-          {["all", "sports", "live", "trending", "upcoming"].map((tab) => (
+          {["all", "live", "upcoming", "cricket", "NFL"].map((tab) => (
             <button
               key={tab}
               onClick={() => setActiveTab(tab as any)}
@@ -817,10 +818,28 @@ export const UpcomingEventsDyn = () => {
             </button>
           ))}
         </div>
+{/* SEARCH BAR */}
+<div className="mb-6">
+  <input
+    type="text"
+    placeholder="Search questions..."
+    value={searchQuery}
+    onChange={(e) => setSearchQuery(e.target.value)}
+    className="w-full md:w-1/2 rounded-lg bg-dark-card border border-white/10
+               px-4 py-2 text-sm text-white placeholder:text-gray-text
+               focus:outline-none focus:border-primary/40"
+  />
+</div>
 
         {/* QUESTIONS GRID */}
         <div className="grid md:grid-cols-4 gap-4">
-          {questions.map((q) => (
+         {questions
+  .filter((q) =>
+    q.question
+      .toLowerCase()
+      .includes(searchQuery.toLowerCase())
+  )
+  .map((q) => (
             <div
               key={q.questionId}
               className="bg-[#1F2C34] border border-white/5 rounded-xl p-4
@@ -841,14 +860,18 @@ export const UpcomingEventsDyn = () => {
 
               <div className="grid grid-cols-2 gap-2 mb-4">
                 {q.options.slice(0, 4).map((opt) => (
-                  <div
-                    key={opt.id}
-                    className="bg-[#1e1e1e] border border-white/10 rounded-lg py-2 text-center"
-                  >
-                    <span className="text-green-400 font-semibold text-sm">
-                      {opt.label}
-                    </span>
-                  </div>
+                  <button
+              key={opt.id}
+              
+              className={`p-3 rounded-lg border transition-all text-sm font-medium border-white/10 bg-dark-card text-white hover:border-primary/30"
+              }`}
+            >
+              {opt.label}
+             <div className="text-xs text-gray-text mt-1">
+  {opt.percentage != null ? Number(opt.percentage).toFixed(1) : "0.0"}%
+</div>
+
+            </button>
                 ))}
               </div>
 

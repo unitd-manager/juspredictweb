@@ -77,6 +77,35 @@ const getTeamProbabilities = (event: any, teams: any[]) => {
   
   return { probA, probB };
 };
+const resolveTeams = (event: any) => {
+  // 1️⃣ Preferred: structured teams
+  if (Array.isArray(event?.teams) && event.teams.length >= 2) {
+    return event.teams;
+  }
+
+  if (
+    Array.isArray(event?.sportEvent?.teams) &&
+    event.sportEvent.teams.length >= 2
+  ) {
+    return event.sportEvent.teams;
+  }
+
+  // 2️⃣ Fallback: parse from event name (Panthers vs Rams)
+  const name =
+    event?.name || event?.eventName || event?.shortName || "";
+
+  const vsMatch = name.match(/(.+?)\s+vs\s+(.+)/i);
+
+  if (vsMatch) {
+    return [
+      { name: vsMatch[1].trim(), shortName: vsMatch[1].trim() },
+      { name: vsMatch[2].trim(), shortName: vsMatch[2].trim() },
+    ];
+  }
+
+  // 3️⃣ Last resort
+  return [{ name: "Team A" }, { name: "Team B" }];
+};
 
 // Team Row Component
 const TeamRow = ({ team, probability }: { team: any; probability: number }) => {
@@ -156,14 +185,17 @@ const EventThumbnail = ({
   const id = String(event.id ?? event.eventId ?? "");
 
   /* ---------- Teams ---------- */
-  const teams = Array.isArray(event?.teams)
-    ? event.teams
-    : Array.isArray(event?.sportEvent?.teams)
-    ? event.sportEvent.teams
-    : [];
+  // const teams = Array.isArray(event?.teams)
+  //   ? event.teams
+  //   : Array.isArray(event?.sportEvent?.teams)
+  //   ? event.sportEvent.teams
+  //   : [];
+const teams = resolveTeams(event);
+const teamA = teams[0];
+const teamB = teams[1];
 
-  const teamA = teams?.[0] || {};
-  const teamB = teams?.[1] || {};
+  // const teamA = teams?.[0] || {};
+  // const teamB = teams?.[1] || {};
 
   /* ---------- Probabilities ---------- */
   const { probA, probB } = getTeamProbabilities(event, teams);
@@ -217,121 +249,118 @@ const EventThumbnail = ({
 
     const vsIndex = fullName.toLowerCase().indexOf(" vs ");
     if (vsIndex !== -1) {
-      return [
-        fullName.slice(0, vsIndex).trim(),
-        fullName.slice(vsIndex).trim(),
-      ];
+      return [fullName.slice(0, vsIndex).trim(), fullName.slice(vsIndex).trim()];
     }
     return [fullName, ""];
   })();
 
+  // Prefer team data from the teams array for display to avoid parsing errors
+  const getName = (t: any) =>
+    [t?.shortName, t?.name, t?.displayName, t?.teamName, t?.abbreviation]
+      .find((v: any) => typeof v === "string" && v.trim().length > 0) || "Team";
+
+  const displayTeamA = getName(teamA);
+  const displayTeamB = getName(teamB);
+  // Prefer explicit sport type when available
+  const displaySport =
+    (event?.sportEvent?.sportType && String(event.sportEvent.sportType).replace(/^SPORT_TYPE_/, "").replace(/_/g, " ")) ||
+    (event?.category || sportName || "");
+
+  const displayTeamsStr = `${displayTeamA} vs ${displayTeamB}`;
+
   /* ---------- UI ---------- */
-  return (
-    <button
-      onClick={() => onSelect(id)}
-      aria-pressed={selectedId === id}
-      className={`relative w-64 min-w-[16rem] md:w-72 md:min-w-[18rem]
-        flex-shrink-0 rounded-xl p-3 text-left transition-all flex
-        overflow-hidden
-        ${
-          selectedId === id
-            ? "bg-primary/10 border border-primary ring-2 ring-primary/30 shadow-lg"
-            : "bg-dark-card border border-white/6 hover:shadow-lg hover:border-primary/30"
-        }`}
-    >
-      {/* LEFT DATE / TIME */}
-      <div className="flex flex-col justify-center items-start pr-3 mr-3
-        border-r border-white/10 bg-primary/20 rounded-lg px-3 flex-shrink-0">
-        <div className="text-xs font-semibold text-white">{dayLabel}</div>
-        <div className="text-xs text-gray-text mt-1">{dateLabel}</div>
-        <div className="text-xs text-gray-text mt-1">{timeLabel}</div>
+ return (
+  <button
+    onClick={() => onSelect(id)}
+    aria-pressed={selectedId === id}
+    className={`relative w-64 min-w-[16rem] md:w-72 md:min-w-[18rem]
+      flex-shrink-0 rounded-xl p-4 text-left transition-all
+      overflow-hidden
+      ${
+        selectedId === id
+          ? "bg-primary/10 border border-primary ring-2 ring-primary/30 shadow-lg"
+          : "bg-dark-card border border-white/6 hover:border-primary/30 hover:shadow-lg"
+      }`}
+  >
+    {/* DATE / TIME */}
+    <div className="flex items-center justify-between mb-3">
+      <div className="flex items-center gap-2 text-xs text-gray-text">
+        <span className="font-semibold text-white">{dayLabel}</span>
+        <span>{dateLabel}</span>
+        <span>{timeLabel}</span>
       </div>
 
-      {/* RIGHT CONTENT */}
-      <div className="flex-1 min-w-0 flex flex-col">
-        {selectedId === id && (
-          <span className="absolute top-2 right-2 flex items-center gap-1">
-            <span className="h-2 w-2 rounded-full bg-red-500 shadow-md" />
-            <span className="text-xs text-white">▾</span>
-          </span>
-        )}
+      {/* {selectedId === id && (
+        <span className="flex items-center gap-1">
+          <span className="h-2 w-2 rounded-full bg-red-500" />
+          {/* <span className="text-xs text-white">LIVE</span> */}
+        {/* </span> */}
+      {/* )}  */}
+    </div>
 
-        {/* TEAMS */}
-        <div className="flex items-center gap-3 mb-2 min-w-0">
-          {/* Team A */}
-          <div className="flex items-center gap-2 min-w-0">
-            <div className="h-10 w-10 flex-shrink-0 rounded bg-dark-lighter flex items-center justify-center overflow-hidden">
-              {teamA?.imageUrl || teamA?.logoUrl ? (
-                <img
-                  src={(teamA.imageUrl || teamA.logoUrl).toString()}
-                  alt={teamA?.name || "Team A"}
-                  className="h-10 w-10 object-cover"
-                  onError={(e) =>
-                    ((e.currentTarget as HTMLImageElement).style.display =
-                      "none")
-                  }
-                />
-              ) : (
-                <span className="text-sm">
-                  {(teamA?.abbreviation ||
-                    teamA?.shortName ||
-                    teamA?.name ||
-                    "A")[0]}
-                </span>
-              )}
-            </div>
-            <div className="text-sm text-white font-medium truncate max-w-[5.5rem]">
-              {teamA?.shortName || "Team A"}
-            </div>
-          </div>
-
-          <div className="flex-1 text-center text-xs text-gray-text">vs</div>
-
-          {/* Team B */}
-          <div className="flex items-center gap-2 justify-end min-w-0">
-            <div className="text-sm text-white font-medium truncate max-w-[5.5rem] text-right">
-              {teamB?.shortName || "Team B"}
-            </div>
-            <div className="h-10 w-10 flex-shrink-0 rounded bg-dark-lighter flex items-center justify-center overflow-hidden">
-              {teamB?.imageUrl || teamB?.logoUrl ? (
-                <img
-                  src={(teamB.imageUrl || teamB.logoUrl).toString()}
-                  alt={teamB?.name || "Team B"}
-                  className="h-10 w-10 object-cover"
-                  onError={(e) =>
-                    ((e.currentTarget as HTMLImageElement).style.display =
-                      "none")
-                  }
-                />
-              ) : (
-                <span className="text-sm">
-                  {(teamB?.abbreviation ||
-                    teamB?.shortName ||
-                    teamB?.name ||
-                    "B")[0]}
-                </span>
-              )}
-            </div>
-          </div>
+    {/* TEAMS */}
+    <div className="flex items-center justify-between gap-2 mb-3">
+      {/* Team A */}
+      <div className="flex flex-col items-center min-w-0 flex-1">
+        <div className="h-12 w-12 rounded bg-dark-lighter flex items-center justify-center overflow-hidden mb-1">
+          {teamA?.imageUrl || teamA?.logoUrl ? (
+            <img
+              src={(teamA.imageUrl || teamA.logoUrl).toString()}
+              alt={teamA?.name || "Team A"}
+              className="h-12 w-12 object-cover"
+            />
+          ) : (
+            <span className="text-lg font-semibold">
+              {(teamA?.shortName || "A")[0]}
+            </span>
+          )}
         </div>
-
-        {/* SPORT NAME */}
-        <div className="text-xs text-gray-text text-center truncate">
-          {sportName}
-        </div>
-
-        {/* FOOTER */}
-        <div className="flex items-center justify-between mt-1 min-w-0">
-          <div className="text-xs text-gray-text truncate max-w-[70%]">
-            {teamsStr}
-          </div>
-          <div className="text-xs text-white font-semibold whitespace-nowrap">
-            {Math.round(probA)}% / {Math.round(probB)}%
-          </div>
-        </div>
+        <span className="text-sm text-white font-medium truncate">
+          {teamA?.shortName || "Team A"}
+        </span>
       </div>
-    </button>
-  );
+
+      {/* VS */}
+      <div className="text-xs text-gray-text font-semibold">VS</div>
+
+      {/* Team B */}
+      <div className="flex flex-col items-center min-w-0 flex-1">
+        <div className="h-12 w-12 rounded bg-dark-lighter flex items-center justify-center overflow-hidden mb-1">
+          {teamB?.imageUrl || teamB?.logoUrl ? (
+            <img
+              src={(teamB.imageUrl || teamB.logoUrl).toString()}
+              alt={teamB?.name || "Team B"}
+              className="h-12 w-12 object-cover"
+            />
+          ) : (
+            <span className="text-lg font-semibold">
+              {(teamB?.shortName || "B")[0]}
+            </span>
+          )}
+        </div>
+        <span className="text-sm text-white font-medium truncate">
+          {teamB?.shortName || "Team B"}
+        </span>
+      </div>
+    </div>
+
+    {/* EVENT / SPORT */}
+    <div title={String(displaySport)} className="text-xs text-gray-text text-center truncate mb-2">
+      {displaySport}
+    </div>
+
+    {/* PROBABILITIES */}
+      <div className="flex items-center justify-between bg-dark-lighter/60 rounded-lg px-3 py-2">
+      <span title={displayTeamsStr} className="text-xs text-gray-text truncate max-w-[65%] whitespace-nowrap overflow-hidden">
+        {displayTeamsStr}
+      </span>
+      <span className="text-sm text-white font-semibold whitespace-nowrap">
+        {Math.round(probA)}% / {Math.round(probB)}%
+      </span>
+    </div>
+  </button>
+);
+
 };
 
 
@@ -494,11 +523,7 @@ const EventCard = ({
       .filter(Boolean)
       .join(" • ");
 
-  const teams = Array.isArray(event?.teams)
-    ? event.teams
-    : Array.isArray(event?.sportEvent?.teams)
-    ? event.sportEvent.teams
-    : [];
+  const teams = resolveTeams(event);
 
   const teamA = teams?.[0] || {};
   const teamB = teams?.[1] || {};
@@ -577,7 +602,7 @@ const EventCard = ({
                 {lastQuestionName}
               </button>
             ) : (
-              <span className="text-gray-text">No questions yet</span>
+              <span className="text-gray-text">Please Login to view questions </span>
             )}
           </div>
           <Button onClick={onViewQuestions} className="bg-primary text-dark-bg hover:bg-primary/90 flex-shrink-0">
@@ -598,7 +623,7 @@ const EventCard = ({
 const EventDetails: React.FC<{
   eventId: string;
   onBack: () => void;
-  onPredict: (question: any, eventId: string, predictionId?: string) => void;
+  onPredict: (question: any, eventId?: string, preselectOutcome?: any) => void;
 }> = ({ eventId, onBack, onPredict }) => {
   const [event, setEvent] = useState<any | null>(null);
   const [questions, setQuestions] = useState<any[]>([]);
@@ -702,11 +727,7 @@ const EventDetails: React.FC<{
   }
 
   // derive teams and probabilities for display
-  const teams = Array.isArray(event?.teams)
-    ? event.teams
-    : Array.isArray(event?.sportEvent?.teams)
-    ? event.sportEvent.teams
-    : [];
+  const teams = resolveTeams(event);
 
   const teamA = teams?.[0] || {};
   const teamB = teams?.[1] || {};
@@ -743,7 +764,7 @@ const EventDetails: React.FC<{
           <p className="text-gray-text">No prediction questions available yet</p>
         </div>
       ) : (
-        <div className="space-y-4 max-h-[600px] overflow-y-auto pr-2">
+        <div className="space-y-4 max-h-[600px] overflow-y-auto pr-2 custom-scrollbar">
           {questions.map((question: any) => (
             <div
               key={question.questionId}
@@ -775,9 +796,11 @@ const EventDetails: React.FC<{
               {question.activity?.marketDataDetails && question.activity.marketDataDetails.length > 0 && (
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mb-4">
                   {question.activity.marketDataDetails.map((option: any, idx: number) => (
-                    <div
+                    <button
                       key={idx}
-                      className="border border-white/10 rounded-lg p-4 hover:border-primary/30 transition-all bg-dark-bg"
+                      onClick={() => onPredict(question, eventId, option)}
+                      className="text-left border border-white/10 rounded-lg p-4 hover:border-primary/30 transition-all bg-dark-bg"
+                      type="button"
                     >
                       <div className="flex items-center justify-between mb-2">
                         <span className="font-semibold text-white">{option.outcome}</span>
@@ -791,7 +814,7 @@ const EventDetails: React.FC<{
                           style={{ width: `${Number.parseFloat(String(option.impliedProbability || '0'))}%` }}
                         ></div>
                       </div>
-                    </div>
+                    </button>
                   ))}
                 </div>
               )}
@@ -920,7 +943,7 @@ console.log('items live',items);
         const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
         const startsIn = diffDays > 0 ? `${diffDays} day${diffDays > 1 ? "s" : ""}` : "Today";
         const qName = p?.question || p?.questionName || p?.question?.description || "Prediction";
-        const outcome = String(p?.eventShortName ?? p?.predictionDetails?.selectedPredictionOutcome ?? p?.selectedPredictionOutcome ?? "").trim();
+        const outcome = String(p?.predictedOutcome ?? p?.predictionDetails?.selectedPredictionOutcome ?? p?.selectedPredictionOutcome ?? "").trim();
         const pctNum = Number(p?.percentage ?? p?.exitPercentage ?? 0);
         const pctText = isFinite(pctNum) ? `${Math.max(0, Math.min(100, Math.round(pctNum)))}%` : "--%";
         const matched = Number(p?.matchedAmt ?? 0);
@@ -929,7 +952,7 @@ console.log('items live',items);
         return (
           <div key={p?.predictionId || idx} className="rounded-2xl border border-white/10 bg-dark-card p-4">
             <div className="flex items-center justify-between">
-              <div className="text-white font-semibold">{outcome || "--"}</div>
+              <div className="text-white font-semibold"> <span className="text-gray-text font-medium">Predicted:</span>{outcome || "--"}</div>
               <Badge variant="secondary" className="text-red-300">Match starts in {startsIn}</Badge>
             </div>
             <div className="my-3 border-t border-white/10" />
@@ -937,7 +960,8 @@ console.log('items live',items);
               <div className="text-white font-medium">{qName}</div>
             </div>
             <div className="mt-2 text-gray-text text-sm flex items-center gap-2">
-              <span>{outcome || "--"}</span>
+              <span className="text-gray-text font-medium">Predicted:</span>
+              <span className="truncate">{outcome || "--"}</span>
               <span>•</span>
               <span>{pctText}</span>
               <span>•</span>
@@ -2254,58 +2278,60 @@ export const Sports: React.FC<{ selectedSport?: string | null }> = ({ selectedSp
   
 console.log('selectedPrediction',selectedPrediction);
 const handleExitPrediction = async () => {
-//  if (!selectedPrediction) return;
-  // ✅ validations
-  if (!exitAmount || Number(exitAmount) <= 0) {
-    setErrorMsg("Please enter a valid exit amount");
-    return;
-  }
-
-console.log('selectedPrediction',selectedPrediction);
-  const exitAmt = Number(exitAmount);
-  if (exitAmt > Number(selectedPrediction.amount)) {
-    setErrorMsg("Exit amount cannot exceed invested amount");
-    return;
-  }
+  if (!selectedPrediction) return;
 
   setIsSubmitting(true);
   setErrorMsg("");
 
-console.log('selectedPrediction',selectedPrediction);
+  // 🔑 REAL amount backend validates against
+  const backendPredictionAmount =
+    selectedPrediction.predictionAmount ??
+    selectedPrediction.remainingAmount ??
+    selectedPrediction.matchedAmount ??
+    selectedPrediction.stakeAmount ??
+    selectedPrediction.amount;
+
+  if (
+    backendPredictionAmount === undefined ||
+    backendPredictionAmount === null
+  ) {
+    setErrorMsg("Invalid prediction amount");
+    setIsSubmitting(false);
+    return;
+  }
+
   try {
     const res = await api.post("/order/v1/exitorder", {
-      amount: String(exitAmt),
+      // ✅ MUST MATCH BACKEND STORED VALUE EXACTLY
+      amount: String(backendPredictionAmount),
+
       eventId: selectedPrediction.eventId,
       orderId: selectedPrediction.orderId,
       questionId: selectedPrediction.questionId,
 
       predictionDetails: {
         selectedPredictionChoice: true,
-        //selectedPredictionOutcome: selectedPrediction.answer,
-        selectedPredictionOutcome:"India",
+        // ✅ exact stored outcome (not label)
+        selectedPredictionOutcome: selectedPrediction.answer,
       },
 
       modifiers: {
         creditDiscount: "0",
         creditMarkup: "0",
-        percentage: String( exitConfidence?? selectedPrediction.percentage
-        ),
-        updatedPercentage:  String(
-          exitConfidence
-        ),
+        // ✅ percentage CANNOT be changed during exit
+        percentage: String(exitConfidence ?? selectedPrediction.percentage),
+        updatedPercentage: String(exitConfidence ?? selectedPrediction.percentage),
       },
     });
 
     if (res?.status?.type === "SUCCESS") {
       setSuccessMessage("Prediction exited successfully");
 
-      // 🔁 reset exit state
       setSelectedPrediction(null);
       setSelectedAction(null);
       setExitAmount("");
       setExitConfidence(null);
 
-      // 🔄 refresh balance + lists
       fetchBalance();
       setActiveTab("exited");
     } else {
@@ -2536,12 +2562,26 @@ console.log('selectedPrediction',selectedPrediction);
                     ))}
                   </div>
                   <br/>
-                     <div className="mb-6">
-                    <h2 className="text-2xl font-bold text-white mb-2">
-                      {sportTournaments[selectedSport || '']?.find((t: any) => String(t.id ?? t.eventId ?? '') === selectedTournamentId)?.name}
-                    </h2>
-                    <p className="text-gray-text text-sm">Events from {selectedSport}</p>
-                  </div>
+                    {(() => {
+                      const headerName = sportTournaments[selectedSport || '']?.find((t: any) => String(t.id ?? t.eventId ?? '') === selectedTournamentId)?.name;
+                      const isNfl = typeof headerName === 'string' && headerName.toLowerCase().includes('nfl');
+                      const bgStyle: React.CSSProperties | undefined = isNfl
+                        ? {
+                            backgroundImage: `url(${new URL('../assets/nfl.jpg', import.meta.url).href})`,
+                            backgroundSize: 'cover',
+                            backgroundPosition: 'center',
+                          }
+                        : undefined;
+
+                      return (
+                        <div className={`mb-6 rounded-md overflow-hidden ${isNfl ? 'h-48 sm:h-56 md:h-64' : ''}`} style={bgStyle}>
+                          <h2 className={`text-2xl font-bold mb-2 text-white`}>
+                            {headerName}
+                          </h2>
+                          {/* <p className={`text-sm ${String(selectedSport || '').toLowerCase() === 'nfl' ? 'text-blue-300' : 'text-gray-text'}`}>Events from {selectedSport}</p> */}
+                        </div>
+                      );
+                    })()}
                 </div>
                 
               )}
@@ -2563,12 +2603,12 @@ console.log('selectedPrediction',selectedPrediction);
                     setIsMobilePanelOpen(false);
                     setActiveTab('all');
                   }}
-                  onPredict={(question, evId?: string, predictionId?: string) => {
+                  onPredict={(question, evId?: string, preselectOutcome?: any) => {
                     console.log('question',question);
                     const id = String(evId ?? selectedEventId ?? '');
                     setSelectedEventId(id);
                     setSelectedQuestion(question);
-                    setSelectedOutcome(null);
+                    setSelectedOutcome(preselectOutcome ?? null);
                     setConfidenceOverride(null);
                     setAmount('');
                     setErrorMsg('');
@@ -2589,7 +2629,7 @@ console.log('selectedPrediction',selectedPrediction);
                     // Show exit prediction panel in right sidebar instead of navigating to details
                     const eventDes = p?.eventDescription || p?.eventName || "Event";
                     const qName = p?.question || p?.questionName || p?.question?.description || "Prediction";
-                    const outcome = String(p?.eventShortName ?? p?.predictionDetails?.selectedPredictionOutcome ?? p?.selectedPredictionOutcome ?? "").trim();
+                    const outcome = String(p?.predictedOutcome ?? p?.predictionDetails?.selectedPredictionOutcome ?? p?.selectedPredictionOutcome ?? "").trim();
                     const pctNum = Number(p?.percentage ?? p?.exitPercentage ?? 0);
                     const matchedAmt = Number(p?.matchedAmt ?? 0);
                     const investAmt = Number(p?.investmentAmt ?? 0);
@@ -2810,11 +2850,11 @@ console.log('selectedPrediction',selectedPrediction);
                             setExitConfidence(null);
                             setIsMobilePanelOpen(false);
                       }}
-                      onPredict={(question, evId?: string, predictionId?: string) => {
+                      onPredict={(question, evId?: string, preselectOutcome?: any) => {
                            const id = String(evId ?? event.id ?? event.eventId ?? "");
                            setSelectedEventId(id);
                            setSelectedQuestion(question);
-                            setSelectedOutcome(null);
+                            setSelectedOutcome(preselectOutcome ?? null);
                             setConfidenceOverride(null);
                             setAmount('');
                             setErrorMsg('');
@@ -2850,7 +2890,8 @@ console.log('selectedPrediction',selectedPrediction);
 
             {/* Right Sidebar - Prediction Panel */}
             <aside className="w-96 flex-shrink-0 hidden lg:block">
-              <div className="rounded-2xl border border-white/10 bg-white/5 p-6 sticky top-24 max-h-[calc(100vh-6rem)] overflow-y-auto pr-2">
+             <div className="rounded-2xl border border-white/10 bg-white/5 p-6 sticky top-24 max-h-[calc(100vh-6rem)] overflow-y-auto">
+
                 <h3 className="text-sm text-gray-text mb-1">{selectedAction === 'exit' ? 'Exit Prediction' : selectedAction === 'cancel' ? 'Cancel Prediction' : 'Make Your Prediction'}</h3>
                 <p className="text-xs text-gray-muted mb-4">Own your call. Trade with confidence.</p>
 
@@ -2909,7 +2950,7 @@ console.log('selectedPrediction',selectedPrediction);
                       </div>
                       <div className={`p-3 rounded-lg border transition-all text-sm font-medium border-white/10 bg-dark-card text-white`}>
                         Amount
-                        <div className="text-xs text-gray-text mt-1">{formatCurrency(selectedAction === 'exit' ? Number(exitAmount || 0) : Number(selectedPrediction.amount))}</div>
+                        <div className="text-xs text-gray-text mt-1">{formatCurrency(selectedAction === 'exit' ? Number(selectedPrediction.matchedAmt || 0) : Number(selectedPrediction.matchedAmt))}</div>
                       </div>
                     </div>
 
@@ -3004,7 +3045,7 @@ console.log('selectedPrediction',selectedPrediction);
                     )}
 
                     <button
-                      onClick={() => (selectedAction === 'cancel' ? handleCancelPrediction(selectedPrediction.id) : handleExitPrediction(selectedPrediction))}
+                      onClick={() => (selectedAction === 'cancel' ? handleCancelPrediction(selectedPrediction.id) : handleExitPrediction())}
                       className={`w-full py-3 rounded-lg font-semibold transition-all ${selectedAction === 'cancel' ? 'bg-dark-card text-white border border-white/10 hover:border-primary/30' : 'bg-yellow-500 text-dark-bg hover:bg-yellow-400'}`}
                     >
                       {selectedAction === 'cancel' ? 'Cancel Prediction' : 'Exit Prediction'}
@@ -3183,7 +3224,10 @@ console.log('selectedPrediction',selectedPrediction);
             </aside>
             <div className="lg:hidden">
               <Dialog open={isMobilePanelOpen} onOpenChange={setIsMobilePanelOpen}>
-                <DialogContent className="max-w-lg w-full">
+               <DialogContent className="max-w-lg w-full p-0">
+
+          <div className="px-6 py-5">
+
                   {successMessage ? (
                     <div className="text-center py-4">
                       <div className="mb-4">
@@ -3300,12 +3344,13 @@ console.log('selectedPrediction',selectedPrediction);
                         </div>
                       )}
 
-                      <button onClick={() => (selectedAction === 'cancel' ? handleCancelPrediction(selectedPrediction.id) : handleExitPrediction(selectedPrediction.id))} className={`w-full py-3 rounded-lg font-semibold transition-all ${selectedAction === 'cancel' ? 'bg-dark-card text-white border border-white/10 hover:border-primary/30' : 'bg-yellow-500 text-dark-bg hover:bg-yellow-400'}`}>
+                      <button onClick={() => (selectedAction === 'cancel' ? handleCancelPrediction(selectedPrediction.id) : handleExitPrediction())} className={`w-full py-3 rounded-lg font-semibold transition-all ${selectedAction === 'cancel' ? 'bg-dark-card text-white border border-white/10 hover:border-primary/30' : 'bg-yellow-500 text-dark-bg hover:bg-yellow-400'}`}>
                         {selectedAction === 'cancel' ? 'Cancel Prediction' : 'Exit Prediction'}
                       </button>
                     </div>
                   ) : selectedQuestion ? (
-                    <div className="space-y-4">
+                    <div className="px-6 py-6 pr-12">
+
                       <div className="bg-dark-card border border-white/10 p-4 rounded-lg">
                         <div className="text-sm text-white font-semibold mb-1">{selectedQuestion.name}</div>
                         {selectedQuestion.category && (
@@ -3448,6 +3493,7 @@ console.log('selectedPrediction',selectedPrediction);
                       <p>Select a question from the events to start your prediction.</p>
                     </div>
                   )}
+                  </div>
                 </DialogContent>
               </Dialog>
             </div>
