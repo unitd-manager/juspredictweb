@@ -108,6 +108,41 @@ const OrderDetails: React.FC = () => {
     }
   };
 
+  // Convert enum-like values to human-readable labels
+  const humanizeEnum = (val?: string) => {
+    if (!val) return '--';
+    // Known prefixes to remove
+    const cleaned = String(val)
+      .replace(/^PREDICTION_EVENT_STATUS_/, '')
+      .replace(/^EVENT_STATUS_/, '')
+      .replace(/^PREDICTIONOUTCOME_/, '')
+      .replace(/^PREDICTION_STATUS_/, '')
+      .replace(/^PREDICTIONTIMEINFORCE_/, '')
+      .replace(/^QUESTION_TYPE_/, '')
+      .replace(/^ORDER_TYPE_/, '')
+      .replace(/^ORDERSTATUS_/, '')
+      .replace(/^PREDICTION_/, '')
+      .replace(/_/g, ' ')
+      .toLowerCase();
+
+    // Title case
+    return cleaned
+      .split(' ')
+      .map((s) => s.charAt(0).toUpperCase() + s.slice(1))
+      .join(' ')
+      .trim();
+  };
+
+  const mapPredictionOutcome = (val?: string) => {
+    if (!val) return '--';
+    const m: Record<string, string> = {
+      PREDICTIONOUTCOME_SUCCESS: 'Success',
+      PREDICTIONOUTCOME_FAILURE: 'Failure',
+      PREDICTIONOUTCOME_UNSPECIFIED: 'Unspecified',
+    };
+    return m[val] || humanizeEnum(val);
+  };
+
   const formatDate = (dateString: string) => {
     try {
       return new Date(dateString).toLocaleString(undefined, {
@@ -196,20 +231,20 @@ const OrderDetails: React.FC = () => {
               {/* Header */}
               <div className="bg-dark-lighter px-6 py-4 border-b border-white/10">
                 <h2 className="text-xl font-bold text-white">Order Information</h2>
-                <p className="text-sm text-gray-text mt-1">ID: {orderData.orderId}</p>
+                {/* <p className="text-sm text-gray-text mt-1">ID: {orderData.orderId}</p> */}
               </div>
 
               {/* Main Details Table */}
               <div className="divide-y divide-white/10">
                 {/* Order ID Row */}
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 border-b border-white/10">
-                  <div className="px-6 py-4 border-r border-white/5">
+                  {/* <div className="px-6 py-4 border-r border-white/5">
                     <div className="text-xs text-gray-text font-medium mb-1">Order ID</div>
                     <div className="text-white font-semibold break-all">{orderData.orderId}</div>
-                  </div>
+                  </div> */}
                   <div className="px-6 py-4 border-r border-white/5">
                     <div className="text-xs text-gray-text font-medium mb-1">Order Type</div>
-                    <div className="text-white font-semibold">{orderData.orderType || '--'}</div>
+                    <div className="text-white font-semibold">{humanizeEnum(orderData.orderType)}</div>
                   </div>
                   <div className="px-6 py-4">
                     <div className="text-xs text-gray-text font-medium mb-1">Order Status</div>
@@ -223,10 +258,10 @@ const OrderDetails: React.FC = () => {
                 <div className="px-6 py-4">
                   <h3 className="text-sm font-bold text-white mb-4">Event Information</h3>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <div>
+                    {/* <div>
                       <div className="text-xs text-gray-text font-medium mb-1">Event ID</div>
                       <div className="text-white break-all">{orderData.eventId}</div>
-                    </div>
+                    </div> */}
                     <div>
                       <div className="text-xs text-gray-text font-medium mb-1">Event Name</div>
                       <div className="text-white">{orderData.eventName || '--'}</div>
@@ -246,7 +281,7 @@ const OrderDetails: React.FC = () => {
                     <div>
                       <div className="text-xs text-gray-text font-medium mb-1">Event Status</div>
                       <Badge className={`inline-block ${getStatusColor(orderData.eventStatus)}`}>
-                        {orderData.eventStatus || '--'}
+                        {humanizeEnum(orderData.eventStatus)}
                       </Badge>
                     </div>
                   </div>
@@ -256,17 +291,17 @@ const OrderDetails: React.FC = () => {
                 <div className="px-6 py-4">
                   <h3 className="text-sm font-bold text-white mb-4">Question Information</h3>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <div>
+                    {/* <div>
                       <div className="text-xs text-gray-text font-medium mb-1">Question ID</div>
                       <div className="text-white break-all">{orderData.questionId}</div>
-                    </div>
+                    </div> */}
                     <div>
                       <div className="text-xs text-gray-text font-medium mb-1">Question</div>
                       <div className="text-white">{orderData.question || '--'}</div>
                     </div>
                     <div className="md:col-span-2">
-                      <div className="text-xs text-gray-text font-medium mb-1">Predicted Outcome</div>
-                      <div className="text-white">{orderData.predictedOutcome || '--'}</div>
+                        <div className="text-xs text-gray-text font-medium mb-1">Predicted Outcome</div>
+                        <div className="text-white">{humanizeEnum(orderData.predictedOutcome)}</div>
                     </div>
                   </div>
                 </div>
@@ -321,7 +356,7 @@ const OrderDetails: React.FC = () => {
                     <div>
                       <div className="text-xs text-gray-text font-medium mb-1">Prediction Outcome</div>
                       <Badge className={`inline-block ${getPredictionOutcomeColor(orderData.predictionOutcome)}`}>
-                        {orderData.predictionOutcome || '--'}
+                        {mapPredictionOutcome(orderData.predictionOutcome)}
                       </Badge>
                     </div>
                     <div>

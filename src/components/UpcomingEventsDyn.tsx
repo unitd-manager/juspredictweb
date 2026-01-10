@@ -715,6 +715,7 @@ export const UpcomingEventsDyn = () => {
   const [activeTab, setActiveTab] = useState<
     "all" | "live" | "upcoming" | "cricket" | "NFL"
   >("all")
+const [searchQuery, setSearchQuery] = useState("");
 
   const [page, setPage] = useState(1)
   const [pageSize] = useState(8)
@@ -817,10 +818,28 @@ export const UpcomingEventsDyn = () => {
             </button>
           ))}
         </div>
+{/* SEARCH BAR */}
+<div className="mb-6">
+  <input
+    type="text"
+    placeholder="Search questions..."
+    value={searchQuery}
+    onChange={(e) => setSearchQuery(e.target.value)}
+    className="w-full md:w-1/2 rounded-lg bg-dark-card border border-white/10
+               px-4 py-2 text-sm text-white placeholder:text-gray-text
+               focus:outline-none focus:border-primary/40"
+  />
+</div>
 
         {/* QUESTIONS GRID */}
         <div className="grid md:grid-cols-4 gap-4">
-          {questions.map((q) => (
+         {questions
+  .filter((q) =>
+    q.question
+      .toLowerCase()
+      .includes(searchQuery.toLowerCase())
+  )
+  .map((q) => (
             <div
               key={q.questionId}
               className="bg-[#1F2C34] border border-white/5 rounded-xl p-4
@@ -841,14 +860,18 @@ export const UpcomingEventsDyn = () => {
 
               <div className="grid grid-cols-2 gap-2 mb-4">
                 {q.options.slice(0, 4).map((opt) => (
-                  <div
-                    key={opt.id}
-                    className="bg-[#1e1e1e] border border-white/10 rounded-lg py-2 text-center"
-                  >
-                    <span className="text-green-400 font-semibold text-sm">
-                      {opt.label}
-                    </span>
-                  </div>
+                  <button
+              key={opt.id}
+              
+              className={`p-3 rounded-lg border transition-all text-sm font-medium border-white/10 bg-dark-card text-white hover:border-primary/30"
+              }`}
+            >
+              {opt.label}
+             <div className="text-xs text-gray-text mt-1">
+  {opt.percentage != null ? Number(opt.percentage).toFixed(1) : "0.0"}%
+</div>
+
+            </button>
                 ))}
               </div>
 
