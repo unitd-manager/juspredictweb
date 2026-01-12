@@ -777,11 +777,11 @@ const getTabFilters = (tab: string) => {
   }
 
   if (tab === "cricket") {
-    filters.subcategory = "EVENT_SUBCATEGORY_CRICKET";
+    filters.sub_category = 1;
   }
 
   if (tab === "NFL") {
-    filters.subcategory = "EVENT_SUBCATEGORY_NFL";
+    filters.sub_category =2;
   }
 
   return filters;
@@ -822,7 +822,7 @@ const getTabFilters = (tab: string) => {
     return {
       questionId: q.questionId,
       eventId: q.eventId || event?.id,
-      eventName: event?.shortName,
+      eventName: event?.shortName || event?.name ,
       eventStartTime: formatEventTime(event?.startDate),
 
       eventStatus: normalizeEventStatus(event?.status),
