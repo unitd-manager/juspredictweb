@@ -406,10 +406,17 @@ export interface QuestionOption {
   label: string
   percentage: number
 }
+const tabToEventStatus: Record<string, string> = {
+  all: "",
+  live: "Live",
+  upcoming: "Upcoming",
+};
 
 export interface QuestionCard {
   questionId: string
   eventId?: string
+  eventName?: string
+  eventStatus?: string
   question: string
   questionType: string
   options: QuestionOption[]
@@ -424,6 +431,14 @@ interface PredictionModalProps {
   onClose: () => void
   question: QuestionCard | null
 }
+const normalizeEventStatus = (status?: string) => {
+  if (!status) return "Unknown";
+
+  return status
+    .replace("EVENT_STATUS_", "")
+    .toLowerCase()
+    .replace(/^\w/, (c) => c.toUpperCase());
+};
 
 export const PredictionModal: React.FC<PredictionModalProps> = ({
   open,
@@ -718,7 +733,7 @@ export const UpcomingEventsDyn = () => {
 const [searchQuery, setSearchQuery] = useState("");
 
   const [page, setPage] = useState(1)
-  const [pageSize] = useState(8)
+  const [pageSize] = useState(16)
   const [isLoading, setIsLoading] = useState(false)
   const [hasMore, setHasMore] = useState(true)
 
@@ -747,22 +762,30 @@ const [searchQuery, setSearchQuery] = useState("");
       const res = await api.post<any>("/event/v1/getquestions", payload)
       if (res?.status?.type !== "SUCCESS") return
 
-      const newQuestions: QuestionCard[] = (res.questions ?? []).map(
-        (q: any) => ({
-          questionId: q.questionId,
-          eventId: String(q.eventId ?? q.event?.id ?? ""),
-          question: q.description || q.name || "Prediction Market",
-          questionType: q.questionType,
-          users: q.activity?.questionUsers ?? 0,
-          volume: q.activity?.questionVolume ?? "0",
-          options:
-            q.activity?.marketDataDetails?.map((m: any) => ({
-              id: m.outcome,
-              label: m.outcome,
-              percentage: Number(m.impliedProbability) || 0,
-            })) ?? [],
-        })
-      )
+      const newQuestions: QuestionCard[] = (res.questionInfo ?? []).map(
+  (item: any) => {
+    const q = item.question;
+    const event = item.event;
+
+    return {
+      questionId: q.questionId,
+      eventId: q.eventId || event?.id,
+      eventName: event?.shortName,
+      eventStatus: normalizeEventStatus(event?.status), // ✅ FIX
+      question: q.description || q.name || "Prediction Market",
+      questionType: q.questionType,
+      users: q.activity?.questionUsers ?? 0,
+      volume: q.activity?.questionVolume ?? "0",
+      options:
+        q.activity?.marketDataDetails?.map((m: any) => ({
+          id: m.outcome,
+          label: m.outcome,
+          percentage: Number(m.impliedProbability) || 0,
+        })) ?? [],
+    };
+  }
+);
+
 
       setQuestions((prev) =>
         reset ? newQuestions : [...prev, ...newQuestions]
@@ -834,12 +857,19 @@ const [searchQuery, setSearchQuery] = useState("");
         {/* QUESTIONS GRID */}
         <div className="grid md:grid-cols-4 gap-4">
          {questions
-  .filter((q) =>
-    q.question
+  .filter((q) => {
+    const matchesSearch = q.question
       .toLowerCase()
-      .includes(searchQuery.toLowerCase())
-  )
+      .includes(searchQuery.toLowerCase());
+
+    const matchesStatus =
+      activeTab === "all" ||
+      q.eventStatus === tabToEventStatus[activeTab];
+
+    return matchesSearch && matchesStatus;
+  })
   .map((q) => (
+
             <div
               key={q.questionId}
               className="bg-[#1F2C34] border border-white/5 rounded-xl p-4
@@ -847,10 +877,10 @@ const [searchQuery, setSearchQuery] = useState("");
             >
               <div className="flex justify-between mb-2">
                 <span className="px-2 py-1 rounded-md bg-gray-600 text-white text-[10px]">
-                  {q.questionType.replace("QUESTION_TYPE_", "")}
+                  {q.eventName}
                 </span>
                 <span className="px-2 py-1 rounded-md bg-primary/80 text-black text-[10px]">
-                  Active
+                 {q.eventStatus}
                 </span>
               </div>
 
