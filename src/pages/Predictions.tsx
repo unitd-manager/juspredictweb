@@ -606,6 +606,10 @@ console.log('items',items)
   const filteredItems = items.filter((p: any) => {
     const event = eventsMap[String(p?.eventId || "")] || {};
 
+    // Filter for predictedOutcomeChoice = "Yes"
+    const predictedOutcomeChoice = p?.predictedOutcomeChoice || "";
+    if (predictedOutcomeChoice.toLowerCase() !== "yes") return false;
+
     if (selectedTournamentId) {
       const parentId = String(event?.parentEventId || "");
       if (parentId !== selectedTournamentId) return false;
@@ -2042,94 +2046,6 @@ console.log('selectedPrediction',selectedPrediction);
   const mainLoading = selectedTournamentId ? (loadingTournamentEvents[selectedTournamentId] ?? false) : (showAllChildEvents ? loadingAllChildEvents : isLoading);
   const mainEvents = showAllChildEvents ? (allChildEvents ?? []) : (selectedTournamentId ? (eventsForTournament ?? []) : filteredEvents);
 
-  const handleMakePrediction = async () => {
-    setErrorMsg('');
-
-    if (!selectedQuestion) {
-      setErrorMsg('Please select a question first');
-      return;
-    }
-
-    if (!selectedOutcome) {
-      setErrorMsg('Please select an outcome (Yes or No)');
-      return;
-    }
-
-    if (!amount || Number(amount) <= 0) {
-      setErrorMsg('Please enter a valid amount');
-      return;
-    }
-
-    const amt = Number(amount);
-    if (balance && amt > getAvailableBalance(balance)) {
-      setErrorMsg('Insufficient balance');
-      return;
-    }
-
-    setIsSubmitting(true);
-    try {
-      const qpText = String(selectedQuestion?.activity?.questionProbability || '');
-      const m = qpText.match(/(\d+(?:\.\d+)?)\s*%/);
-      const defaultPct = m ? Math.max(0, Math.min(100, Number(m[1]))) : 0;
-      const impliedPct = Math.max(
-        0,
-        Math.min(100, Number.parseFloat(String(selectedOutcome?.impliedProbability || '0')) || 0)
-      );
-      const confPct = confidenceOverride ?? impliedPct ?? defaultPct;
-
-      const res = await api.post<any>('/order/v1/exitorder', {
-        eventId: selectedEventId,
-        questionId: selectedQuestion.questionId,
-        amount: amount,
-        predictionDetails: {
-          selectedPredictionOutcome: selectedOutcome.outcome,
-          selectedPredictionChoice: true,
-        },
-        modifiers: {
-          creditDiscount: '0',
-          creditMarkup: '0',
-          percentage: String(confPct),
-          updatedPercentage: '0',
-        },
-      });
-
-      if (res?.status?.type === 'SUCCESS') {
-        setSuccessMessage('Prediction created successfully!');
-        const evt = events.find(e => String(e.id ?? e.eventId ?? '') === String(selectedEventId));
-        const evtName = (evt?.name || evt?.eventName || evt?.sportEvent?.name || 'Event') as string;
-        setActivePredictions(prev => [
-          ...prev,
-          {
-            id: String(res.orderId ?? Math.random().toString(36).slice(2)),
-            eventId: String(selectedEventId),
-            eventName: evtName,
-            startDate: Number(evt?.startDate ?? 0),
-            questionName: String(selectedQuestion?.name ?? ''),
-            answer: String(selectedOutcome?.outcome ?? ''),
-            percentage: Number(confPct),
-            amount: Number(amt),
-            status: 'PREDICTION_STATUS_MATCHED',
-          }
-        ]);
-        setSelectedOutcome(null);
-        setAmount('');
-        setSelectedQuestion(null);
-        setSelectedEventId(null);
-        setErrorMsg('');
-        fetchBalance();
-      } else {
-        setErrorMsg('Failed to create prediction');
-      }
-    } catch (e) {
-      console.error('Failed to create prediction', e);
-      setErrorMsg('Failed to create prediction. Please try again.');
-    } finally {
-      setIsSubmitting(false);
-    }
-  };
-
-
-
   const handleExitPrediction = async (id: string) => {
     if (!selectedPrediction) return;
     
@@ -2684,19 +2600,6 @@ const navigate = useNavigate();
                           })()}
                         </div>
                       )}
-
-                      <button
-                        onClick={handleMakePrediction}
-                        disabled={!selectedOutcome || !amount || Number(amount) <= 0 || isSubmitting}
-                        className={`w-full py-3 rounded-lg font-semibold transition-all flex items-center justify-center gap-2 ${
-                          !selectedOutcome || !amount || Number(amount) <= 0 || isSubmitting
-                            ? 'bg-gray-muted text-gray-text cursor-not-allowed opacity-50'
-                            : 'bg-primary text-dark-bg hover:bg-primary/90 cursor-pointer'
-                        }`}
-                      >
-                        {isSubmitting && <Loader2 className="w-4 h-4 animate-spin" />}
-                        {isSubmitting ? 'Submitting...' : !selectedOutcome ? 'Select an outcome' : !amount || Number(amount) <= 0 ? 'Enter amount' : 'Make Prediction'}
-                      </button>
                     </div>
                   ) : (
                     <div className="text-gray-text text-sm text-center py-8">

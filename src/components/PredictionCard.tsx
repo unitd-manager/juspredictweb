@@ -134,7 +134,7 @@ console.log('p',p);
         {/* ROW 2 */}
 
         <div className="col-span-3 flex flex-col gap-1 text-xs text-gray-300">
-          <span>📍 {p.venue || "--"}</span>
+          {/* <span>📍 {p.venue || "--"}</span> */}
           {/* <span className="flex items-center gap-1 pl-6">
             <Clock className="h-3 w-3" />
             {getEventTimeLabel(p.eventStartDate, p.eventEndDate)}

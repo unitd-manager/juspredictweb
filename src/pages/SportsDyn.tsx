@@ -900,6 +900,10 @@ console.log('items live',items);
   const filteredItems = items.filter((p: any) => {
     const event = eventsMap[String(p?.eventId || "")] || {};
     
+    // Filter by predictedOutcomeChoice = "yes"
+    const predictedOutcomeChoice = String(p?.predictedOutcomeChoice || "").toLowerCase();
+    if (predictedOutcomeChoice !== "yes") return false;
+    
     // Filter by tournament if selected
     if (selectedTournamentId) {
       const parentId = String(event?.parentEventId || "");
@@ -2612,7 +2616,7 @@ const handleExitPrediction = async () => {
                       status: p?.predictionStatus || p?.status || "PREDICTION_STATUS_LIVE"
                     });
                     setSelectedAction('exit');
-                    setExitAmount("");
+                    setExitAmount(String(matchedAmt > 0 ? matchedAmt : investAmt));
                     setExitConfidence(null);
                     setErrorMsg("");
                     fetchBalance();
@@ -2948,11 +2952,14 @@ const handleExitPrediction = async () => {
                         )
                       )}
                       <div className="mt-3 grid grid-cols-4 gap-2">
-                        {(['10', '50', '100', '500'] as const).map((v) => (
+                        {(Number(selectedPrediction.amount || 0) <= 100 
+                          ? ['10', '50', '100'] as const 
+                          : ['10', '50', '100', '500'] as const
+                        ).filter((v) => Number(v) < Number(selectedPrediction.amount || 0)).map((v) => (
                           <button
                             key={v}
                             disabled={selectedAction !== 'exit'}
-                            onClick={() => selectedAction === 'exit' && setExitAmount(String(Math.min(Number(v), Number(selectedPrediction.amount || 0))))}
+                            onClick={() => selectedAction === 'exit' && setExitAmount(String(Number(v)))}
                             className={`py-2 rounded-lg bg-dark-card border border-white/10 text-sm text-white ${selectedAction !== 'exit' ? 'opacity-50 cursor-not-allowed' : 'hover:border-primary/30'}`}
                           >
                             ${v}
