@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { ArrowLeft, TrendingUp, Users, DollarSign, AlertCircle, Loader2, ExternalLink } from 'lucide-react';
+import { ArrowLeft, TrendingUp, Users, DollarSign, AlertCircle, Loader2 } from 'lucide-react';
 import { Badge } from '../components/ui/Badge';
 import { PageHeader } from '../components/PageHeaderSport';
 import { Button } from '../components/ui/Button';
@@ -243,7 +243,7 @@ const teamB = teams[1];
     ""
   ).toString();
 
-  const [sportName, teamsStr] = (() => {
+  const [sportName] = (() => {
     const parts = fullName.split(" - ");
     if (parts.length === 2) return [parts[0].trim(), parts[1].trim()];
 
@@ -840,13 +840,6 @@ const LivePredictionsList: React.FC<{ onExit: (p: any, event: any) => void; sele
   const [eventsMap, setEventsMap] = React.useState<Record<string, any>>({});
   const [isLoading, setIsLoading] = React.useState<boolean>(true);
 console.log('items live',items);
-  const getEventName = (event: any) => (
-    (typeof event?.name === "string" && event.name.trim()) ||
-    (typeof event?.eventName === "string" && event.eventName.trim()) ||
-    (typeof event?.sportEvent?.name === "string" && event.sportEvent.name.trim()) ||
-    (typeof event?.sportEvent?.eventName === "string" && event.sportEvent.eventName.trim()) ||
-    [event?.sportEvent?.sportType?.replace?.("SPORT_TYPE_", ""), event?.sportEvent?.eventFormat].filter(Boolean).join(" • ")
-  );
 
   React.useEffect(() => {
     let mounted = true;
@@ -934,9 +927,7 @@ console.log('items live',items);
   return (
     <div className="space-y-4">
       {filteredItems.map((p: any, idx: number) => {
-        const eventId = String(p?.eventId || "");
-        const event = eventsMap[eventId] || {};
-        // const title = getEventName(event) || `Event ${eventId}`;
+        // Event data available from eventsMap if needed
         const eventDate = new Date(p?.eventStartDate);
         const today = new Date();
         const diffTime = Math.abs(eventDate.getTime() - today.getTime());
@@ -986,7 +977,7 @@ console.log('items live',items);
 };
 
 // Open Predictions List Component
-const OpenPredictionsList: React.FC<{ onOpen: (p: any, event: any) => void; selectedSport?: string | null; selectedTournamentId?: string | null }> = ({ onOpen, selectedSport, selectedTournamentId }) => {
+const OpenPredictionsList: React.FC<{ onOpen: (p: any, event: any) => void; selectedSport?: string | null; selectedTournamentId?: string | null }> = ({ onOpen: _onOpen, selectedSport, selectedTournamentId }) => {
   const navigate = useNavigate();
   const [items, setItems] = React.useState<any[]>([]);
   const [eventsMap, setEventsMap] = React.useState<Record<string, any>>({});
@@ -1165,7 +1156,7 @@ const OpenPredictionsList: React.FC<{ onOpen: (p: any, event: any) => void; sele
 };
 
 // Completed Predictions List Component
-const CompletedPredictionsList: React.FC<{ onOpen: (p: any, event: any) => void; selectedSport?: string | null; selectedTournamentId?: string | null }> = ({ onOpen, selectedSport, selectedTournamentId }) => {
+const CompletedPredictionsList: React.FC<{ onOpen: (p: any, event: any) => void; selectedSport?: string | null; selectedTournamentId?: string | null }> = ({ onOpen: _onOpen, selectedSport, selectedTournamentId }) => {
   const [items, setItems] = React.useState<any[]>([]);
   const [eventsMap, setEventsMap] = React.useState<Record<string, any>>({});
   const [isLoading, setIsLoading] = React.useState<boolean>(true);
@@ -1326,7 +1317,6 @@ const CompletedPredictionsList: React.FC<{ onOpen: (p: any, event: any) => void;
       ) : (
         <div className="space-y-3">
           {filteredItems.map((p: any, idx: number) => {
-            const eventName = p?.eventName || p?.eventShortName || "Event";
             const eventShortName = p?.eventShortName || "";
             const eventDesc = p?.eventDescription || "";
             const eventStatus = p?.eventStatus || "";
@@ -1334,7 +1324,6 @@ const CompletedPredictionsList: React.FC<{ onOpen: (p: any, event: any) => void;
             const predictedOutcome = p?.predictedOutcome || p?.predictedOutcomeChoice || "";
             const percentage = Number(p?.percentage || 0);
             const investmentAmt = Number(p?.investmentAmt || 0);
-            const potentialReturns = Number(p?.potentialReturns || 0);
             const earnings = Number(p?.earnings || 0);
             const predictionOutcome = String(p?.predictionOutcome || "");
             const daysAgo = p?.eventStartDate ? Math.floor((Date.now() - new Date(p.eventStartDate).getTime()) / (1000 * 60 * 60 * 24)) : 0;
@@ -1390,7 +1379,7 @@ const CompletedPredictionsList: React.FC<{ onOpen: (p: any, event: any) => void;
 };
 
 // Cancelled Predictions List Component
-const CancelledPredictionsList: React.FC<{ onOpen: (p: any, event: any) => void; selectedSport?: string | null; selectedTournamentId?: string | null }> = ({ onOpen, selectedSport, selectedTournamentId }) => {
+const CancelledPredictionsList: React.FC<{ onOpen: (p: any, event: any) => void; selectedSport?: string | null; selectedTournamentId?: string | null }> = ({ onOpen: _onOpen, selectedSport, selectedTournamentId }) => {
   const [items, setItems] = React.useState<any[]>([]);
   const [eventsMap, setEventsMap] = React.useState<Record<string, any>>({});
   const [isLoading, setIsLoading] = React.useState<boolean>(true);
@@ -1489,22 +1478,16 @@ const CancelledPredictionsList: React.FC<{ onOpen: (p: any, event: any) => void;
   return (
     <div className="space-y-3">
       {filteredItems.map((p: any, idx: number) => {
-        const eventName = p?.eventName || p?.eventShortName || "Event";
         const eventShortName = p?.eventShortName || "";
         const eventDesc = p?.eventDescription || "";
-        const eventStatus = p?.eventStatus || "";
         const question = p?.question || "Question";
         const predictedOutcome = p?.predictedOutcome || p?.predictedOutcomeChoice || "";
         const percentage = Number(p?.percentage || 0);
         const investmentAmt = Number(p?.investmentAmt || 0);
         const matchedAmt = Number(p?.matchedAmt || 0);
         const daysAgo = p?.eventStartDate ? Math.floor((Date.now() - new Date(p.eventStartDate).getTime()) / (1000 * 60 * 60 * 24)) : 0;
-        
-        const statusLabel = eventStatus === "PREDICTION_EVENT_STATUS_CLOSED" ? "Event Closed" : "Match starts in";
-        const isClosed = eventStatus === "PREDICTION_EVENT_STATUS_CLOSED";
-        
-        // Calculate exited amount
-        const exitedAmount = investmentAmt - matchedAmt;
+        const isClosed = false; // Exited events show as exited, not closed
+        const statusLabel = "Exited";
 
         return (
           <div key={p?.predictionId || idx} className="rounded-xl border border-white/10 bg-dark-card p-5 hover:border-primary/30 transition-all">
@@ -1560,7 +1543,7 @@ const CancelledPredictionsList: React.FC<{ onOpen: (p: any, event: any) => void;
 };
 
 // Exited Predictions List Component
-const ExitedPredictionsList: React.FC<{ onOpen: (p: any, event: any) => void; selectedSport?: string | null; selectedTournamentId?: string | null }> = ({ onOpen, selectedSport, selectedTournamentId }) => {
+const ExitedPredictionsList: React.FC<{ onOpen: (p: any, event: any) => void; selectedSport?: string | null; selectedTournamentId?: string | null }> = ({ onOpen: _onOpen, selectedSport, selectedTournamentId }) => {
   const navigate = useNavigate();
   const [items, setItems] = React.useState<any[]>([]);
   const [eventsMap, setEventsMap] = React.useState<Record<string, any>>({});
@@ -1654,9 +1637,7 @@ const ExitedPredictionsList: React.FC<{ onOpen: (p: any, event: any) => void; se
   return (
     <div className="space-y-4">
       {filteredItems.map((p: any, idx: number) => {
-        const eventId = String(p?.eventId || "");
-        const event = eventsMap[eventId] || {};
-        // const title = getEventName(event) || `Event ${eventId}`;
+        // Event data available from eventsMap if needed
         const eventDate = new Date(p?.eventStartDate);
         const today = new Date();
         const diffTime = Math.abs(eventDate.getTime() - today.getTime());
@@ -1732,9 +1713,9 @@ export const Sports: React.FC<{ selectedSport?: string | null }> = ({ selectedSp
   const [loadingAllChildEvents, setLoadingAllChildEvents] = React.useState<boolean>(false);
   const [suppressQuestionPredictionFetch, setSuppressQuestionPredictionFetch] = React.useState<boolean>(false);
   const [selectedQuestionPrediction, setSelectedQuestionPrediction] = React.useState<any | null>(null);
-  const [selectedEventStatusFilter, setSelectedEventStatusFilter] = useState<'live' | 'upcoming' | 'trending' | null>();
+  const [selectedEventStatusFilter] = useState<'live' | 'upcoming' | 'trending' | null>();
 
-  const [activePredictions, setActivePredictions] = useState<Array<{
+  const [_activePredictions] = useState<Array<{
     id: string;
     eventId: string;
     eventName: string;
@@ -1794,7 +1775,7 @@ export const Sports: React.FC<{ selectedSport?: string | null }> = ({ selectedSp
   const [sportTournaments, setSportTournaments] = React.useState<Record<string, any[]>>({});
   const [loadingTournaments, setLoadingTournaments] = React.useState<Record<string, boolean>>({});
   const [tournamentChildEventCounts, setTournamentChildEventCounts] = React.useState<Record<string, number>>({});
-  const [sportTournamentCounts, setSportTournamentCounts] = React.useState<Record<string, number>>({});
+  // tournament count tracking (not used in current UI)
 
   // State for selected tournament and its child events
   const [selectedTournamentId, setSelectedTournamentId] = React.useState<string | null>(null);
@@ -1871,7 +1852,6 @@ export const Sports: React.FC<{ selectedSport?: string | null }> = ({ selectedSp
 
       setSportTournaments(prev => ({ ...prev, [sportName]: allTournaments }));
       setTournamentChildEventCounts(prev => ({ ...prev, ...countMap }));
-      setSportTournamentCounts(prev => ({ ...prev, [sportName]: allTournaments.length }));
       console.log(`Complete: Fetched ${allTournaments.length} tournaments for sport '${sportName}' (total count: ${totalCount})`);
     } catch (e) {
       console.error('Failed to fetch tournaments for sport', sportName, e);
@@ -2100,7 +2080,7 @@ export const Sports: React.FC<{ selectedSport?: string | null }> = ({ selectedSp
       }
     }
     
-    setSportTournamentCounts(countMap);
+    // Tournament count tracking removed - not used in current UI
   };
 
   useEffect(() => {
@@ -2242,22 +2222,6 @@ export const Sports: React.FC<{ selectedSport?: string | null }> = ({ selectedSp
 
       if (res?.status?.type === 'SUCCESS') {
         setSuccessMessage('Prediction created successfully!');
-        const evt = events.find(e => String(e.id ?? e.eventId ?? '') === String(selectedEventId));
-        const evtName = (evt?.name || evt?.eventName || evt?.sportEvent?.name || 'Event') as string;
-        setActivePredictions(prev => [
-          ...prev,
-          {
-            id: String(res.orderId ?? Math.random().toString(36).slice(2)),
-            eventId: String(selectedEventId),
-            eventName: evtName,
-            startDate: Number(evt?.startDate ?? 0),
-            questionName: String(selectedQuestion?.name ?? ''),
-            answer: String(selectedOutcome?.outcome ?? ''),
-            percentage: Number(confPct),
-            amount: Number(amt),
-            status: 'PREDICTION_STATUS_MATCHED',
-          }
-        ]);
         setSelectedOutcome(null);
         setAmount('');
         setSelectedQuestion(null);
@@ -2301,7 +2265,7 @@ const handleExitPrediction = async () => {
   }
 
   try {
-    const res = await api.post("/order/v1/exitorder", {
+    const res = await api.post<any>("/order/v1/exitorder", {
       // ✅ MUST MATCH BACKEND STORED VALUE EXACTLY
       amount: String(backendPredictionAmount),
 
@@ -2331,7 +2295,7 @@ const handleExitPrediction = async () => {
       setSelectedAction(null);
       setExitAmount("");
       setExitConfidence(null);
-
+      setActiveTab("exited");
       fetchBalance();
       setActiveTab("exited");
     } else {
@@ -2347,8 +2311,7 @@ const handleExitPrediction = async () => {
 
 
 
-  const handleCancelPrediction = (id: string) => {
-    setActivePredictions(prev => prev.map(p => (p.id === id ? { ...p, status: 'PREDICTION_STATUS_CANCELLED' } : p)));
+  const handleCancelPrediction = (_id: string) => {
     setSuccessMessage('Prediction cancelled');
     setSelectedAction(null);
     setSelectedPrediction(null);
@@ -2865,17 +2828,8 @@ const handleExitPrediction = async () => {
                             setSuccessMessage(null);
                             fetchBalance();
                             setIsMobilePanelOpen(true);
-                        if (predictionId) {
+                        if (selectedQuestionPrediction?.id) {
                           setSuppressQuestionPredictionFetch(true);
-                          (async () => {
-                            try {
-                              const byId = await api.post<any>("/prediction/v1/getbyid", { predictionId });
-                              const mine = byId?.prediction || null;
-                              setSelectedQuestionPrediction(mine);
-                            } catch (e) {
-                              setSelectedQuestionPrediction(null);
-                            }
-                          })();
                         } else {
                           setSelectedQuestionPrediction(null);
                         }
