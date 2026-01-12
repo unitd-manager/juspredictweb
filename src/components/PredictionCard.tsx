@@ -96,10 +96,14 @@ export const PredictionCard = ({
   p,
   onAction,
   actionLabel = "Exit Prediction",
+  onOrderDetails,
+  orderId,
 }: {
   p: ApiPrediction;
   onAction?: () => void;
   actionLabel?: string;
+  onOrderDetails?: () => void;
+  orderId?: string;
 }) => {
   const teams = splitTeams(p.eventName);
   const pct = Math.max(0, Math.min(100, Number(p.percentage ?? 0)));
@@ -179,12 +183,22 @@ console.log('p',p);
             </span>
           )}
 
-          <Button
-            onClick={onAction}
-            className="bg-green-500 hover:bg-green-600 px-4 py-1 text-xs"
-          >
-            {actionLabel}
-          </Button>
+          <div className="flex flex-col gap-1 w-full">
+            {onOrderDetails && (
+              <Button
+                onClick={onOrderDetails}
+                className="bg-blue-500 hover:bg-blue-600 px-4 py-1 text-xs w-full"
+              >
+                Order Details
+              </Button>
+            )}
+            <Button
+              onClick={onAction}
+              className="bg-green-500 hover:bg-green-600 px-4 py-1 text-xs w-full"
+            >
+              {actionLabel}
+            </Button>
+          </div>
         </div>
       </div>
     </Card>
