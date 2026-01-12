@@ -406,16 +406,29 @@ export interface QuestionOption {
   label: string
   percentage: number
 }
+const tabToEventStatus: Record<string, string> = {
+  all: "",
+  live: "Live",
+  upcoming: "Upcoming",
+};
 
 export interface QuestionCard {
   questionId: string
   eventId?: string
+  eventName?: string
+  eventStartTime?: string
+  eventStatus?: string
+
+  subCategory?: string           // RAW (EVENT_SUBCATEGORY_CRICKET)
+  subCategoryLabel?: string      // DISPLAY (Cricket)
+
   question: string
   questionType: string
   options: QuestionOption[]
   users: number
   volume: string
 }
+
 
 /* ---------------- PREDICTION MODAL ---------------- */
 
@@ -424,7 +437,22 @@ interface PredictionModalProps {
   onClose: () => void
   question: QuestionCard | null
 }
+const normalizeEventStatus = (status?: string) => {
+  if (!status) return "Unknown";
 
+  return status
+    .replace("EVENT_STATUS_", "")
+    .toLowerCase()
+    .replace(/^\w/, (c) => c.toUpperCase());
+};
+const normalizeEventSubCategory = (status?: string) => {
+  if (!status) return "Unknown";
+
+  return status
+    .replace("EVENT_SUBCATEGORY_", "")
+    .toLowerCase()
+    .replace(/^\w/, (c) => c.toUpperCase());
+};
 export const PredictionModal: React.FC<PredictionModalProps> = ({
   open,
   onClose,
@@ -706,6 +734,22 @@ return (
 }
 
 /* ---------------- QUESTIONS LIST ---------------- */
+const formatEventTime = (startDate?: string | number) => {
+  const ts = Number(startDate);
+
+  if (!ts || isNaN(ts)) return "--";
+
+  const date = new Date(ts * 1000); // ✅ convert seconds → ms
+
+  return date.toLocaleString(undefined, {
+    day: "2-digit",
+    month: "short",
+    year: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+    hour12: true,
+  });
+};
 
 export const UpcomingEventsDyn = () => {
   const [questions, setQuestions] = useState<QuestionCard[]>([])
@@ -718,9 +762,30 @@ export const UpcomingEventsDyn = () => {
 const [searchQuery, setSearchQuery] = useState("");
 
   const [page, setPage] = useState(1)
-  const [pageSize] = useState(8)
+  const [pageSize] = useState(16)
   const [isLoading, setIsLoading] = useState(false)
   const [hasMore, setHasMore] = useState(true)
+const getTabFilters = (tab: string) => {
+  const filters: any = {};
+
+  if (tab === "live") {
+    filters.status = "QUESTION_STATUS_ACTIVE";
+  }
+
+  if (tab === "upcoming") {
+    filters.status = "QUESTION_STATUS_UPCOMING";
+  }
+
+  if (tab === "cricket") {
+    filters.subcategory = "EVENT_SUBCATEGORY_CRICKET";
+  }
+
+  if (tab === "NFL") {
+    filters.subcategory = "EVENT_SUBCATEGORY_NFL";
+  }
+
+  return filters;
+};
 
   /* FETCH QUESTIONS */
   const fetchQuestions = async (reset = false) => {
@@ -729,12 +794,14 @@ const [searchQuery, setSearchQuery] = useState("");
     setIsLoading(true)
 
     try {
-      const payload: any = {
-        pageRequest: {
-          pageNumber: reset ? 1 : page,
-          pageSize,
-        },
-      }
+    const payload: any = {
+  pageRequest: {
+    pageNumber: reset ? 1 : page,
+    pageSize,
+  },
+  ...getTabFilters(activeTab), // ✅ HERE
+};
+
 
       if (activeTab === "live") {
         payload.status = "QUESTION_STATUS_ACTIVE"
@@ -747,22 +814,37 @@ const [searchQuery, setSearchQuery] = useState("");
       const res = await api.post<any>("/event/v1/getquestions", payload)
       if (res?.status?.type !== "SUCCESS") return
 
-      const newQuestions: QuestionCard[] = (res.questions ?? []).map(
-        (q: any) => ({
-          questionId: q.questionId,
-          eventId: String(q.eventId ?? q.event?.id ?? ""),
-          question: q.description || q.name || "Prediction Market",
-          questionType: q.questionType,
-          users: q.activity?.questionUsers ?? 0,
-          volume: q.activity?.questionVolume ?? "0",
-          options:
-            q.activity?.marketDataDetails?.map((m: any) => ({
-              id: m.outcome,
-              label: m.outcome,
-              percentage: Number(m.impliedProbability) || 0,
-            })) ?? [],
-        })
-      )
+    const newQuestions: QuestionCard[] = (res.questionInfo ?? []).map(
+  (item: any) => {
+    const q = item.question;
+    const event = item.event;
+
+    return {
+      questionId: q.questionId,
+      eventId: q.eventId || event?.id,
+      eventName: event?.shortName,
+      eventStartTime: formatEventTime(event?.startDate),
+
+      eventStatus: normalizeEventStatus(event?.status),
+
+      subCategory: event?.subCategory, // ✅ RAW VALUE
+      subCategoryLabel: normalizeEventSubCategory(event?.subCategory), // ✅ DISPLAY
+
+      question: q.description || q.name || "Prediction Market",
+      questionType: q.questionType,
+      users: q.activity?.questionUsers ?? 0,
+      volume: q.activity?.questionVolume ?? "0",
+      options:
+        q.activity?.marketDataDetails?.map((m: any) => ({
+          id: m.outcome,
+          label: m.outcome,
+          percentage: Number(m.impliedProbability) || 0,
+        })) ?? [],
+    };
+  }
+);
+
+
 
       setQuestions((prev) =>
         reset ? newQuestions : [...prev, ...newQuestions]
@@ -780,12 +862,107 @@ const [searchQuery, setSearchQuery] = useState("");
       setIsLoading(false)
     }
   }
+const useDebounce = (value: string, delay = 500) => {
+  const [debounced, setDebounced] = useState(value);
 
-  /* INITIAL LOAD */
   useEffect(() => {
-    fetchQuestions()
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [])
+    const t = setTimeout(() => setDebounced(value), delay);
+    return () => clearTimeout(t);
+  }, [value, delay]);
+
+  return debounced;
+};
+
+ const debouncedSearch = useDebounce(searchQuery, 500);
+
+const fetchQuestionsBySearch = async (reset = false) => {
+  if (isLoading || (!hasMore && !reset)) return;
+  if (!debouncedSearch) return;
+
+  setIsLoading(true);
+
+  try {
+    const res = await api.post<any>("/event/v1/searchquestion", {
+      questionWildCardSearch: debouncedSearch,
+      pageRequest: {
+        pageNumber: reset ? 1 : page,
+        pageSize,
+      },
+    });
+
+    if (res?.status?.type !== "SUCCESS") return;
+
+   const newQuestions: QuestionCard[] = (res.questions ?? []).map((q: any) => ({
+  questionId: q.questionId,
+  eventId: q.eventId,
+  eventName: q.shortName || q.name || "",
+
+  subCategory: q.subCategory, // ✅ RAW
+  subCategoryLabel: normalizeEventSubCategory(q.subCategory), // ✅ DISPLAY
+
+  eventStatus: normalizeEventStatus(q.status),
+  question: q.description || q.name || "Prediction Market",
+  questionType: q.questionType,
+  users: q.activity?.questionUsers ?? 0,
+  volume: q.activity?.questionVolume ?? "0",
+  options:
+    q.activity?.marketDataDetails?.map((m: any) => ({
+      id: m.outcome,
+      label: m.outcome,
+      percentage: Number(m.impliedProbability) || 0,
+    })) ?? [],
+}));
+
+
+    setQuestions(prev => (reset ? newQuestions : [...prev, ...newQuestions]));
+
+    const totalPages = res.pageInfo?.totalPages ?? 1;
+    if ((reset ? 1 : page) >= totalPages) {
+      setHasMore(false);
+    } else {
+      setPage(p => p + 1);
+    }
+  } catch (e) {
+    console.error("Search failed", e);
+  } finally {
+    setIsLoading(false);
+  }
+};
+// const filteredQuestions = questions.filter((q) => {
+//   const matchesSearch = q.question
+//     .toLowerCase()
+//     .includes(searchQuery.toLowerCase());
+
+//   let matchesTab = true;
+
+//   if (activeTab === "cricket") {
+//     matchesTab = q.subCategory === "EVENT_SUBCATEGORY_CRICKET";
+//   } else if (activeTab === "NFL") {
+//     matchesTab = q.subCategory === "EVENT_SUBCATEGORY_NFL";
+//   } else if (activeTab === "live") {
+//     matchesTab = q.eventStatus === "Live";
+//   } else if (activeTab === "upcoming") {
+//     matchesTab = q.eventStatus === "Upcoming";
+//   }
+
+//   return matchesSearch && matchesTab;
+// });
+
+
+useEffect(() => {
+  if (debouncedSearch) {
+    setQuestions([]);
+    setPage(1);
+    setHasMore(true);
+    fetchQuestionsBySearch(true);
+  } else {
+    setQuestions([]);
+    setPage(1);
+    setHasMore(true);
+    fetchQuestions(true);
+  }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+}, [debouncedSearch, activeTab]);
 
   /* TAB CHANGE RESET */
   useEffect(() => {
@@ -833,13 +1010,10 @@ const [searchQuery, setSearchQuery] = useState("");
 
         {/* QUESTIONS GRID */}
         <div className="grid md:grid-cols-4 gap-4">
-         {questions
-  .filter((q) =>
-    q.question
-      .toLowerCase()
-      .includes(searchQuery.toLowerCase())
-  )
-  .map((q) => (
+     {questions.map((q) => (
+
+
+
             <div
               key={q.questionId}
               className="bg-[#1F2C34] border border-white/5 rounded-xl p-4
@@ -847,10 +1021,13 @@ const [searchQuery, setSearchQuery] = useState("");
             >
               <div className="flex justify-between mb-2">
                 <span className="px-2 py-1 rounded-md bg-gray-600 text-white text-[10px]">
-                  {q.questionType.replace("QUESTION_TYPE_", "")}
+                  {q.eventName}
                 </span>
+                  <span className="px-2 py-1 rounded-md bg-dark-card text-gray-300 text-[10px]">
+     {q.subCategoryLabel}
+  </span>
                 <span className="px-2 py-1 rounded-md bg-primary/80 text-black text-[10px]">
-                  Active
+                 {q.eventStatus}
                 </span>
               </div>
 
@@ -877,6 +1054,9 @@ const [searchQuery, setSearchQuery] = useState("");
 
               <div className="flex justify-between items-center text-xs text-gray-400">
                 <span>👥 {q.users}</span>
+                 <span className="px-2 py-1 rounded-md bg-dark-card text-gray-300 text-[10px]">
+    {q.eventStartTime}
+  </span>
                 <Button
                   size="sm"
                   onClick={() => {
@@ -897,11 +1077,15 @@ const [searchQuery, setSearchQuery] = useState("");
 
         {hasMore && (
           <div className="flex justify-center mt-8">
-            <Button
-              onClick={() => fetchQuestions()}
-              disabled={isLoading}
-              className="px-8"
-            >
+         <Button
+  onClick={() =>
+    debouncedSearch
+      ? fetchQuestionsBySearch()
+      : fetchQuestions()
+  }
+  disabled={isLoading}
+>
+
               {isLoading ? "Loading..." : "Load More"}
             </Button>
           </div>
