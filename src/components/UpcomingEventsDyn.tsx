@@ -769,11 +769,11 @@ const getTabFilters = (tab: string) => {
   const filters: any = {};
 
   if (tab === "live") {
-    filters.status = "QUESTION_STATUS_ACTIVE";
+    filters.status = "EVENT_STATUS_LIVE";
   }
 
   if (tab === "upcoming") {
-    filters.status = "QUESTION_STATUS_UPCOMING";
+    filters.status = "EVENT_STATUS_UPCOMING";
   }
 
   if (tab === "cricket") {
@@ -804,11 +804,11 @@ const getTabFilters = (tab: string) => {
 
 
       if (activeTab === "live") {
-        payload.status = "QUESTION_STATUS_ACTIVE"
+        payload.status = "EVENT_STATUS_LIVE"
       }
 
       if (activeTab === "upcoming") {
-        payload.status = "QUESTION_STATUS_UPCOMING"
+        payload.status = "EVENT_STATUS_UPCOMING"
       }
 
       const res = await api.post<any>("/event/v1/getquestions", payload)
@@ -873,96 +873,14 @@ const useDebounce = (value: string, delay = 500) => {
   return debounced;
 };
 
- const debouncedSearch = useDebounce(searchQuery, 500);
-
-const fetchQuestionsBySearch = async (reset = false) => {
-  if (isLoading || (!hasMore && !reset)) return;
-  if (!debouncedSearch) return;
-
-  setIsLoading(true);
-
-  try {
-    const res = await api.post<any>("/event/v1/searchquestion", {
-      questionWildCardSearch: debouncedSearch,
-      pageRequest: {
-        pageNumber: reset ? 1 : page,
-        pageSize,
-      },
-    });
-
-    if (res?.status?.type !== "SUCCESS") return;
-
-   const newQuestions: QuestionCard[] = (res.questions ?? []).map((q: any) => ({
-  questionId: q.questionId,
-  eventId: q.eventId,
-  eventName: q.shortName || q.name || "",
-
-  subCategory: q.subCategory, // ✅ RAW
-  subCategoryLabel: normalizeEventSubCategory(q.subCategory), // ✅ DISPLAY
-
-  eventStatus: normalizeEventStatus(q.status),
-  question: q.description || q.name || "Prediction Market",
-  questionType: q.questionType,
-  users: q.activity?.questionUsers ?? 0,
-  volume: q.activity?.questionVolume ?? "0",
-  options:
-    q.activity?.marketDataDetails?.map((m: any) => ({
-      id: m.outcome,
-      label: m.outcome,
-      percentage: Number(m.impliedProbability) || 0,
-    })) ?? [],
-}));
+//  const debouncedSearch = useDebounce(searchQuery, 500);
 
 
-    setQuestions(prev => (reset ? newQuestions : [...prev, ...newQuestions]));
 
-    const totalPages = res.pageInfo?.totalPages ?? 1;
-    if ((reset ? 1 : page) >= totalPages) {
-      setHasMore(false);
-    } else {
-      setPage(p => p + 1);
-    }
-  } catch (e) {
-    console.error("Search failed", e);
-  } finally {
-    setIsLoading(false);
-  }
-};
-// const filteredQuestions = questions.filter((q) => {
-//   const matchesSearch = q.question
-//     .toLowerCase()
-//     .includes(searchQuery.toLowerCase());
+const displayedQuestions = questions.filter(q =>
+  q.question.toLowerCase().includes(searchQuery.toLowerCase())
+);
 
-//   let matchesTab = true;
-
-//   if (activeTab === "cricket") {
-//     matchesTab = q.subCategory === "EVENT_SUBCATEGORY_CRICKET";
-//   } else if (activeTab === "NFL") {
-//     matchesTab = q.subCategory === "EVENT_SUBCATEGORY_NFL";
-//   } else if (activeTab === "live") {
-//     matchesTab = q.eventStatus === "Live";
-//   } else if (activeTab === "upcoming") {
-//     matchesTab = q.eventStatus === "Upcoming";
-//   }
-
-//   return matchesSearch && matchesTab;
-// });
-
-
-useEffect(() => {
-  if (debouncedSearch) {
-    setQuestions([]);
-    setPage(1);
-    setHasMore(true);
-    fetchQuestionsBySearch(true);
-  } else {
-    setQuestions([]);
-    setPage(1);
-    setHasMore(true);
-    fetchQuestions(true);
-  }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-}, [debouncedSearch, activeTab]);
 
   /* TAB CHANGE RESET */
   useEffect(() => {
@@ -1010,7 +928,8 @@ useEffect(() => {
 
         {/* QUESTIONS GRID */}
         <div className="grid md:grid-cols-4 gap-4">
-     {questions.map((q) => (
+    {displayedQuestions.map((q) => (
+
 
 
 
@@ -1077,14 +996,8 @@ useEffect(() => {
 
         {hasMore && (
           <div className="flex justify-center mt-8">
-         <Button
-  onClick={() =>
-    debouncedSearch
-      ? fetchQuestionsBySearch()
-      : fetchQuestions()
-  }
-  disabled={isLoading}
->
+       <Button onClick={() => fetchQuestions()}>
+
 
               {isLoading ? "Loading..." : "Load More"}
             </Button>
