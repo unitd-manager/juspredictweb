@@ -786,82 +786,100 @@ const getTabFilters = (tab: string) => {
 
   return filters;
 };
+const buildPayload = (reset = false) => {
+  const payload: any = {
+    pageRequest: {
+      pageNumber: reset ? 1 : page,
+      pageSize,
+    },
+  };
 
-  /* FETCH QUESTIONS */
-  const fetchQuestions = async (reset = false) => {
-    if (isLoading || (!hasMore && !reset)) return
+  // 🔍 Search
+  if (searchQuery.trim()) {
+    payload.questionWildCardSearch = searchQuery.trim();
+  }
 
-    setIsLoading(true)
+  // 🟢 Live / 🔵 Upcoming (EVENT STATUS)
+  if (activeTab === "live") {
+    payload.eventStatus = ["EVENT_STATUS_LIVE"];
+  }
 
-    try {
-    const payload: any = {
-  pageRequest: {
-    pageNumber: reset ? 1 : page,
-    pageSize,
-  },
-  ...getTabFilters(activeTab), // ✅ HERE
+  if (activeTab === "upcoming") {
+    payload.eventStatus = ["EVENT_STATUS_UPCOMING"];
+  }
+
+  // 🏏 Cricket / 🏈 NFL (SUB CATEGORY)
+  if (activeTab === "cricket") {
+    payload.subCategory = "EVENT_SUBCATEGORY_CRICKET";
+  }
+
+  if (activeTab === "NFL") {
+    payload.subCategory = "EVENT_SUBCATEGORY_NFL";
+  }
+
+  return payload;
 };
 
+  /* FETCH QUESTIONS */
+ const fetchQuestions = async (reset = false) => {
+  if (isLoading || (!hasMore && !reset)) return;
 
-      if (activeTab === "live") {
-        payload.status = "EVENT_STATUS_LIVE"
-      }
+  setIsLoading(true);
 
-      if (activeTab === "upcoming") {
-        payload.status = "EVENT_STATUS_UPCOMING"
-      }
+  try {
+    const payload = buildPayload(reset);
 
-      const res = await api.post<any>("/event/v1/getquestions", payload)
-      if (res?.status?.type !== "SUCCESS") return
+    const res = await api.post<any>(
+      "/event/v1/getquestions",
+      payload
+    );
+
+    if (res?.status?.type !== "SUCCESS") return;
 
     const newQuestions: QuestionCard[] = (res.questionInfo ?? []).map(
-  (item: any) => {
-    const q = item.question;
-    const event = item.event;
+      (item: any) => {
+        const q = item.question;
+        const event = item.event;
 
-    return {
-      questionId: q.questionId,
-      eventId: q.eventId || event?.id,
-      eventName: event?.shortName || event?.name ,
-      eventStartTime: formatEventTime(event?.startDate),
+        return {
+          questionId: q.questionId,
+          eventId: q.eventId || event?.id,
+          eventName: event?.shortName || event?.name,
+          eventStartTime: formatEventTime(event?.startDate),
+          eventStatus: normalizeEventStatus(event?.status),
 
-      eventStatus: normalizeEventStatus(event?.status),
+          subCategory: event?.subCategory,
+          subCategoryLabel: normalizeEventSubCategory(event?.subCategory),
 
-      subCategory: event?.subCategory, // ✅ RAW VALUE
-      subCategoryLabel: normalizeEventSubCategory(event?.subCategory), // ✅ DISPLAY
-
-      question: q.description || q.name || "Prediction Market",
-      questionType: q.questionType,
-      users: q.activity?.questionUsers ?? 0,
-      volume: q.activity?.questionVolume ?? "0",
-      options:
-        q.activity?.marketDataDetails?.map((m: any) => ({
-          id: m.outcome,
-          label: m.outcome,
-          percentage: Number(m.impliedProbability) || 0,
-        })) ?? [],
-    };
-  }
-);
-
-
-
-      setQuestions((prev) =>
-        reset ? newQuestions : [...prev, ...newQuestions]
-      )
-
-      const totalPages = res.pageInfo?.totalPages ?? 1
-      if ((reset ? 1 : page) >= totalPages) {
-        setHasMore(false)
-      } else {
-        setPage((p) => p + 1)
+          question: q.description || q.name || "Prediction Market",
+          questionType: q.questionType,
+          users: q.activity?.questionUsers ?? 0,
+          volume: q.activity?.questionVolume ?? "0",
+          options:
+            q.activity?.marketDataDetails?.map((m: any) => ({
+              id: m.outcome,
+              label: m.outcome,
+              percentage: Number(m.impliedProbability) || 0,
+            })) ?? [],
+        };
       }
-    } catch (err) {
-      console.error("Failed to fetch questions", err)
-    } finally {
-      setIsLoading(false)
+    );
+
+    setQuestions(prev => (reset ? newQuestions : [...prev, ...newQuestions]));
+
+    const totalPages = res.pageInfo?.totalPages ?? 1;
+    if ((reset ? 1 : page) >= totalPages) {
+      setHasMore(false);
+    } else {
+      setPage(p => p + 1);
     }
+  } catch (err) {
+    console.error("Failed to fetch questions", err);
+  } finally {
+    setIsLoading(false);
   }
+};
+
 const useDebounce = (value: string, delay = 500) => {
   const [debounced, setDebounced] = useState(value);
 
@@ -877,20 +895,24 @@ const useDebounce = (value: string, delay = 500) => {
 
 
 
-const displayedQuestions = questions.filter(q =>
-  q.question.toLowerCase().includes(searchQuery.toLowerCase())
-);
-
 
   /* TAB CHANGE RESET */
-  useEffect(() => {
-    setQuestions([])
-    setPage(1)
-    setHasMore(true)
-    fetchQuestions(true)
+  // useEffect(() => {
+  //   setQuestions([])
+  //   setPage(1)
+  //   setHasMore(true)
+  //   fetchQuestions(true)
+  //   window.scrollTo({ top: 0, behavior: "smooth" })
+  //   // eslint-disable-next-line react-hooks/exhaustive-deps
+  // }, [activeTab])
+useEffect(() => {
+  setQuestions([]);
+  setPage(1);
+  setHasMore(true);
+  fetchQuestions(true);
     window.scrollTo({ top: 0, behavior: "smooth" })
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [activeTab])
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+}, [activeTab, searchQuery]);
 
   return (
     <section className="py-12 bg-[#1A1A1D]">
@@ -928,10 +950,7 @@ const displayedQuestions = questions.filter(q =>
 
         {/* QUESTIONS GRID */}
         <div className="grid md:grid-cols-4 gap-4">
-    {displayedQuestions.map((q) => (
-
-
-
+  {questions.map((q) => (
 
             <div
               key={q.questionId}
@@ -996,11 +1015,10 @@ const displayedQuestions = questions.filter(q =>
 
         {hasMore && (
           <div className="flex justify-center mt-8">
-       <Button onClick={() => fetchQuestions()}>
+      <Button onClick={() => fetchQuestions()}>
+  {isLoading ? "Loading..." : "Load More"}
+</Button>
 
-
-              {isLoading ? "Loading..." : "Load More"}
-            </Button>
           </div>
         )}
 
