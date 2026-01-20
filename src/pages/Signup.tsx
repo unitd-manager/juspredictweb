@@ -346,9 +346,9 @@ const handleAppleSignup = async (response: any) => {
 <div className="flex justify-center mt-3">
   <AppleSignInButton
     authOptions={{
-      clientId: "com.your.serviceid", // Apple Service ID
+      clientId: "com.juspredict", // Apple Service ID
       scope: "email name",
-      redirectURI: "https://yourdomain.com/auth/apple/callback",
+      redirectURI: "https://test.juspredict.com/auth/apple/callback",
       state: "state123",
       nonce: "nonce123",
       usePopup: true,

@@ -5,6 +5,7 @@ import { Loader2, ArrowLeft, DollarSign, AlertCircle } from 'lucide-react';
 import { Button } from '../components/ui/Button';
 import { useNavigate, useParams } from 'react-router-dom';
 import { Badge } from '../components/ui/Badge';
+import AppCoin from '../assets/appCoin.svg';
 
 interface OrderDetailsData {
   orderDetails: {
@@ -159,10 +160,20 @@ const OrderDetails: React.FC = () => {
   };
 
   const formatCurrency = (value: string | number) => {
-    const num = Number(value);
-    if (!isFinite(num)) return '--';
-    return `$${num.toFixed(2)}`;
-  };
+  const num = Number(value);
+  if (!isFinite(num)) return "--";
+
+  return (
+    <span className="flex items-center gap-1">
+      <span>{num.toFixed(2)}</span>
+      <img
+        src={AppCoin}
+        alt="coin"
+        className="w-4 h-4 translate-y-[1px]"
+      />
+    </span>
+  );
+};
 
   if (!orderId) {
     return (

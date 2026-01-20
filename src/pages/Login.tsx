@@ -306,9 +306,9 @@ export const Login = () => {
                 <div className="flex justify-center">
                   <AppleSignInButton
                     authOptions={{
-                      clientId: "com.your.serviceid",
+                      clientId: "com.juspredict",
                       scope: "email name",
-                      redirectURI: "https://yourdomain.com/auth/apple/callback",
+                      redirectURI: "https://test.juspredict.com/auth/apple/callback",
                       state: "state123",
                       nonce: "nonce123",
                       usePopup: true,

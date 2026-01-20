@@ -4,7 +4,7 @@ import { PageHeader } from "../components/PageHeader";
 import { Loader2 } from "lucide-react";
 import { Button } from "../components/ui/Button";
 import { activityApi } from "../api/activity";
-
+import AppCoin from "../assets/appCoin.svg";
 /* ---------------------------------------------------
    HELPERS
 --------------------------------------------------- */
@@ -264,16 +264,24 @@ const TransactionsDyn: React.FC = () => {
                             {t.description}
                           </td>
                         
-                          <td
-                            className={`px-4 py-2 text-sm font-bold text-right ${
-                              t.type === "credit"
-                                ? "text-primary"
-                                : "text-red-400"
-                            }`}
-                          >
-                            {t.type === "credit" ? "+" : "-"}$
-                            {Math.abs(t.amount).toFixed(2)}
-                          </td>
+                         <td
+  className={`px-4 py-2 text-sm font-bold text-right ${
+    t.type === "credit" ? "text-primary" : "text-red-400"
+  }`}
+>
+  <div className="flex items-center justify-end gap-1">
+    <span>
+      {t.type === "credit" ? "+" : "-"}
+      {Math.abs(t.amount).toFixed(2)}
+    </span>
+    <img
+      src={AppCoin}
+      alt="coin"
+      className="w-4 h-4 translate-y-[1px]"
+    />
+  </div>
+</td>
+
                         </tr>
                       ))}
                     </tbody>

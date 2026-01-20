@@ -1,11 +1,12 @@
 import React, { useState, useEffect } from 'react';
-import { ArrowLeft, TrendingUp, Users, DollarSign, AlertCircle, Loader2 } from 'lucide-react';
+import { ArrowLeft, TrendingUp, Users, DollarSign, AlertCircle, Loader2, Image } from 'lucide-react';
 import { Badge } from '../components/ui/Badge';
 import { PageHeader } from '../components/PageHeaderSport';
 import { Button } from '../components/ui/Button';
 import { api } from '../api/api';
 import { Dialog, DialogContent } from '../components/ui/Dialog';
 import { useNavigate } from 'react-router-dom';
+import AppCoin from '../assets/appCoin.svg';
 
 // Helper function to extract probabilities correctly matched to teams
 const getTeamProbabilities = (event: any, teams: any[]) => {
@@ -773,19 +774,32 @@ const EventDetails: React.FC<{
             >
               <div className="flex items-start justify-between mb-4">
                 <div className="flex-1">
-                  <h3 className="text-base font-bold text-white mb-2">{question.name}</h3>
-                  {question.description && (
-                    <p className="text-gray-text text-sm">{question.description}</p>
-                  )}
-                </div>
+  <h3 className="text-lg font-extrabold text-white leading-snug mb-2">
+    {question.name}
+  </h3>
+
+  {question.description && (
+   <p className="text-sm font-bold text-white-text">
+  {question.description}
+</p>
+
+  )}
+</div>
+
               </div>
 
               {question.activity && (
                 <div className="flex items-center space-x-6 mb-4 text-sm">
-                  <div className="flex items-center text-gray-text">
-                    <DollarSign className="w-4 h-4 mr-1" />
-                    <span>Volume: ${Number.parseFloat(String(question.activity.questionVolume || '0')).toFixed(0)}</span>
-                  </div>
+                  <div className="flex items-center gap-1 text-gray-text">
+  <span>
+    Volume:{" "}
+    {Number.parseFloat(
+      String(question.activity.questionVolume || "0")
+    ).toFixed(0)}
+  </span>
+  <img src={AppCoin} alt="coin" className="w-4 h-4 translate-y-[1px]" />
+</div>
+
                   <div className="flex items-center text-gray-text">
                     <Users className="w-4 h-4 mr-1" />
                     <span>{question.activity.questionUsers} traders</span>
@@ -943,7 +957,23 @@ console.log('items live',items);
         const pctText = isFinite(pctNum) ? `${Math.max(0, Math.min(100, Math.round(pctNum)))}%` : "--%";
         const matched = Number(p?.matchedAmt ?? 0);
         const invest = Number(p?.investmentAmt ?? 0);
-        const matchedText = isFinite(matched) && isFinite(invest) && invest > 0 ? `${matched.toFixed(2)}/${invest.toFixed(2)} is matched` : "--";
+  const matchedText =
+  isFinite(matched) && isFinite(invest) && invest > 0 ? (
+    <span className="flex items-center gap-1">
+      <span>
+        {matched.toFixed(2)}/{invest.toFixed(2)}
+      </span>
+      <img
+        src={AppCoin}
+        alt="coin"
+        className="w-4 h-4 translate-y-[1px]"
+      />
+      <span>is matched</span>
+    </span>
+  ) : (
+    "--"
+  );
+
         return (
           <div key={p?.predictionId || idx} className="rounded-2xl border border-white/10 bg-dark-card p-4">
             <div className="flex items-center justify-between">
@@ -960,7 +990,7 @@ console.log('items live',items);
               <span>•</span>
               <span>{pctText}</span>
               <span>•</span>
-              <span className="inline-flex items-center gap-1"><DollarSign className="w-4 h-4" /> {matchedText}</span>
+              <span className="inline-flex items-center gap-1"> {matchedText}</span>
             </div>
             <div className="flex gap-3 mt-4">
               <Button onClick={() => onExit(p, event)} className="flex-1 bg-yellow-500 text-dark-bg hover:bg-yellow-400">
@@ -1977,8 +2007,13 @@ export const Sports: React.FC<{ selectedSport?: string | null }> = ({ selectedSp
     }
     return 0;
   };
+const formatCurrency = (n: number) => (
+  <span className="flex items-center gap-1">
+    <span>{n.toFixed(2)}</span>
+    <img src={AppCoin} alt="coin" className="w-4 h-4 translate-y-[1px]" />
+  </span>
+);
 
-  const formatCurrency = (n: number) => `$${n.toFixed(2)}`;
 
   const fetchBalance = async () => {
     const token = localStorage.getItem("auth_token");
@@ -2938,7 +2973,7 @@ const handleExitPrediction = async () => {
                         value={selectedAction === 'exit' ? exitAmount : String(selectedPrediction.amount ?? '')}
                         onChange={(e) => selectedAction === 'exit' && setExitAmount(e.target.value)}
                         
-                        placeholder="$100"
+                        placeholder="100 JP Coins"
                       />
                       {selectedAction === 'exit' ? (
                         <div className="mt-2 text-xs text-gray-text">
@@ -2956,14 +2991,22 @@ const handleExitPrediction = async () => {
                           ? ['10', '50', '100'] as const 
                           : ['10', '50', '100', '500'] as const
                         ).filter((v) => Number(v) < Number(selectedPrediction.amount || 0)).map((v) => (
-                          <button
-                            key={v}
-                            disabled={selectedAction !== 'exit'}
-                            onClick={() => selectedAction === 'exit' && setExitAmount(String(Number(v)))}
-                            className={`py-2 rounded-lg bg-dark-card border border-white/10 text-sm text-white ${selectedAction !== 'exit' ? 'opacity-50 cursor-not-allowed' : 'hover:border-primary/30'}`}
-                          >
-                            ${v}
-                          </button>
+                       <button
+  key={v}
+  disabled={selectedAction !== "exit"}
+  onClick={() =>
+    selectedAction === "exit" && setExitAmount(String(Number(v)))
+  }
+  className={`flex items-center justify-center gap-1 py-2 rounded-lg bg-dark-card border border-white/10 text-sm text-white ${
+    selectedAction !== "exit"
+      ? "opacity-50 cursor-not-allowed"
+      : "hover:border-primary/30"
+  }`}
+>
+  <span>{v}</span>
+  <img src={AppCoin} alt="coin" className="w-4 h-4 translate-y-[1px]" />
+</button>
+
                         ))}
                       </div>
                     </div>
@@ -3097,7 +3140,7 @@ const handleExitPrediction = async () => {
                         onChange={(e) => setAmount(e.target.value)}
                       disabled={Boolean(selectedQuestionPrediction && selectedQuestionPrediction.predictionStatus && selectedQuestionPrediction.predictionStatus !== "PREDICTION_STATUS_CANCELLED" && selectedQuestionPrediction.predictionStatus !== "PREDICTION_STATUS_EXITED")}
 
-                        placeholder="$100"
+                        placeholder="100 JP Coins"
                       />
                       {balance && amount && Number(amount) > 0 && (
                         <div className="mt-2 text-xs text-gray-text">
@@ -3106,13 +3149,19 @@ const handleExitPrediction = async () => {
                       )}
                       <div className="mt-3 grid grid-cols-4 gap-2">
                         {(['10', '50', '100', '500'] as const).map((v) => (
-                          <button
-                            key={v}
-                            onClick={() => setAmount(v)}
-                            className="py-2 rounded-lg bg-dark-card border border-white/10 text-sm text-white hover:border-primary/30 transition-all"
-                          >
-                            ${v}
-                          </button>
+                         <button
+  key={v}
+  onClick={() => setAmount(v)}
+  className="flex items-center justify-center gap-1 py-2 rounded-lg bg-dark-card border border-white/10 text-sm text-white hover:border-primary/30 transition-all"
+>
+  <span>{v}</span>
+  <img
+    src={AppCoin}
+    alt="coin"
+    className="w-4 h-4 translate-y-[1px]"
+  />
+</button>
+
                         ))}
                       </div>
                     </div>
