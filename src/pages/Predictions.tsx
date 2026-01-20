@@ -883,11 +883,13 @@ const OpenPredictionsList: React.FC<{
                   predictedOutcome: p?.predictedOutcome || p?.predictedOutcomeChoice,
                   percentage: p.percentage,
                   investmentAmt: p.investmentAmt,
+                  type: p?.type,
                 }}
                 actionLabel={
                   isCancelling === p.orderId ? "Cancelling..." : "Cancel"
                 }
                 onAction={() => handleCancelOrder(p.orderId)}
+                type={p?.type}
               />
             </div>
           ))}

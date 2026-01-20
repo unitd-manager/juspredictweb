@@ -20,6 +20,7 @@ users?:string| number;
 
   investmentAmt?: number | string;
   potentialReturns?: number | string;
+  type?: number;
 }
 
 /* ---------------- HELPERS ---------------- */
@@ -98,15 +99,18 @@ export const PredictionCard = ({
   actionLabel = "Exit Prediction",
   onOrderDetails,
   orderId,
+  type,
 }: {
   p: ApiPrediction;
   onAction?: () => void;
   actionLabel?: string;
   onOrderDetails?: () => void;
   orderId?: string;
+  type?: number;
 }) => {
   const teams = splitTeams(p.eventName);
   const pct = Math.max(0, Math.min(100, Number(p.percentage ?? 0)));
+  const isCancelModified = type === 2;
 
 console.log('p',p);
   return (
@@ -194,9 +198,9 @@ console.log('p',p);
             )}
             <Button
               onClick={onAction}
-              className="bg-green-500 hover:bg-green-600 px-4 py-1 text-xs w-full"
+              className={isCancelModified ? "bg-orange-500 hover:bg-orange-600 px-4 py-1 text-xs w-full" : "bg-green-500 hover:bg-green-600 px-4 py-1 text-xs w-full"}
             >
-              {actionLabel}
+              {isCancelModified ? "Cancel Modified Prediction" : actionLabel}
             </Button>
           </div>
         </div>
