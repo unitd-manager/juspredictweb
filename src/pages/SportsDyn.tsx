@@ -917,6 +917,11 @@ console.log('items live',items);
     // Filter by predictedOutcomeChoice = "yes"
     const predictedOutcomeChoice = String(p?.predictedOutcomeChoice || "").toLowerCase();
     if (predictedOutcomeChoice !== "yes") return false;
+
+        
+    // Exclude closed events
+    const eventStatus = String(p?.eventStatus || "");
+    if (eventStatus === "PREDICTION_EVENT_STATUS_CLOSED") return false;
     
     // Filter by tournament if selected
     if (selectedTournamentId) {
@@ -1105,6 +1110,11 @@ const OpenPredictionsList: React.FC<{ onOpen: (p: any, event: any) => void; sele
   // Filter items by selected sport and tournament
   const filteredItems = items.filter((p: any) => {
     const event = eventsMap[String(p?.eventId || "")] || {};
+
+        
+    // Exclude closed events
+    const eventStatus = String(p?.eventStatus || "");
+    if (eventStatus === "PREDICTION_EVENT_STATUS_CLOSED") return false;
     
     // Filter by tournament if selected
     if (selectedTournamentId) {
