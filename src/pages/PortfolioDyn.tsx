@@ -11,7 +11,7 @@ import {
   Tooltip,
 } from "recharts";
 import { PageHeader } from "../components/PageHeader";
-
+import AppCoin from "../assets/appCoin.svg"
 /* ---------------------------------------------------
    HELPERS
 --------------------------------------------------- */
@@ -339,33 +339,66 @@ const PortfolioDyn: React.FC = () => {
             {/* Total Portfolio Value */}
             <div className="flex-1 min-w-[200px] bg-dark-card border border-white/5 rounded-2xl p-6 flex flex-col items-center justify-center">
               <h2 className="text-sm text-gray-text mb-2">Total Portfolio Value</h2>
-              <p className="text-2xl font-bold text-white">
-                ${Number(data.totalValue).toLocaleString(undefined, { minimumFractionDigits: 2 })}
-              </p>
-              <span className="text-primary font-semibold mt-1">
-                {data.todayChange >= 0 ? "+" : "-"}${Math.abs(data.todayChange).toLocaleString(undefined, { minimumFractionDigits: 2 })}
-              </span>
+              <p className="text-2xl font-bold text-white flex items-center justify-center gap-1">
+  <span>
+    {Number(data.totalValue).toLocaleString(undefined, {
+      minimumFractionDigits: 2,
+    })}
+  </span>
+  <img src={AppCoin} alt="coin" className="w-4 h-4 translate-y-[1px]" />
+</p>
+
+            <span className="text-primary font-semibold mt-1 flex items-center justify-center gap-1">
+  <span>
+    {data.todayChange >= 0 ? "+" : "-"}
+    {Math.abs(data.todayChange).toLocaleString(undefined, {
+      minimumFractionDigits: 2,
+    })}
+  </span>
+  <img src={AppCoin} alt="coin" className="w-4 h-4 translate-y-[1px]" />
+</span>
+
             </div>
             {/* Available Balance */}
             <div className="flex-1 min-w-[200px] bg-dark-card border border-white/5 rounded-2xl p-6 flex flex-col items-center justify-center">
               <h2 className="text-sm text-gray-text mb-2">Available Balance</h2>
-              <p className="text-2xl font-bold text-white">
-                ${Number(data.availableBalance).toLocaleString(undefined, { minimumFractionDigits: 2 })}
-              </p>
+             <p className="text-2xl font-bold text-white flex items-center justify-center gap-1">
+  <span>
+    {Number(data.availableBalance).toLocaleString(undefined, {
+      minimumFractionDigits: 2,
+    })}
+  </span>
+  <img src={AppCoin} alt="coin" className="w-4 h-4 translate-y-[1px]" />
+</p>
+
             </div>
             {/* Unrealized P&L */}
             <div className="flex-1 min-w-[200px] bg-dark-card border border-white/5 rounded-2xl p-6 flex flex-col items-center justify-center">
               <h2 className="text-sm text-gray-text mb-2">UnRealized P&L</h2>
-              <p className="text-2xl font-bold text-primary">
-                {data.unrealizedPnl >= 0 ? "+" : "-"}${Math.abs(data.unrealizedPnl).toLocaleString(undefined, { minimumFractionDigits: 2 })}
-              </p>
+            <p className="text-2xl font-bold text-primary flex items-center justify-center gap-1">
+  <span>
+    {data.unrealizedPnl >= 0 ? "+" : "-"}
+    {Math.abs(data.unrealizedPnl).toLocaleString(undefined, {
+      minimumFractionDigits: 2,
+    })}
+  </span>
+  <img src={AppCoin} alt="coin" className="w-4 h-4 translate-y-[1px]" />
+</p>
+
             </div>
             {/* Realized P&L */}
             <div className="flex-1 min-w-[200px] bg-dark-card border border-white/5 rounded-2xl p-6 flex flex-col items-center justify-center">
               <h2 className="text-sm text-gray-text mb-2">Realized P&L</h2>
-              <p className="text-2xl font-bold text-primary">
-                {data.realizedPnl >= 0 ? "+" : "-"}${Math.abs(data.realizedPnl).toLocaleString(undefined, { minimumFractionDigits: 2 })}
-              </p>
+             <p className="text-2xl font-bold text-primary flex items-center justify-center gap-1">
+  <span>
+    {data.realizedPnl >= 0 ? "+" : "-"}
+    {Math.abs(data.realizedPnl).toLocaleString(undefined, {
+      minimumFractionDigits: 2,
+    })}
+  </span>
+  <img src={AppCoin} alt="coin" className="w-4 h-4 translate-y-[1px]" />
+</p>
+
             </div>
           </div>
 
@@ -472,9 +505,20 @@ const PortfolioDyn: React.FC = () => {
                         >
                           {p.average}
                         </td>
-                        <td className="py-4 px-4 text-center">${p.current.toFixed(2)}</td>
-                        <td className="py-4 px-4 text-center">${p.price.toFixed(2)}</td>
-                      </tr>
+                    <td className="py-4 px-4 text-center">
+  <div className="flex items-center justify-center gap-1">
+    <span>{p.current.toFixed(2)}</span>
+    <img src={AppCoin} alt="coin" className="w-4 h-4" />
+  </div>
+</td>
+
+<td className="py-4 px-4 text-center">
+  <div className="flex items-center justify-center gap-1">
+    <span>{p.price.toFixed(2)}</span>
+    <img src={AppCoin} alt="coin" className="w-4 h-4" />
+  </div>
+</td>
+  </tr>
                     ));
                   })()}
                 </tbody>

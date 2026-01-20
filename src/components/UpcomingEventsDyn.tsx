@@ -398,7 +398,8 @@ import { CheckCircle } from "lucide-react"
 import { Button } from "./ui/Button"
 import { useEffect, useState } from "react"
 import { api } from "../api/api"
-
+//import AppCoin from "@/assets/appCoin.svg";
+import AppCoin from "../assets/appCoin.svg";
 /* ---------------- TYPES ---------------- */
 
 export interface QuestionOption {
@@ -501,7 +502,12 @@ console.log('question',question);
     return isNaN(n) ? 0 : n
   }
 
-  const formatCurrency = (n: number) => `$${n.toFixed(2)}`;
+const formatCurrency = (n: number) => (
+  <span className="flex items-center gap-1">
+    {n.toFixed(2)}
+    <img src={AppCoin} alt="coin" className="w-4 h-4" />
+  </span>
+);
   const handlePredict = async () => {
     if (!question || !selectedOutcome || amount <= 0) return
 
@@ -658,17 +664,19 @@ return (
           </div>
         )}
 
-        <div className="mt-3 grid grid-cols-4 gap-2">
-          {(["10", "50", "100", "500"] as const).map((v) => (
-            <button
-              key={v}
-              onClick={() => setAmount(Number(v))}
-              className="py-2 rounded-lg bg-dark-card border border-white/10 text-sm text-white hover:border-primary/30 transition-all"
-            >
-              ${v}
-            </button>
-          ))}
-        </div>
+      <div className="mt-3 grid grid-cols-4 gap-2">
+  {(["10", "50", "100", "500"] as const).map((v) => (
+    <button
+      key={v}
+      onClick={() => setAmount(Number(v))}
+      className="flex items-center justify-center gap-1 py-2 rounded-lg bg-dark-card border border-white/10 text-sm text-white hover:border-primary/30 transition-all"
+    >
+      <span>{v}</span>
+      <img src={AppCoin} alt="coin" className="w-4 h-4" />
+    </button>
+  ))}
+</div>
+
       </div>
 
       {/* Potential Returns */}
