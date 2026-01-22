@@ -1148,7 +1148,25 @@ const OpenPredictionsList: React.FC<{ onOpen: (p: any, event: any) => void; sele
         const pctText = isFinite(pctNum) ? `${Math.max(0, Math.min(100, Math.round(pctNum)))}%` : "--%";
         const matched = Number(p?.matchedAmt ?? 0);
         const invest = Number(p?.investmentAmt ?? 0);
-        const matchedText = isFinite(matched) && isFinite(invest) && invest > 0 ? `${matched.toFixed(2)}/${invest.toFixed(2)} is matched` : "--";
+        const predictedOutcome = String(p?.predictedOutcome ?? p?.predictedOutcome?.predictedOutcome ?? "").trim();
+       
+        //const matchedText = isFinite(matched) && isFinite(invest) && invest > 0 ? `${matched.toFixed(2)}/${invest.toFixed(2)} is matched` : "--";
+          const matchedText =
+  isFinite(matched) && isFinite(invest) && invest > 0 ? (
+    <span className="flex items-center gap-1">
+      <span>
+        {matched.toFixed(2)}/{invest.toFixed(2)}
+      </span>
+      <img
+        src={AppCoin}
+        alt="coin"
+        className="w-4 h-4 translate-y-[1px]"
+      />
+      <span>is matched</span>
+    </span>
+  ) : (
+    "--"
+  );
         return (
           <div key={p?.predictionId || idx} className="rounded-2xl border border-white/10 bg-dark-card p-4">
             <div className="flex items-center justify-between">
@@ -1161,11 +1179,11 @@ const OpenPredictionsList: React.FC<{ onOpen: (p: any, event: any) => void; sele
               {isAccepted && <Badge className="text-green-300">Accepted</Badge>}
             </div>
             <div className="mt-2 text-gray-text text-sm flex items-center gap-2">
-              <span>{outcome || "--"}</span>
+              <span>Predicted:{predictedOutcome || "--"}</span>
               <span>•</span>
               <span>{pctText}</span>
               <span>•</span>
-              <span className="inline-flex items-center gap-1"><DollarSign className="w-4 h-4" /> {matchedText}</span>
+              <span className="inline-flex items-center gap-1"> {matchedText}</span>
             </div>
             <div className="flex gap-3 mt-4">
               <Button 
@@ -1357,7 +1375,20 @@ const CompletedPredictionsList: React.FC<{ onOpen: (p: any, event: any) => void;
             const question = p?.question || "Question";
             const predictedOutcome = p?.predictedOutcome || p?.predictedOutcomeChoice || "";
             const percentage = Number(p?.percentage || 0);
-            const investmentAmt = Number(p?.investmentAmt || 0);
+            //const investmentAmt = Number(p?.investmentAmt || 0);
+              const investmentAmt =
+    <span className="flex items-center gap-1">
+      <span>
+        {Number(p?.investmentAmt || 0)}
+      </span>
+      <img
+        src={AppCoin}
+        alt="coin"
+        className="w-4 h-4 translate-y-[1px]"
+      />
+     
+    </span>
+  
             const earnings = Number(p?.earnings || 0);
             const predictionOutcome = String(p?.predictionOutcome || "");
             const daysAgo = p?.eventStartDate ? Math.floor((Date.now() - new Date(p.eventStartDate).getTime()) / (1000 * 60 * 60 * 24)) : 0;
@@ -1380,12 +1411,12 @@ const CompletedPredictionsList: React.FC<{ onOpen: (p: any, event: any) => void;
 
                 {/* Prediction details row */}
                 <div className="flex items-center gap-3 mb-4 text-sm">
-                  <span className="text-gray-text">{predictedOutcome}</span>
+                  <span className="text-gray-text">Predicted: {predictedOutcome}</span>
                   <span className="text-gray-text">•</span>
                   <span className="text-white font-medium">{percentage}%</span>
                   <span className="text-gray-text">•</span>
                   <span className="text-gray-text inline-flex items-center gap-1">
-                    <DollarSign className="w-3 h-3" />
+                 
                     {investmentAmt}
                   </span>
                 </div>
@@ -1517,11 +1548,23 @@ const CancelledPredictionsList: React.FC<{ onOpen: (p: any, event: any) => void;
         const question = p?.question || "Question";
         const predictedOutcome = p?.predictedOutcome || p?.predictedOutcomeChoice || "";
         const percentage = Number(p?.percentage || 0);
-        const investmentAmt = Number(p?.investmentAmt || 0);
+        //const investmentAmt = Number(p?.investmentAmt || 0);
+        const investmentAmt =
+    <span className="flex items-center gap-1">
+      <span>
+        {Number(p?.investmentAmt || 0)}
+      </span>
+      <img
+        src={AppCoin}
+        alt="coin"
+        className="w-4 h-4 translate-y-[1px]"
+      />
+     
+    </span>
         const matchedAmt = Number(p?.matchedAmt || 0);
         const daysAgo = p?.eventStartDate ? Math.floor((Date.now() - new Date(p.eventStartDate).getTime()) / (1000 * 60 * 60 * 24)) : 0;
         const isClosed = false; // Exited events show as exited, not closed
-        const statusLabel = "Exited";
+        const statusLabel = "Matched";
 
         return (
           <div key={p?.predictionId || idx} className="rounded-xl border border-white/10 bg-dark-card p-5 hover:border-primary/30 transition-all">
@@ -1547,7 +1590,7 @@ const CancelledPredictionsList: React.FC<{ onOpen: (p: any, event: any) => void;
               <span className="text-white font-medium">{percentage}%</span>
               <span className="text-gray-text">•</span>
               <span className="text-gray-text inline-flex items-center gap-1">
-                <DollarSign className="w-3 h-3" />
+                
                 {investmentAmt}
               </span>
             </div>
@@ -1682,11 +1725,29 @@ const ExitedPredictionsList: React.FC<{ onOpen: (p: any, event: any) => void; se
         const isExited = status === "PREDICTION_STATUS_EXITED";
         const eventDes = p?.eventDescription;
         const outcome = String(p?.eventShortName ?? p?.predictedOutcome ?? p?.predictionDetails?.selectedPredictionOutcome ?? p?.selectedPredictionOutcome ?? "").trim();
+       const predictedOutcome = String(p?.predictedOutcome ?? p?.predictedOutcome ?? p?.predictionDetails?.selectedPredictionOutcome ?? p?.selectedPredictionOutcome ?? "").trim();
+        
         const pctNum = Number(p?.percentage ?? p?.exitPercentage ?? 0);
         const pctText = isFinite(pctNum) ? `${Math.max(0, Math.min(100, Math.round(pctNum)))}%` : "--%";
         const matched = Number(p?.matchedAmt ?? 0);
         const invest = Number(p?.investmentAmt ?? 0);
-        const matchedText = isFinite(matched) && isFinite(invest) && invest > 0 ? `${matched.toFixed(2)}/${invest.toFixed(2)} is matched` : "--";
+        //const matchedText = isFinite(matched) && isFinite(invest) && invest > 0 ? `${matched.toFixed(2)}/${invest.toFixed(2)} is matched` : "--";
+         const matchedText =
+  isFinite(matched) && isFinite(invest) && invest > 0 ? (
+    <span className="flex items-center gap-1">
+      <span>
+        {matched.toFixed(2)}/{invest.toFixed(2)}
+      </span>
+      <img
+        src={AppCoin}
+        alt="coin"
+        className="w-4 h-4 translate-y-[1px]"
+      />
+      <span>is matched</span>
+    </span>
+  ) : (
+    "--"
+  );
         return (
           <div key={p?.predictionId || idx} className="rounded-2xl border border-white/10 bg-dark-card p-4">
             <div className="flex items-center justify-between">
@@ -1699,11 +1760,11 @@ const ExitedPredictionsList: React.FC<{ onOpen: (p: any, event: any) => void; se
               {isExited && <Badge className="text-gray-text">Exited</Badge>}
             </div>
             <div className="mt-2 text-gray-text text-sm flex items-center gap-2">
-              <span>{outcome || "--"}</span>
+              <span>Predicted: {predictedOutcome || "--"}</span>
               <span>•</span>
               <span>{pctText}</span>
               <span>•</span>
-              <span className="inline-flex items-center gap-1"><DollarSign className="w-4 h-4" /> {matchedText}</span>
+              <span className="inline-flex items-center gap-1"> {matchedText}</span>
             </div>
             <Button 
               onClick={() => navigate(`/order-details/${p?.orderId}`)}
@@ -2263,8 +2324,8 @@ const formatCurrency = (n: number) => (
         setSuccessMessage('Prediction created successfully!');
         setSelectedOutcome(null);
         setAmount('');
-        setSelectedQuestion(null);
-        setSelectedEventId(null);
+        // setSelectedQuestion(null);
+        // setSelectedEventId(null);
         setErrorMsg('');
         fetchBalance();
       } else {
@@ -2902,11 +2963,11 @@ const handleExitPrediction = async () => {
                     <button
                       onClick={() => {
                         setSuccessMessage(null);
-                        setSelectedQuestion(null);
+                       // setSelectedQuestion(null);
                         setSelectedOutcome(null);
                         setAmount('');
                         setConfidenceOverride(null);
-                        setSelectedEventId(null);
+                       // setSelectedEventId(null);
                         setErrorMsg('');
                         setSelectedTeams(null);
                         setBalance(null);
