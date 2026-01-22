@@ -917,6 +917,11 @@ console.log('items live',items);
     // Filter by predictedOutcomeChoice = "yes"
     const predictedOutcomeChoice = String(p?.predictedOutcomeChoice || "").toLowerCase();
     if (predictedOutcomeChoice !== "yes") return false;
+
+        
+    // Exclude closed events
+    const eventStatus = String(p?.eventStatus || "");
+    if (eventStatus === "PREDICTION_EVENT_STATUS_CLOSED") return false;
     
     // Filter by tournament if selected
     if (selectedTournamentId) {
@@ -1105,6 +1110,11 @@ const OpenPredictionsList: React.FC<{ onOpen: (p: any, event: any) => void; sele
   // Filter items by selected sport and tournament
   const filteredItems = items.filter((p: any) => {
     const event = eventsMap[String(p?.eventId || "")] || {};
+
+        
+    // Exclude closed events
+    const eventStatus = String(p?.eventStatus || "");
+    if (eventStatus === "PREDICTION_EVENT_STATUS_CLOSED") return false;
     
     // Filter by tournament if selected
     if (selectedTournamentId) {
@@ -1189,9 +1199,9 @@ const OpenPredictionsList: React.FC<{ onOpen: (p: any, event: any) => void; sele
               <Button 
                 onClick={() => handleCancelOrder(p?.orderId)}
                 disabled={isCancelling === (p?.orderId)}
-                className="flex-1 bg-red-500 text-white hover:bg-red-600 disabled:opacity-50"
+                className={`flex-1 text-white disabled:opacity-50 ${p?.type === 2 ? 'bg-orange-500 hover:bg-orange-600' : 'bg-red-500 hover:bg-red-600'}`}
               >
-                {isCancelling === (p?.orderId) ? 'Cancelling...' : 'Cancel'}
+                {isCancelling === (p?.orderId) ? (p?.type === 2 ? 'Cancelling Modified...' : 'Cancelling...') : (p?.type === 2 ? 'Cancel Modified Prediction' : 'Cancel')}
               </Button>
               <Button 
                 onClick={() => navigate(`/order-details/${p?.orderId}`)}

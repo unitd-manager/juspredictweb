@@ -610,6 +610,9 @@ console.log('items',items)
     const predictedOutcomeChoice = p?.predictedOutcomeChoice || "";
     if (predictedOutcomeChoice.toLowerCase() !== "yes") return false;
 
+    const eventStatus = String(p?.eventStatus || "");
+    if (eventStatus === "PREDICTION_EVENT_STATUS_CLOSED") return false;
+
     if (selectedTournamentId) {
       const parentId = String(event?.parentEventId || "");
       if (parentId !== selectedTournamentId) return false;
@@ -816,6 +819,9 @@ const OpenPredictionsList: React.FC<{
   const filteredItems = items.filter((p: any) => {
     const event = eventsMap[String(p?.eventId || "")] || {};
 
+    const eventStatus = String(p?.eventStatus || "");
+    if (eventStatus === "PREDICTION_EVENT_STATUS_CLOSED") return false;
+
     if (selectedTournamentId) {
       if (String(event?.parentEventId || "") !== selectedTournamentId)
         return false;
@@ -877,11 +883,13 @@ const OpenPredictionsList: React.FC<{
                   predictedOutcome: p?.predictedOutcome || p?.predictedOutcomeChoice,
                   percentage: p.percentage,
                   investmentAmt: p.investmentAmt,
+                  type: p?.type,
                 }}
                 actionLabel={
                   isCancelling === p.orderId ? "Cancelling..." : "Cancel"
                 }
                 onAction={() => handleCancelOrder(p.orderId)}
+                type={p?.type}
               />
             </div>
           ))}
