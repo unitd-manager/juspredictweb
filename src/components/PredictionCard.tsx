@@ -3,7 +3,7 @@ import { TrendingUp, Clock, User2Icon } from "lucide-react";
 import { Card } from "./ui/Card";
 import { Button } from "./ui/Button";
 import { Progress } from "./ui/progress";
-
+import AppCoin from '../assets/appCoin.svg';
 /* ---------------- TYPES ---------------- */
 
 export interface ApiPrediction {
@@ -32,6 +32,12 @@ const splitTeams = (name?: string) => {
     right: parts[1]?.trim() || "--",
   };
 };
+const CoinAmount = ({ amount }) => (
+  <span className="flex items-center gap-1 font-semibold">
+    {Number(amount || 0).toLocaleString()}
+    <img src={AppCoin} className="w-4 h-4" />
+  </span>
+);
 
 const getFlag = (team: string) => {
   if (/india/i.test(team)) return "🇮🇳";
@@ -161,14 +167,18 @@ console.log('p',p);
             <span className="bg-gray-900/60 px-2 py-1 rounded">
               Invested:
               <span className="text-white font-semibold ml-1">
-                ₹ {p.investmentAmt ?? "--"}
+            
+                <CoinAmount amount={p?.investmentAmt} />
+
               </span>
             </span>
 
             <span className="bg-gray-900/60 px-2 py-1 rounded">
               Returns:
               <span className="text-white font-semibold ml-1">
-                ₹ {p.potentialReturns ?? "--"}
+               
+                <CoinAmount amount={p?.potentialReturns} />
+
               </span>
             </span>
           </div>

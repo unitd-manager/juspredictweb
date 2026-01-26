@@ -951,6 +951,8 @@ console.log('items live',items);
     <div className="space-y-4">
       {filteredItems.map((p: any, idx: number) => {
         // Event data available from eventsMap if needed
+        
+        const eventDes = p?.eventDescription;
         const eventDate = new Date(p?.eventStartDate);
         const today = new Date();
         const diffTime = Math.abs(eventDate.getTime() - today.getTime());
@@ -982,7 +984,7 @@ console.log('items live',items);
         return (
           <div key={p?.predictionId || idx} className="rounded-2xl border border-white/10 bg-dark-card p-4">
             <div className="flex items-center justify-between">
-              <div className="text-white font-semibold"> <span className="text-gray-text font-medium">Predicted:</span>{outcome || "--"}</div>
+              <div className="text-white font-semibold"> {eventDes}</div>
               <Badge variant="secondary" className="text-red-300">Match starts in {startsIn}</Badge>
             </div>
             <div className="my-3 border-t border-white/10" />
@@ -1180,7 +1182,7 @@ const OpenPredictionsList: React.FC<{ onOpen: (p: any, event: any) => void; sele
         return (
           <div key={p?.predictionId || idx} className="rounded-2xl border border-white/10 bg-dark-card p-4">
             <div className="flex items-center justify-between">
-              <div className="text-white font-semibold">{outcome || "--"} {eventDes}</div>
+              <div className="text-white font-semibold"> {eventDes}</div>
               <Badge variant="secondary" className="text-red-300">Match starts in {startsIn}</Badge>
             </div>
             <div className="my-3 border-t border-white/10" />
@@ -1571,7 +1573,15 @@ const CancelledPredictionsList: React.FC<{ onOpen: (p: any, event: any) => void;
       />
      
     </span>
-        const matchedAmt = Number(p?.matchedAmt || 0);
+        const matchedAmt =  <span className="flex items-center gap-1">
+      <span>{Number(p?.matchedAmt || 0)}</span>
+      <img
+        src={AppCoin}
+        alt="coin"
+        className="w-4 h-4 translate-y-[1px]"
+      />
+     
+    </span>;
         const daysAgo = p?.eventStartDate ? Math.floor((Date.now() - new Date(p.eventStartDate).getTime()) / (1000 * 60 * 60 * 24)) : 0;
         const isClosed = false; // Exited events show as exited, not closed
         const statusLabel = "Matched";
@@ -1614,7 +1624,7 @@ const CancelledPredictionsList: React.FC<{ onOpen: (p: any, event: any) => void;
             <div className="bg-dark-lighter rounded-lg p-3 border border-white/5 flex items-start gap-3 text-sm text-gray-text">
               <AlertCircle className="w-4 h-4 flex-shrink-0 mt-0.5 text-orange-400" />
               <span>
-                You predicted {investmentAmt} JP coins. Out of these, {matchedAmt.toFixed(1)} have been exited, and the remaining have been cancelled.
+                You predicted {investmentAmt} . Out of these, {matchedAmt} have been matched, and the remaining have been cancelled.
               </span>
             </div>
 
