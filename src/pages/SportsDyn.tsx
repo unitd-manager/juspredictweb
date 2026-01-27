@@ -1562,7 +1562,7 @@ const CancelledPredictionsList: React.FC<{ onOpen: (p: any, event: any) => void;
         const percentage = Number(p?.percentage || 0);
         //const investmentAmt = Number(p?.investmentAmt || 0);
         const investmentAmt =
-    <span className="flex items-center gap-1">
+    <span className="inline-flex items-center gap-1">
       <span>
         {Number(p?.investmentAmt || 0)}
       </span>
@@ -1573,7 +1573,7 @@ const CancelledPredictionsList: React.FC<{ onOpen: (p: any, event: any) => void;
       />
      
     </span>
-        const matchedAmt =  <span className="flex items-center gap-1">
+        const matchedAmt =  <span className="inline-flex items-center gap-1">
       <span>{Number(p?.matchedAmt || 0)}</span>
       <img
         src={AppCoin}
