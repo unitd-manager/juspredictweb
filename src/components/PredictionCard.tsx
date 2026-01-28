@@ -32,7 +32,7 @@ const splitTeams = (name?: string) => {
     right: parts[1]?.trim() || "--",
   };
 };
-const CoinAmount = ({ amount }) => (
+const CoinAmount = ({ amount }: { amount: number | string | undefined }) => (
   <span className="flex items-center gap-1 font-semibold">
     {Number(amount || 0).toLocaleString()}
     <img src={AppCoin} className="w-4 h-4" />

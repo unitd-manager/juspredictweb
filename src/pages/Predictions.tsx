@@ -1696,7 +1696,7 @@ console.log('selectedPrediction',selectedPrediction);
   const [expandedSport, setExpandedSport] = React.useState<string | null>(null);
   const [sportTournaments, setSportTournaments] = React.useState<Record<string, any[]>>({});
   const [loadingTournaments, setLoadingTournaments] = React.useState<Record<string, boolean>>({});
-  const [tournamentChildEventCounts, setTournamentChildEventCounts] = React.useState<Record<string, number>>({});
+  const [tournamentChildEventCounts, setTournamentChildEventCounts] = React.useState<Record<string, number | null>>({});
   const [sportTournamentCounts, setSportTournamentCounts] = React.useState<Record<string, number>>({});
 
   // State for selected tournament and its child events
@@ -1747,34 +1747,60 @@ console.log('selectedPrediction',selectedPrediction);
         pageNumber++;
       }
 
-      // Fetch child event counts for each tournament
-      const countMap: Record<string, number> = {};
+      // Display tournaments immediately without waiting for counts
+      setSportTournaments(prev => ({ ...prev, [sportName]: allTournaments }));
+      setSportTournamentCounts(prev => ({ ...prev, [sportName]: allTournaments.length }));
+
+      // Initialize counts as null (loading indicator)
+      const loadingCountMap: Record<string, null> = {};
       for (const tournament of allTournaments) {
         const tournamentId = String(tournament.id ?? tournament.eventId ?? '');
         if (tournamentId) {
-          try {
-            const countRes = await api.post<any>('/event/v1/listevents', {
-              status: [
-                'EVENT_STATUS_UPCOMING',
-                'EVENT_STATUS_ACTIVE',
-                'EVENT_STATUS_COMPLETED',
-              ],
-              category: 'EVENT_CATEGORY_SPORTS',
-              parentEventId: tournamentId,
-              pageNumber: 1,
-              pageSize: 1, // We only need the totalCount, not actual events
-            });
-            countMap[tournamentId] = countRes?.totalCount || 0;
-          } catch (e) {
-            console.error(`Failed to fetch count for tournament ${tournamentId}`, e);
-            countMap[tournamentId] = 0;
-          }
+          loadingCountMap[tournamentId] = null;
         }
       }
+      setTournamentChildEventCounts(prev => ({ ...prev, ...loadingCountMap }));
 
-      setSportTournaments(prev => ({ ...prev, [sportName]: allTournaments }));
-      setTournamentChildEventCounts(prev => ({ ...prev, ...countMap }));
-      setSportTournamentCounts(prev => ({ ...prev, [sportName]: allTournaments.length }));
+      // Fetch child event counts in batches of 5 for faster completion
+      const countMap: Record<string, number> = {};
+      const batchSize = 5;
+      const fetchBatch = async (tournaments: any[]) => {
+        for (let i = 0; i < tournaments.length; i += batchSize) {
+          const batch = tournaments.slice(i, i + batchSize);
+          await Promise.all(
+            batch.map(async (tournament) => {
+              const tournamentId = String(tournament.id ?? tournament.eventId ?? '');
+              if (tournamentId) {
+                try {
+                  const countRes = await api.post<any>('/event/v1/listevents', {
+                    status: [
+                      'EVENT_STATUS_UPCOMING',
+                      'EVENT_STATUS_ACTIVE',
+                      'EVENT_STATUS_COMPLETED',
+                    ],
+                    category: 'EVENT_CATEGORY_SPORTS',
+                    parentEventId: tournamentId,
+                    pageNumber: 1,
+                    pageSize: 1,
+                  });
+                  countMap[tournamentId] = countRes?.totalCount || 0;
+                  // Update state after each successful fetch for immediate UI feedback
+                  setTournamentChildEventCounts(prev => ({ ...prev, [tournamentId]: countRes?.totalCount || 0 }));
+                } catch (e) {
+                  console.error(`Failed to fetch count for tournament ${tournamentId}`, e);
+                  countMap[tournamentId] = 0;
+                  setTournamentChildEventCounts(prev => ({ ...prev, [tournamentId]: 0 }));
+                }
+              }
+            })
+          );
+        }
+      };
+      
+      fetchBatch(allTournaments).catch(err => {
+        console.error('Error updating tournament counts:', err);
+      });
+
       console.log(`Complete: Fetched ${allTournaments.length} tournaments for sport '${sportName}' (total count: ${totalCount})`);
     } catch (e) {
       console.error('Failed to fetch tournaments for sport', sportName, e);
@@ -2164,7 +2190,7 @@ const navigate = useNavigate();
           <div className="flex flex-col lg:flex-row gap-8">
             {/* Left Sidebar - Sports */}
             <aside className="w-full lg:w-64 lg:flex-shrink-0">
-              <div className="rounded-2xl border border-white/10 bg-white/5 p-4 sticky top-24">
+              <div className="rounded-2xl border border-white/10 bg-white/5 p-4 sticky top-24 max-h-[calc(100vh-6rem)] overflow-y-auto">
               
 
                 <h3 className="text-sm font-semibold text-white mb-3">Sports</h3>
@@ -2248,7 +2274,12 @@ const navigate = useNavigate();
                                       }`}
                                     >
                                       <div className="truncate">{t.shortName}</div>
-                                      <div className="text-xs bg-dark-card px-2 py-0.5 rounded text-white">{tournamentChildEventCounts[String(t.id ?? t.eventId ?? '')] || 0}</div>
+                                      <div className="text-xs bg-dark-card px-2 py-0.5 rounded text-white">
+                                        {tournamentChildEventCounts[String(t.id ?? t.eventId ?? '')] === null 
+                                          ? '...' 
+                                          : tournamentChildEventCounts[String(t.id ?? t.eventId ?? '')] || 0
+                                        }
+                                      </div>
                                     </li>
                                   ))
                                 ) : (
