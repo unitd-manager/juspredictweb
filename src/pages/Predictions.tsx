@@ -6,7 +6,8 @@ import { Button } from '../components/ui/Button';
 import { api } from '../api/api';
 import { Dialog, DialogContent } from '../components/ui/Dialog';
 import { useNavigate } from 'react-router-dom';
-import { PredictionCard } from '../components/PredictionCard';//
+import { PredictionCard } from '../components/PredictionCard';
+import AppCoin from '../assets/appCoin.svg';
 //import { PredictionsCard } from '../components/PredictionsCard';
 
 // Helper function to extract probabilities correctly matched to teams
@@ -1069,7 +1070,20 @@ const CompletedPredictionsList: React.FC<{ onOpen: (p: any, event: any) => void;
             const question = p?.question || "Question";
             const predictedOutcome = p?.predictedOutcome || p?.predictedOutcomeChoice || "";
             const percentage = Number(p?.percentage || 0);
-            const investmentAmt = Number(p?.investmentAmt || 0);
+           // const investmentAmt = Number(p?.investmentAmt || 0);
+               const investmentAmt =
+    <span className="flex items-center gap-1">
+      <span>
+        {Number(p?.investmentAmt || 0)}
+      </span>
+      <img
+        src={AppCoin}
+        alt="coin"
+        className="w-4 h-4 translate-y-[1px]"
+      />
+     
+    </span>
+  
             const potentialReturns = Number(p?.potentialReturns || 0);
             const earnings = Number(p?.earnings || 0);
             const predictionOutcome = String(p?.predictionOutcome || "");
@@ -1093,12 +1107,11 @@ const CompletedPredictionsList: React.FC<{ onOpen: (p: any, event: any) => void;
 
                 {/* Prediction details row */}
                 <div className="flex items-center gap-3 mb-4 text-sm">
-                  <span className="text-gray-text">{predictedOutcome}</span>
+                  <span className="text-gray-text">Predicted: {predictedOutcome}</span>
                   <span className="text-gray-text">•</span>
                   <span className="text-white font-medium">{percentage}%</span>
                   <span className="text-gray-text">•</span>
                   <span className="text-gray-text inline-flex items-center gap-1">
-                    <DollarSign className="w-3 h-3" />
                     {investmentAmt}
                   </span>
                 </div>
@@ -1293,8 +1306,26 @@ const CancelledPredictionsList: React.FC<{
             const predictedOutcome =
               p?.predictedOutcome || p?.predictedOutcomeChoice || "";
             const percentage = Number(p?.percentage || 0);
-            const investmentAmt = Number(p?.investmentAmt || 0);
-            const matchedAmt = Number(p?.matchedAmt || 0);
+         const investmentAmt = (
+  <span className="inline-flex items-center gap-1">
+    <span>{Number(p?.investmentAmt || 0)}</span>
+
+    <img
+      src={AppCoin}
+      alt="coin"
+      className="w-4 h-4 translate-y-[1px]"
+    />
+  </span>
+);
+
+            const matchedAmt =  <span className="inline-flex items-center gap-1">
+      <span>{Number(p?.matchedAmt || 0)}</span> <img
+        src={AppCoin}
+        alt="coin"
+        className="w-4 h-4 translate-y-[1px]"
+      />
+     
+    </span>;
 
             const daysAgo = p?.eventStartDate
               ? Math.floor(
@@ -1334,12 +1365,12 @@ const CancelledPredictionsList: React.FC<{
 
                 {/* Prediction details */}
                 <div className="flex items-center gap-3 mb-4 text-sm">
-                  <span className="text-gray-text">{predictedOutcome}</span>
+                  <span className="text-gray-text">Predicted: {predictedOutcome}</span>
                   <span className="text-gray-text">•</span>
                   <span className="text-white font-medium">{percentage}%</span>
                   <span className="text-gray-text">•</span>
                   <span className="text-gray-text">
-                    ₹ {investmentAmt}
+                    {investmentAmt}
                   </span>
                 </div>
 
@@ -1350,8 +1381,8 @@ const CancelledPredictionsList: React.FC<{
 
                 {/* Info */}
                 <div className="bg-dark-lighter rounded-lg p-3 border border-white/5 text-sm text-gray-text">
-                  You predicted ₹{investmentAmt}. Out of these,
-                  ₹{matchedAmt.toFixed(1)} were matched and the rest cancelled.
+                  You predicted {investmentAmt}. Out of these,
+                  {matchedAmt} were matched and the rest cancelled.
                 </div>
 
                 {/* Time */}
@@ -1527,6 +1558,8 @@ const ExitedPredictionsList: React.FC<{
       {filteredItems.map((p: any, idx: number) => {
         const eventId = String(p?.eventId || "");
         const event = eventsMap[eventId] || {};
+         const predictedOutcome = String(p?.predictedOutcome ?? p?.predictedOutcome ?? p?.predictionDetails?.selectedPredictionOutcome ?? p?.selectedPredictionOutcome ?? "").trim();
+      
         const qName =
           p?.question ||
           p?.questionName ||
@@ -1549,12 +1582,17 @@ const ExitedPredictionsList: React.FC<{
 
             <div className="text-sm text-gray-text mb-2">{qName}</div>
 
-            <div className="text-sm text-gray-text flex items-center gap-2">
+            {/* <div className="text-sm text-gray-text flex items-center gap-2">
               <span>{p?.predictionDetails?.selectedPredictionOutcome}</span>
               <span>•</span>
               <span>{pctText}</span>
+            </div> */}
+ <div className="mt-2 text-gray-text text-sm flex items-center gap-2">
+              <span>Predicted: {predictedOutcome || "--"}</span>
+              <span>•</span>
+              <span>{pctText}</span>
+              
             </div>
-
             <Button
               onClick={() => navigate(`/order-details/${p?.orderId}`)}
               className="mt-4 w-full bg-primary text-dark-bg hover:bg-primary/90"

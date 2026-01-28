@@ -981,7 +981,7 @@ useEffect(() => {
                 {q.question}
               </p>
 
-              <div className="grid grid-cols-2 gap-2 mb-4">
+              {/* <div className="grid grid-cols-2 gap-2 mb-4">
                 {q.options.slice(0, 4).map((opt) => (
                   <button
               key={opt.id}
@@ -996,7 +996,34 @@ useEffect(() => {
 
             </button>
                 ))}
-              </div>
+              </div> */}
+      <div className="flex flex-col gap-2 mb-4">
+  {q.options.slice(0, 4).map((opt) => (
+    <div key={opt.id} className="grid grid-cols-2 gap-2">
+      
+      {/* Label Card */}
+      <div
+        className="p-3 rounded-lg border border-white/10 bg-dark-card
+                   text-sm font-medium text-white"
+      >
+        {opt.label}
+      </div>
+
+      {/* Percentage Card */}
+      <div
+        className="p-3 rounded-lg border border-white/10 bg-dark-card
+                   text-sm text-right text-gray-text"
+      >
+        {opt.percentage != null
+          ? Number(opt.percentage).toFixed(1)
+          : "0.0"}%
+      </div>
+
+    </div>
+  ))}
+</div>
+
+
 
               <div className="flex justify-between items-center text-xs text-gray-400">
                 <span>👥 {q.users}</span>
