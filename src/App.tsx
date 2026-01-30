@@ -25,7 +25,7 @@ import Profile from "./pages/Profile";
 import PortfolioDyn from './pages/PortfolioDyn';
 import TransactionsDyn from './pages/TransactionsDyn';
 import Predictions from './pages/Predictions';
-
+import ProtectedRoute from './components/ProtectedRoute';
 
 function App() {
   const [ selectedSport ] = useState<string | undefined>();
@@ -42,47 +42,105 @@ function App() {
         <div className="min-h-screen bg-dark-bg text-white selection:bg-primary/30 selection:text-primary">
         <Navbar />
         <main>
-          <Routes>
-              {/* {allowedHosts.includes(hostname) && (
-              <>
-                
-              </>
-            )} */}
-            
-            <Route path="/" element={<Home />} />
-            <Route path="/portfoliodyn" element={<Portfolio />} />
-            <Route path="/portfolio" element={<PortfolioDyn />} />
-            <Route path="/predictions" element={<Predictions />} />
-            <Route path="/clanlist" element={<Clan />} />
-            <Route path="/clan/:clanId" element={<ClanDetail onBack={function (): void {
-              throw new Error('Function not implemented.');
-            } } />} />
-            <Route
-                  path="/clan"
-                  element={<Suspense fallback={null}><ClanList /></Suspense>}
-                />
-                <Route
-                  path="/clanDetailDyn/:groupId"
-                  element={<Suspense fallback={null}><ClanDetailDyn /></Suspense>}
-                />
-                <Route
-                  path="/sports"
-                  element={<Suspense fallback={null}><SportsDyn /></Suspense>}
-                  />
-            <Route path="/sportsDyn" element={<Sports selectedSport={selectedSport} />} />
-            <Route path="/about" element={<About />} />
-            <Route path="/faq" element={<Faq />} />
-            <Route path="/contact" element={<Contact />} />
-            <Route path="/transactionsdyn" element={<Transactions />} />
-            <Route path="/transactions" element={<TransactionsDyn />} />
-            <Route path="/order-details/:orderId" element={<OrderDetails />} />
-            <Route path="/login" element={<Login />} />
-            <Route path="/signup" element={<Signup />} />
-            <Route path="/verify-email" element={<VerifyEmail />} />
-            <Route path="/profile" element={<Profile />} />
+       <Routes>
+  {/* PUBLIC ROUTES */}
+  <Route path="/" element={<Home />} />
+  <Route path="/about" element={<About />} />
+  <Route path="/faq" element={<Faq />} />
+  <Route path="/contact" element={<Contact />} />
+  <Route path="/login" element={<Login />} />
+  <Route path="/signup" element={<Signup />} />
+  <Route path="/verify-email" element={<VerifyEmail />} />
 
-            <Route path="*" element={<Home />} />
-          </Routes>
+  {/* 🔒 PROTECTED ROUTES */}
+  <Route path="/portfoliodyn" element={
+    <ProtectedRoute>
+      <Portfolio />
+    </ProtectedRoute>
+  } />
+
+  <Route path="/portfolio" element={
+    <ProtectedRoute>
+      <PortfolioDyn />
+    </ProtectedRoute>
+  } />
+
+  <Route path="/predictions" element={
+    <ProtectedRoute>
+      <Predictions />
+    </ProtectedRoute>
+  } />
+
+  <Route path="/clanlist" element={
+    <ProtectedRoute>
+      <Clan />
+    </ProtectedRoute>
+  } />
+
+  <Route path="/clan/:clanId" element={
+    <ProtectedRoute>
+      <ClanDetail onBack={() => {}} />
+    </ProtectedRoute>
+  } />
+
+  <Route path="/clan" element={
+    <ProtectedRoute>
+      <Suspense fallback={null}>
+        <ClanList />
+      </Suspense>
+    </ProtectedRoute>
+  } />
+
+  <Route path="/clanDetailDyn/:groupId" element={
+    <ProtectedRoute>
+      <Suspense fallback={null}>
+        <ClanDetailDyn />
+      </Suspense>
+    </ProtectedRoute>
+  } />
+
+  <Route path="/sports" element={
+    <ProtectedRoute>
+      <Suspense fallback={null}>
+        <SportsDyn />
+      </Suspense>
+    </ProtectedRoute>
+  } />
+
+  <Route path="/sportsDyn" element={
+    <ProtectedRoute>
+      <Sports selectedSport={selectedSport} />
+    </ProtectedRoute>
+  } />
+
+  <Route path="/transactionsdyn" element={
+    <ProtectedRoute>
+      <Transactions />
+    </ProtectedRoute>
+  } />
+
+  <Route path="/transactions" element={
+    <ProtectedRoute>
+      <TransactionsDyn />
+    </ProtectedRoute>
+  } />
+
+  <Route path="/order-details/:orderId" element={
+    <ProtectedRoute>
+      <OrderDetails />
+    </ProtectedRoute>
+  } />
+
+  <Route path="/profile" element={
+    <ProtectedRoute>
+      <Profile />
+    </ProtectedRoute>
+  } />
+
+  {/* FALLBACK */}
+  <Route path="*" element={<Home />} />
+</Routes>
+
         </main>
         <Footer />
         <Toaster />

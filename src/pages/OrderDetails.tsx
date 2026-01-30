@@ -323,28 +323,28 @@ const OrderDetails: React.FC = () => {
                   <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                     <div className="bg-dark-lighter rounded-lg p-4 border border-white/5">
                       <div className="flex items-center gap-2 mb-1">
-                        <DollarSign className="w-4 h-4 text-gray-text" />
+                        {/* <DollarSign className="w-4 h-4 text-gray-text" /> */}
                         <div className="text-xs text-gray-text font-medium">Investment Amount</div>
                       </div>
                       <div className="text-2xl font-bold text-white">{formatCurrency(orderData.investmentAmt)}</div>
                     </div>
                     <div className="bg-dark-lighter rounded-lg p-4 border border-white/5">
                       <div className="flex items-center gap-2 mb-1">
-                        <DollarSign className="w-4 h-4 text-gray-text" />
+                        {/* <DollarSign className="w-4 h-4 text-gray-text" /> */}
                         <div className="text-xs text-gray-text font-medium">Matched Amount</div>
                       </div>
                       <div className="text-2xl font-bold text-white">{formatCurrency(orderData.matchedAmt)}</div>
                     </div>
-                    <div className="bg-dark-lighter rounded-lg p-4 border border-white/5">
+                    {/* <div className="bg-dark-lighter rounded-lg p-4 border border-white/5">
                       <div className="flex items-center gap-2 mb-1">
                         <DollarSign className="w-4 h-4 text-gray-text" />
                         <div className="text-xs text-gray-text font-medium">Potential Returns</div>
                       </div>
                       <div className="text-2xl font-bold text-primary">{formatCurrency(orderData.potentialReturns)}</div>
-                    </div>
+                    </div> */}
                     <div className="bg-dark-lighter rounded-lg p-4 border border-white/5">
                       <div className="flex items-center gap-2 mb-1">
-                        <DollarSign className="w-4 h-4 text-gray-text" />
+                        {/* <DollarSign className="w-4 h-4 text-gray-text" /> */}
                         <div className="text-xs text-gray-text font-medium">Earnings</div>
                       </div>
                       <div className={`text-2xl font-bold ${Number(orderData.earnings) >= 0 ? 'text-green-400' : 'text-red-400'}`}>

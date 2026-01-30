@@ -777,7 +777,7 @@ const getTabFilters = (tab: string) => {
   const filters: any = {};
 
   if (tab === "live") {
-    filters.status = "EVENT_STATUS_LIVE";
+    filters.status = "EVENT_STATUS_ACTIVE";
   }
 
   if (tab === "upcoming") {
@@ -809,7 +809,7 @@ const buildPayload = (reset = false) => {
 
   // 🟢 Live / 🔵 Upcoming (EVENT STATUS)
   if (activeTab === "live") {
-    payload.eventStatus = ["EVENT_STATUS_LIVE"];
+    payload.eventStatus = ["EVENT_STATUS_ACTIVE"];
   }
 
   if (activeTab === "upcoming") {

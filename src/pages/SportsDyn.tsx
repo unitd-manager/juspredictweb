@@ -2094,6 +2094,13 @@ const formatCurrency = (n: number) => (
     <img src={AppCoin} alt="coin" className="w-4 h-4 translate-y-[1px]" />
   </span>
 );
+const formatProfitCurrency = (n: number) => (
+  <span className="inline-flex items-center gap-1 whitespace-nowrap">
+    <span>+</span>
+    <span>{n.toFixed(2)}</span>
+    <img src={AppCoin} alt="coin" className="w-4 h-4 translate-y-[1px]" />
+  </span>
+);
 
 
   const fetchBalance = async () => {
@@ -2988,6 +2995,7 @@ const handleExitPrediction = async () => {
                         setAmount('');
                         setConfidenceOverride(null);
                        // setSelectedEventId(null);
+                       setSelectedAction(null);
                         setErrorMsg('');
                         setSelectedTeams(null);
                         setBalance(null);
@@ -3117,7 +3125,7 @@ const handleExitPrediction = async () => {
                               </div>
                               <div className="flex justify-between">
                                 <span className="text-gray-text">Potential Profit</span>
-                                <span className="text-primary font-semibold">+{formatCurrency(profit)}</span>
+                                <span className="text-primary font-semibold">{formatProfitCurrency(profit)}</span>
                               </div>
                               <div className="flex justify-between pt-2 border-t border-white/10">
                                 <span className="text-white">Total Return</span>
@@ -3261,24 +3269,36 @@ const handleExitPrediction = async () => {
                           const totalReturn = amt + profit;
 
                           return (
-                            <div className="space-y-2 text-xs">
-                              <div className="flex justify-between">
-                                <span className="text-gray-text">Investment</span>
-                                <span className="text-white font-medium">{formatCurrency(amt)}</span>
-                              </div>
-                              <div className="flex justify-between">
-                                <span className="text-gray-text">Prediction</span>
-                                <span className="text-white font-medium">{formatPercent(confPct)}</span>
-                              </div>
-                              <div className="flex justify-between">
-                                <span className="text-gray-text">Potential Profit</span>
-                                <span className="text-primary font-semibold">+{formatCurrency(profit)}</span>
-                              </div>
-                              <div className="flex justify-between pt-2 border-t border-white/10">
-                                <span className="text-white">Total Return</span>
-                                <span className="text-white font-semibold">{formatCurrency(totalReturn)}</span>
-                              </div>
-                            </div>
+                            <div className="space-y-2 text-xs min-w-0 w-full">
+  <div className="grid grid-cols-[1fr_auto] items-center">
+    <span className="text-gray-text">Investment</span>
+    <span className="text-white font-medium whitespace-nowrap">
+      {formatCurrency(amt)}
+    </span>
+  </div>
+
+  <div className="grid grid-cols-[1fr_auto] items-center">
+    <span className="text-gray-text">Prediction</span>
+    <span className="text-white font-medium whitespace-nowrap">
+      {formatPercent(confPct)}
+    </span>
+  </div>
+
+  <div className="grid grid-cols-[1fr_auto] items-center">
+    <span className="text-gray-text">Potential Profit</span>
+    <span className="text-primary font-semibold whitespace-nowrap">
+      {formatProfitCurrency(profit)}
+    </span>
+  </div>
+
+  <div className="grid grid-cols-[1fr_auto] items-center pt-2 border-t border-white/10">
+    <span className="text-white">Total Return</span>
+    <span className="text-white font-semibold whitespace-nowrap">
+      {formatCurrency(totalReturn)}
+    </span>
+  </div>
+</div>
+
                           );
                         })()}
                       </div>

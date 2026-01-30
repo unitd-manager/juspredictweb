@@ -157,7 +157,7 @@ const formatFilterLabel = (filterStr: string): string => {
 const mapPredictionsToPositions = (predictions: any[]): Position[] =>
   predictions.map((p: any) => ({
     id: p.predictionId ?? crypto.randomUUID(),
-     date: formatDate(p?.lastActivity ?? ""),
+     date: formatDate(p?.eventStartDate ?? ""),
     outcome: getTypeLabel(p?.type),
     eventName: p?.eventName ?? "Event",
     question: p?.question ?? "Question",
