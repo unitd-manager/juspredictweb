@@ -884,6 +884,7 @@ const OpenPredictionsList: React.FC<{
                   predictedOutcome: p?.predictedOutcome || p?.predictedOutcomeChoice,
                   percentage: p.percentage,
                   investmentAmt: p.investmentAmt,
+                  potentialReturns: p.potentialReturns,
                   type: p?.type,
                 }}
                 actionLabel={

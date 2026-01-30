@@ -3382,20 +3382,41 @@ const handleExitPrediction = async () => {
                       <h4 className="text-white font-semibold mb-2">Success!</h4>
                       <p className="text-gray-text text-sm mb-6">{successMessage}</p>
                       <button
+                      // onClick={() => {
+                      //   setSuccessMessage(null);
+                      //   setSelectedQuestion(null);
+                      //   setSelectedOutcome(null);
+                      //   setAmount('');
+                      //   setConfidenceOverride(null);
+                      //   setSelectedEventId(null);
+                      //   setErrorMsg('');
+                      //   setSelectedTeams(null);
+                      //   setBalance(null);
+                      //   setExitAmount('');
+                      //   setExitConfidence(null);
+                      //   setIsMobilePanelOpen(false);
+                      // }}
                       onClick={() => {
-                        setSuccessMessage(null);
-                        setSelectedQuestion(null);
-                        setSelectedOutcome(null);
-                        setAmount('');
-                        setConfidenceOverride(null);
-                        setSelectedEventId(null);
-                        setErrorMsg('');
-                        setSelectedTeams(null);
-                        setBalance(null);
-                        setExitAmount('');
-                        setExitConfidence(null);
-                        setIsMobilePanelOpen(false);
-                      }}
+  setSuccessMessage(null);
+
+  // 🔥 RESET EVERYTHING RELATED TO prediction panel
+  setSelectedQuestion(null);
+  setSelectedQuestionPrediction(null);
+  setSelectedEventId(null);
+  setSelectedOutcome(null);
+  setConfidenceOverride(null);
+  setAmount("");
+  setExitAmount("");
+  setExitConfidence(null);
+  setSelectedAction(null);
+  setSuppressQuestionPredictionFetch(false);
+
+  setErrorMsg("");
+  setSelectedTeams(null);
+  setBalance(null);
+  setIsMobilePanelOpen(false);
+}}
+
                         className="w-full py-3 bg-primary text-dark-bg hover:bg-primary/90 rounded-lg font-semibold transition-all"
                       >
                         Ok
