@@ -508,6 +508,14 @@ const formatCurrency = (n: number) => (
     <img src={AppCoin} alt="coin" className="w-4 h-4" />
   </span>
 );
+const formatProfitCurrency = (n: number) => (
+  <span className="inline-flex items-center gap-1 whitespace-nowrap">
+    <span>+</span>
+    <span>{n.toFixed(2)}</span>
+    <img src={AppCoin} alt="coin" className="w-4 h-4 translate-y-[1px]" />
+  </span>
+);
+
   const handlePredict = async () => {
     if (!question || !selectedOutcome || amount <= 0) return
 
@@ -710,7 +718,7 @@ return (
                 <div className="flex justify-between">
                   <span className="text-gray-text">Potential Profit</span>
                   <span className="text-primary font-semibold">
-                    +{formatCurrency(profit)}
+                    {formatProfitCurrency(profit)}
                   </span>
                 </div>
 
