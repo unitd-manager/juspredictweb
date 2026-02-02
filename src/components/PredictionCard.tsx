@@ -168,7 +168,7 @@ console.log('p',p);
               Invested:
               <span className="text-white font-semibold ml-1">
             
-                <CoinAmount amount={p?.investmentAmt} />
+                <CoinAmount amount={Number(p?.investmentAmt).toFixed(2)} />
 
               </span>
             </span>
@@ -177,7 +177,7 @@ console.log('p',p);
               Returns:
               <span className="text-white font-semibold ml-1">
                
-                <CoinAmount amount={p?.potentialReturns} />
+                <CoinAmount amount={Number(p?.potentialReturns).toFixed(2)} />
 
               </span>
             </span>
@@ -185,7 +185,7 @@ console.log('p',p);
 
           <div className="flex items-center gap-3">
             <Progress value={pct} className="h-2 bg-gray-700 flex-1" />
-            <span className="text-xs">{pct}%</span>
+            <span className="text-xs">{Number(pct).toFixed(2)}%</span>
           </div>
         </div>
 
@@ -193,7 +193,7 @@ console.log('p',p);
           {p.exitPercentage !== undefined && (
             <span className="flex items-center gap-1 text-green-400 text-xs">
               <TrendingUp className="h-3 w-3" />
-              {p.exitPercentage}%
+              {Number(p.exitPercentage).toFixed(2)}%
             </span>
           )}
 

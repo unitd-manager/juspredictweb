@@ -1070,12 +1070,12 @@ const CompletedPredictionsList: React.FC<{ onOpen: (p: any, event: any) => void;
             const eventStatus = p?.eventStatus || "";
             const question = p?.question || "Question";
             const predictedOutcome = p?.predictedOutcome || p?.predictedOutcomeChoice || "";
-            const percentage = Number(p?.percentage || 0);
+            const percentage = Number(p?.percentage || 0).toFixed(2);
            // const investmentAmt = Number(p?.investmentAmt || 0);
                const investmentAmt =
     <span className="flex items-center gap-1">
       <span>
-        {Number(p?.investmentAmt || 0)}
+        {Number(p?.investmentAmt || 0).toFixed(2)}
       </span>
       <img
         src={AppCoin}
@@ -1086,7 +1086,18 @@ const CompletedPredictionsList: React.FC<{ onOpen: (p: any, event: any) => void;
     </span>
   
             const potentialReturns = Number(p?.potentialReturns || 0);
-            const earnings = Number(p?.earnings || 0);
+             const earnings = 
+             <span className="flex items-center gap-1">
+      <span>
+       {Number(p?.earnings || 0).toFixed(2)}
+      </span>
+      <img
+        src={AppCoin}
+        alt="coin"
+        className="w-4 h-4 translate-y-[1px]"
+      />
+     
+    </span>
             const predictionOutcome = String(p?.predictionOutcome || "");
             const daysAgo = p?.eventStartDate ? Math.floor((Date.now() - new Date(p.eventStartDate).getTime()) / (1000 * 60 * 60 * 24)) : 0;
 
@@ -1121,8 +1132,7 @@ const CompletedPredictionsList: React.FC<{ onOpen: (p: any, event: any) => void;
                 <div className={`rounded-lg p-3 flex items-center justify-between ${outcomeColor}`}>
                   <span className="font-medium">{outcomeLabel}</span>
                   <span className="font-bold inline-flex items-center gap-1">
-                    <DollarSign className="w-4 h-4" />
-                    {Math.abs(earnings)}
+                    {earnings}
                   </span>
                 </div>
 
@@ -1306,10 +1316,10 @@ const CancelledPredictionsList: React.FC<{
             const question = p?.question || "Question";
             const predictedOutcome =
               p?.predictedOutcome || p?.predictedOutcomeChoice || "";
-            const percentage = Number(p?.percentage || 0);
+            const percentage = Number(p?.percentage || 0).toFixed(2);
          const investmentAmt = (
   <span className="inline-flex items-center gap-1">
-    <span>{Number(p?.investmentAmt || 0)}</span>
+    <span>{Number(p?.investmentAmt || 0).toFixed(2)}</span>
 
     <img
       src={AppCoin}

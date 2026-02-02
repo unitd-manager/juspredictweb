@@ -355,7 +355,7 @@ const OrderDetails: React.FC = () => {
                       <div className="flex items-center gap-2 mb-1">
                         <div className="text-xs text-gray-text font-medium">Percentage</div>
                       </div>
-                      <div className="text-2xl font-bold text-white">{orderData.percentage}%</div>
+                      <div className="text-2xl font-bold text-white">{Number(orderData.percentage).toFixed(2)}%</div>
                     </div>
                   </div>
                 </div>
@@ -366,8 +366,8 @@ const OrderDetails: React.FC = () => {
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div>
                       <div className="text-xs text-gray-text font-medium mb-1">Prediction Outcome</div>
-                      <Badge className={`inline-block ${getPredictionOutcomeColor(orderData.predictionOutcome)}`}>
-                        {mapPredictionOutcome(orderData.predictionOutcome)}
+                      <Badge className={`inline-block ${getPredictionOutcomeColor(orderData.predictedOutcome)}`}>
+                        {mapPredictionOutcome(orderData.predictedOutcome)}
                       </Badge>
                     </div>
                     <div>

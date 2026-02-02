@@ -264,7 +264,7 @@ const teamB = teams[1];
   const displayTeamB = getName(teamB);
   // Prefer explicit sport type when available
   const displaySport =
-    (event?.sportEvent?.sportType && String(event.sportEvent.sportType).replace(/^SPORT_TYPE_/, "").replace(/_/g, " ")) ||
+    (event?.subCategory && String(event.subCategory).replace(/^EVENT_SUBCATEGORY/, "").replace(/_/g, " ")) ||
     (event?.category || sportName || "");
 
   const displayTeamsStr = `${displayTeamA} vs ${displayTeamB}`;
@@ -1386,12 +1386,13 @@ const CompletedPredictionsList: React.FC<{ onOpen: (p: any, event: any) => void;
             const eventStatus = p?.eventStatus || "";
             const question = p?.question || "Question";
             const predictedOutcome = p?.predictedOutcome || p?.predictedOutcomeChoice || "";
-            const percentage = Number(p?.percentage || 0);
+           const percentage = Number(p?.percentage || 0).toFixed(2);
+
             //const investmentAmt = Number(p?.investmentAmt || 0);
               const investmentAmt =
     <span className="flex items-center gap-1">
       <span>
-        {Number(p?.investmentAmt || 0)}
+        {Number(p?.investmentAmt || 0).toFixed(2)}
       </span>
       <img
         src={AppCoin}
@@ -1401,7 +1402,18 @@ const CompletedPredictionsList: React.FC<{ onOpen: (p: any, event: any) => void;
      
     </span>
   
-            const earnings = Number(p?.earnings || 0);
+            const earnings = 
+             <span className="flex items-center gap-1">
+      <span>
+       {Number(p?.earnings || 0)}
+      </span>
+      <img
+        src={AppCoin}
+        alt="coin"
+        className="w-4 h-4 translate-y-[1px]"
+      />
+     
+    </span>
             const predictionOutcome = String(p?.predictionOutcome || "");
             const daysAgo = p?.eventStartDate ? Math.floor((Date.now() - new Date(p.eventStartDate).getTime()) / (1000 * 60 * 60 * 24)) : 0;
 
@@ -1437,8 +1449,8 @@ const CompletedPredictionsList: React.FC<{ onOpen: (p: any, event: any) => void;
                 <div className={`rounded-lg p-3 flex items-center justify-between ${outcomeColor}`}>
                   <span className="font-medium">{outcomeLabel}</span>
                   <span className="font-bold inline-flex items-center gap-1">
-                    <DollarSign className="w-4 h-4" />
-                    {Math.abs(earnings)}
+                  
+                    {earnings}
                   </span>
                 </div>
 
@@ -1559,12 +1571,12 @@ const CancelledPredictionsList: React.FC<{ onOpen: (p: any, event: any) => void;
         const eventDesc = p?.eventDescription || "";
         const question = p?.question || "Question";
         const predictedOutcome = p?.predictedOutcome || p?.predictedOutcomeChoice || "";
-        const percentage = Number(p?.percentage || 0);
+        const percentage = Number(p?.percentage || 0).toFixed(2);
         //const investmentAmt = Number(p?.investmentAmt || 0);
         const investmentAmt =
     <span className="inline-flex items-center gap-1">
       <span>
-        {Number(p?.investmentAmt || 0)}
+        {Number(p?.investmentAmt || 0).toFixed(2)}
       </span>
       <img
         src={AppCoin}
@@ -1574,7 +1586,7 @@ const CancelledPredictionsList: React.FC<{ onOpen: (p: any, event: any) => void;
      
     </span>
         const matchedAmt =  <span className="inline-flex items-center gap-1">
-      <span>{Number(p?.matchedAmt || 0)}</span>
+      <span>{Number(p?.matchedAmt || 0).toFixed(2)}</span>
       <img
         src={AppCoin}
         alt="coin"
@@ -1823,6 +1835,8 @@ export const Sports: React.FC<{ selectedSport?: string | null }> = ({ selectedSp
   const [selectedSport, setSelectedSport] = useState<string | null>(propSelectedSport ?? null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
   // When true, show all child events (CHILD_EVENT) in the main panel
+  const [panelIdle, setPanelIdle] = useState(true);
+
   const [showAllChildEvents, setShowAllChildEvents] = React.useState<boolean>(false);
   const [allChildEvents, setAllChildEvents] = React.useState<any[] | null>(null);
   const [loadingAllChildEvents, setLoadingAllChildEvents] = React.useState<boolean>(false);
@@ -1845,6 +1859,11 @@ export const Sports: React.FC<{ selectedSport?: string | null }> = ({ selectedSp
   const [selectedAction, setSelectedAction] = useState<'cancel' | 'exit' | null>(null);
   const [isMobilePanelOpen, setIsMobilePanelOpen] = useState(false);
 
+const toApiSubCategory = (name: string) => {
+  if (!name) return "";
+  return "EVENT_SUBCATEGORY_" + name.toUpperCase().replace(/\s+/g, "_");
+};
+
   const tabs = [
     
     { id: 'all', label: 'All' },
@@ -1854,36 +1873,42 @@ export const Sports: React.FC<{ selectedSport?: string | null }> = ({ selectedSp
     { id: 'cancelled', label: 'Cancelled' },
     { id: 'exited', label: 'Exited' },
   ] as const;
+const getSubCategoryName = (sub?: string) => {
+  if (!sub) return "Other";
+  return sub
+    .replace("EVENT_SUBCATEGORY_", "")
+    .replace(/_/g, " ")
+    .toLowerCase()
+    .replace(/\b\w/g, c => c.toUpperCase());
+};
 
   // Build dynamic sports list from fetched events
-  const sportsList = React.useMemo(() => {
-    const map = new Map<string, number>();
-    for (const ev of events || []) {
-      // Try a few fields for sport type / name
-      let raw = ev?.sportEvent?.sportType || ev?.category || ev?.sport || ev?.name || 'Other';
-      if (typeof raw === 'string') {
-        // Normalize common API values like SPORT_TYPE_SOCCER
-        raw = raw.replace(/^SPORT_TYPE_/, '').replace(/_/g, ' ').trim();
-      } else {
-        raw = String(raw);
-      }
-      const key = raw || 'Other';
-      map.set(key, (map.get(key) || 0) + 1);
-    }
+ const sportsList = React.useMemo(() => {
+  const map = new Map<string, number>();
 
-    const emojiMap: Record<string, string> = {
-      Football: '🏈',
-      Basketball: '🏀',
-      Cricket: '🏏',
-      Soccer: '⚽',
-      Tennis: '🎾',
-      Other: '🎯',
-    };
+  for (const ev of events || []) {
+    const name = getSubCategoryName(ev?.subCategory);
+    map.set(name, (map.get(name) || 0) + 1);
+  }
 
-    return Array.from(map.entries())
-      .map(([name, count]) => ({ name, emoji: emojiMap[name] || '🏅', count }))
-      .sort((a, b) => b.count - a.count);
-  }, [events]);
+  const emojiMap: Record<string, string> = {
+    Cricket: "🏏",
+    Football: "⚽",
+    Nfl: "🏈",
+    Basketball: "🏀",
+    Tennis: "🎾",
+    Other: "🎯",
+  };
+
+  return Array.from(map.entries())
+    .map(([name, count]) => ({
+      name,
+      emoji: emojiMap[name] || "🏅",
+      count,
+    }))
+    .sort((a, b) => b.count - a.count);
+}, [events]);
+
 
   // State for expanded sport -> shows tournaments
   const [expandedSport, setExpandedSport] = React.useState<string | null>(null);
@@ -1904,103 +1929,44 @@ export const Sports: React.FC<{ selectedSport?: string | null }> = ({ selectedSp
   };
 
   const fetchTournamentsForSport = async (sportName: string) => {
-    if (!sportName) return;
-    if (sportTournaments[sportName]) return; // cached
-    try {
-      setLoadingTournaments(prev => ({ ...prev, [sportName]: true }));
-      const sportType = mapDisplayToSportType(sportName);
-      let allTournaments: any[] = [];
-      let pageNumber = 1;
-      let totalCount = 0;
+  if (!sportName) return;
+  if (sportTournaments[sportName]) return;
 
-      while (true) {
-        const res = await api.post<any>('/event/v1/listevents', {
-          status: [
-            'EVENT_STATUS_UPCOMING',
-            'EVENT_STATUS_ACTIVE',
-            'EVENT_STATUS_COMPLETED',
-          ],
-          category: 'EVENT_CATEGORY_SPORTS',
-          eventHierarchy: 'PARENT_EVENT',
-          sportType,
-          pageNumber,
-          pageSize: 20,
-        });
+  try {
+    setLoadingTournaments(prev => ({ ...prev, [sportName]: true }));
 
-        const evs = Array.isArray(res?.events) ? res.events : [];
-        totalCount = res?.totalCount || 0;
-        allTournaments = allTournaments.concat(evs);
+    const subcategory = toApiSubCategory(sportName);
+    console.log("Fetching tournaments:", subcategory);
 
-        console.log(`Fetched sport '${sportName}' page ${pageNumber}: ${evs.length} tournaments, total so far: ${allTournaments.length}/${totalCount}`);
+    const res = await api.post<any>("/event/v1/listevents", {
+      status: [
+        "EVENT_STATUS_UPCOMING",
+        "EVENT_STATUS_ACTIVE",
+        "EVENT_STATUS_COMPLETED",
+      ],
+      category: "EVENT_CATEGORY_SPORTS",
+      eventHierarchy: "PARENT_EVENT",
 
-        // Stop if we've fetched all tournaments or got empty page
-        if (allTournaments.length >= totalCount || evs.length === 0) {
-          break;
-        }
-        pageNumber++;
-      }
+      // ✅ THIS MUST BE LOWERCASE
+      subcategory,
 
-      // Display tournaments immediately without waiting for counts
-      setSportTournaments(prev => ({ ...prev, [sportName]: allTournaments }));
+      pageNumber: 1,
+      pageSize: 50,
+    });
 
-      // Initialize counts as null (loading indicator)
-      const loadingCountMap: Record<string, null> = {};
-      for (const tournament of allTournaments) {
-        const tournamentId = String(tournament.id ?? tournament.eventId ?? '');
-        if (tournamentId) {
-          loadingCountMap[tournamentId] = null;
-        }
-      }
-      setTournamentChildEventCounts(prev => ({ ...prev, ...loadingCountMap }));
+    setSportTournaments(prev => ({
+      ...prev,
+      [sportName]: res?.events || [],
+    }));
+  } catch (e) {
+    console.error("Failed to fetch tournaments", e);
+    setSportTournaments(prev => ({ ...prev, [sportName]: [] }));
+  } finally {
+    setLoadingTournaments(prev => ({ ...prev, [sportName]: false }));
+  }
+};
 
-      // Fetch child event counts in batches of 5 for faster completion
-      const countMap: Record<string, number> = {};
-      const batchSize = 5;
-      const fetchBatch = async (tournaments: any[]) => {
-        for (let i = 0; i < tournaments.length; i += batchSize) {
-          const batch = tournaments.slice(i, i + batchSize);
-          await Promise.all(
-            batch.map(async (tournament) => {
-              const tournamentId = String(tournament.id ?? tournament.eventId ?? '');
-              if (tournamentId) {
-                try {
-                  const countRes = await api.post<any>('/event/v1/listevents', {
-                    status: [
-                      'EVENT_STATUS_UPCOMING',
-                      'EVENT_STATUS_ACTIVE',
-                      'EVENT_STATUS_COMPLETED',
-                    ],
-                    category: 'EVENT_CATEGORY_SPORTS',
-                    parentEventId: tournamentId,
-                    pageNumber: 1,
-                    pageSize: 1,
-                  });
-                  countMap[tournamentId] = countRes?.totalCount || 0;
-                  // Update state after each successful fetch for immediate UI feedback
-                  setTournamentChildEventCounts(prev => ({ ...prev, [tournamentId]: countRes?.totalCount || 0 }));
-                } catch (e) {
-                  console.error(`Failed to fetch count for tournament ${tournamentId}`, e);
-                  countMap[tournamentId] = 0;
-                  setTournamentChildEventCounts(prev => ({ ...prev, [tournamentId]: 0 }));
-                }
-              }
-            })
-          );
-        }
-      };
-      
-      fetchBatch(allTournaments).catch(err => {
-        console.error('Error updating tournament counts:', err);
-      });
 
-      console.log(`Complete: Fetched ${allTournaments.length} tournaments for sport '${sportName}' (total count: ${totalCount})`);
-    } catch (e) {
-      console.error('Failed to fetch tournaments for sport', sportName, e);
-      setSportTournaments(prev => ({ ...prev, [sportName]: [] }));
-    } finally {
-      setLoadingTournaments(prev => ({ ...prev, [sportName]: false }));
-    }
-  };
 
   const fetchEventsForTournament = async (tournamentId: string) => {
     if (!tournamentId) return;
@@ -2012,17 +1978,22 @@ export const Sports: React.FC<{ selectedSport?: string | null }> = ({ selectedSp
       let totalCount = 0;
 
       while (true) {
-        const res = await api.post<any>('/event/v1/listevents', {
-          status: [
-            'EVENT_STATUS_UPCOMING',
-            'EVENT_STATUS_ACTIVE',
-            'EVENT_STATUS_COMPLETED',
-          ],
-          category: 'EVENT_CATEGORY_SPORTS',
-          parentEventId: tournamentId,
-          pageNumber,
-          pageSize: 20,
-        });
+       const res = await api.post<any>('/event/v1/listevents', {
+  status: [
+    'EVENT_STATUS_UPCOMING',
+    'EVENT_STATUS_ACTIVE',
+    'EVENT_STATUS_COMPLETED',
+  ],
+  category: 'EVENT_CATEGORY_SPORTS',
+  parentEventId: tournamentId,
+
+  // ✅ ADD THIS
+  subcategory: selectedSport ? toApiSubCategory(selectedSport) : undefined,
+
+  pageNumber,
+  pageSize: 20,
+});
+
 
         const evs = Array.isArray(res?.events) ? res.events : [];
         totalCount = res?.totalCount || 0;
@@ -2066,6 +2037,8 @@ export const Sports: React.FC<{ selectedSport?: string | null }> = ({ selectedSp
             'EVENT_STATUS_COMPLETED',
           ],
           category: 'EVENT_CATEGORY_SPORTS',
+          
+  subcategory: selectedSport ? toApiSubCategory(selectedSport) : undefined,
           eventHierarchy: 'CHILD_EVENT',
           pageNumber,
           pageSize: 100, // Request 100 but API may return 20
@@ -2167,6 +2140,8 @@ const formatProfitCurrency = (n: number) => (
             "EVENT_STATUS_COMPLETED",
           ],
           category: "EVENT_CATEGORY_SPORTS",
+          
+  subcategory: selectedSport ? toApiSubCategory(selectedSport) : undefined,
           eventHierarchy: "CHILD_EVENT",
           pageNumber,
           pageSize: 20,
@@ -2304,17 +2279,21 @@ const formatProfitCurrency = (n: number) => (
     }
     // 'trending' filter can be added based on your business logic
 
-    if (selectedSport) {
-      // Match by sport type using the same logic as sportsList calculation
-      let raw = event?.sportEvent?.sportType || event?.category || event?.sport || event?.name || 'Other';
-      if (typeof raw === 'string') {
-        raw = raw.replace(/^SPORT_TYPE_/, '').replace(/_/g, ' ').trim();
-      } else {
-        raw = String(raw);
-      }
-      const eventSport = raw || 'Other';
-      matchesSport = eventSport === selectedSport;
-    }
+    // if (selectedSport) {
+    //   // Match by sport type using the same logic as sportsList calculation
+    //   let raw = event?.sportEvent?.sportType || event?.category || event?.sport || event?.name || 'Other';
+    //   if (typeof raw === 'string') {
+    //     raw = raw.replace(/^SPORT_TYPE_/, '').replace(/_/g, ' ').trim();
+    //   } else {
+    //     raw = String(raw);
+    //   }
+    //   const eventSport = raw || 'Other';
+    //   matchesSport = eventSport === selectedSport;
+    // }
+if (selectedSport) {
+  const eventSub = getSubCategoryName(event?.subCategory);
+  matchesSport = eventSub === selectedSport;
+}
 
     return matchesStatus && matchesSport && matchesEventStatusFilter;
   });
@@ -2587,20 +2566,38 @@ const handleExitPrediction = async () => {
                     sportsList.map((sport) => (
                       <li key={sport.name}>
                         <div
+                          // onClick={() => {
+                          //   if (expandedSport === sport.name) {
+                          //     setExpandedSport(null);
+                          //     setSelectedTournamentId(null);
+                          //     setEventsForTournament(null);
+                          //     setShowAllChildEvents(false);
+                          //   } else {
+                          //     setExpandedSport(sport.name);
+                          //     fetchTournamentsForSport(sport.name);
+                          //   }
+                          //   setSelectedSport(sport.name);
+                          //   setShowAllChildEvents(false);
+                          //   setActiveTab('all');
+                          // }}
                           onClick={() => {
-                            if (expandedSport === sport.name) {
-                              setExpandedSport(null);
-                              setSelectedTournamentId(null);
-                              setEventsForTournament(null);
-                              setShowAllChildEvents(false);
-                            } else {
-                              setExpandedSport(sport.name);
-                              fetchTournamentsForSport(sport.name);
-                            }
-                            setSelectedSport(sport.name);
-                            setShowAllChildEvents(false);
-                            setActiveTab('all');
-                          }}
+  if (expandedSport === sport.name) {
+    setExpandedSport(null);
+    setSelectedTournamentId(null);
+    setEventsForTournament(null);
+  } else {
+    setExpandedSport(sport.name);
+    fetchTournamentsForSport(sport.name);
+  }
+
+  // 🔥 IMPORTANT RESET
+  setSelectedSport(sport.name);
+  setSelectedTournamentId(null);
+  setEventsForTournament(null);
+  setShowAllChildEvents(false);
+  setActiveTab("all");
+}}
+
                           className={`flex items-center justify-between px-3 py-2 rounded-lg transition-all cursor-pointer ${
                             selectedSport === sport.name
                               ? 'bg-primary/20 text-primary'
@@ -2729,6 +2726,7 @@ const handleExitPrediction = async () => {
                     const id = String(evId ?? selectedEventId ?? '');
                     setSelectedEventId(id);
                     setSelectedQuestion(question);
+                    setPanelIdle(false);
                     setSelectedOutcome(preselectOutcome ?? null);
                     setConfidenceOverride(null);
                     setAmount('');
@@ -2785,6 +2783,7 @@ const handleExitPrediction = async () => {
                     setSelectedEventId(id);
                     const q = p?.question || { questionId: p?.questionId, name: p?.questionName };
                     setSelectedQuestion(q);
+                    setPanelIdle(false);
                     setSelectedOutcome(null);
                     setConfidenceOverride(null);
                     setAmount("");
@@ -2803,6 +2802,7 @@ const handleExitPrediction = async () => {
                     setSelectedEventId(id);
                     const q = p?.question || { questionId: p?.questionId, name: p?.questionName };
                     setSelectedQuestion(q);
+                    setPanelIdle(false);
                     setSelectedOutcome(null);
                     setConfidenceOverride(null);
                     setAmount("");
@@ -2821,6 +2821,7 @@ const handleExitPrediction = async () => {
                     setSelectedEventId(id);
                     const q = p?.question || { questionId: p?.questionId, name: p?.questionName };
                     setSelectedQuestion(q);
+                    setPanelIdle(false);
                     setSelectedOutcome(null);
                     setConfidenceOverride(null);
                     setAmount("");
@@ -2839,6 +2840,7 @@ const handleExitPrediction = async () => {
                     setSelectedEventId(id);
                     const q = p?.question || { questionId: p?.questionId, name: p?.questionName };
                     setSelectedQuestion(q);
+                    setPanelIdle(false);
                     setSelectedOutcome(null);
                     setConfidenceOverride(null);
                     setAmount("");
@@ -2914,6 +2916,7 @@ const handleExitPrediction = async () => {
                           const id = String(event.id ?? event.eventId ?? eventId ?? '');
                           setSelectedEventId(id);
                           setSelectedQuestion(question);
+                          setPanelIdle(false);
                           setSelectedOutcome(null);
                           setConfidenceOverride(null);
                           setAmount('');
@@ -2975,6 +2978,7 @@ const handleExitPrediction = async () => {
                            const id = String(evId ?? event.id ?? event.eventId ?? "");
                            setSelectedEventId(id);
                            setSelectedQuestion(question);
+                           setPanelIdle(false);
                             setSelectedOutcome(preselectOutcome ?? null);
                             setConfidenceOverride(null);
                             setAmount('');
@@ -3175,7 +3179,7 @@ const handleExitPrediction = async () => {
                       {selectedAction === 'cancel' ? 'Cancel Prediction' : 'Exit Prediction'}
                     </button>
                   </div>
-                )  : selectedQuestion ? (
+                )  : !panelIdle && selectedQuestion ? (
                   <div className="space-y-4">
                     <div className="bg-dark-card border border-white/10 p-4 rounded-lg">
                       <div className="text-sm text-white font-semibold mb-1">{selectedQuestion.description}</div>
@@ -3396,27 +3400,30 @@ const handleExitPrediction = async () => {
                       //   setExitConfidence(null);
                       //   setIsMobilePanelOpen(false);
                       // }}
-                      onClick={() => {
-  setSuccessMessage(null);
+                  onClick={() => {
+    setSuccessMessage(null);
 
-  // 🔥 RESET EVERYTHING RELATED TO prediction panel
-  setSelectedQuestion(null);
-  setSelectedQuestionPrediction(null);
-  setSelectedEventId(null);
-  setSelectedOutcome(null);
-  setConfidenceOverride(null);
-  setAmount("");
-  setExitAmount("");
-  setExitConfidence(null);
-  setSelectedAction(null);
-  setSuppressQuestionPredictionFetch(false);
+    setPanelIdle(true);
+    // ✅ KEEP EVENT SELECTED
+    // setSelectedEventId(null); ❌ DO NOT TOUCH
 
-  setErrorMsg("");
-  setSelectedTeams(null);
-  setBalance(null);
-  setIsMobilePanelOpen(false);
-}}
+    // 🔥 RESET ONLY prediction panel state
+    setSelectedQuestion(null);
+    setSelectedQuestionPrediction(null);
+    setSelectedOutcome(null);
+    setConfidenceOverride(null);
+    setAmount("");
+    setExitAmount("");
+    setExitConfidence(null);
+    setSelectedAction(null);
+    setSelectedPrediction(null);
+    setSuppressQuestionPredictionFetch(false);
 
+    setErrorMsg("");
+    setSelectedTeams(null);
+    setBalance(null);
+    setIsMobilePanelOpen(false);
+  }}
                         className="w-full py-3 bg-primary text-dark-bg hover:bg-primary/90 rounded-lg font-semibold transition-all"
                       >
                         Ok
