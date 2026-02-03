@@ -3025,17 +3025,21 @@ const handleExitPrediction = async () => {
                     <button
                       onClick={() => {
                         setSuccessMessage(null);
-                       // setSelectedQuestion(null);
+                        // Reset to idle panel like mobile handler
+                        setPanelIdle(true);
+                        setSelectedQuestion(null);
+                        setSelectedQuestionPrediction(null);
                         setSelectedOutcome(null);
-                        setAmount('');
                         setConfidenceOverride(null);
-                       // setSelectedEventId(null);
-                       setSelectedAction(null);
+                        setAmount('');
+                        setExitAmount('');
+                        setExitConfidence(null);
+                        setSelectedAction(null);
+                        setSelectedPrediction(null);
+                        setSuppressQuestionPredictionFetch(false);
                         setErrorMsg('');
                         setSelectedTeams(null);
                         setBalance(null);
-                        setExitAmount('');
-                        setExitConfidence(null);
                         setIsMobilePanelOpen(false);
                       }}
                       className="w-full py-3 bg-primary text-dark-bg hover:bg-primary/90 rounded-lg font-semibold transition-all"
