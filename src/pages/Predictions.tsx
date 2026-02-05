@@ -1330,7 +1330,7 @@ const CancelledPredictionsList: React.FC<{
 );
 
             const matchedAmt =  <span className="inline-flex items-center gap-1">
-      <span>{Number(p?.matchedAmt || 0)}</span> <img
+      <span>{Number(p?.matchedAmt || 0).toFixed(2)}</span> <img
         src={AppCoin}
         alt="coin"
         className="w-4 h-4 translate-y-[1px]"
@@ -1676,25 +1676,43 @@ console.log('selectedPrediction',selectedPrediction);
   // Build dynamic sports list from fetched events
   const sportsList = React.useMemo(() => {
     const map = new Map<string, number>();
-    for (const ev of events || []) {
-      // Try a few fields for sport type / name
-      let raw = ev?.sportEvent?.sportType || ev?.category || ev?.sport || ev?.name || 'Other';
-      if (typeof raw === 'string') {
-        // Normalize common API values like SPORT_TYPE_SOCCER
-        raw = raw.replace(/^SPORT_TYPE_/, '').replace(/_/g, ' ').trim();
-      } else {
-        raw = String(raw);
+
+    const normalizeSub = (sub?: any) => {
+      if (!sub) return '';
+      try {
+        let s = String(sub || '').replace(/^EVENT_SUBCATEGORY_/, '').replace(/_/g, ' ').trim();
+        s = s.toLowerCase().replace(/\b\w/g, (c) => c.toUpperCase());
+        return s || '';
+      } catch {
+        return '';
       }
-      const key = raw || 'Other';
-      map.set(key, (map.get(key) || 0) + 1);
+    };
+
+    for (const ev of events || []) {
+      // Prefer explicit event subcategory when available
+      let name = normalizeSub(ev?.subCategory || ev?.sportEvent?.subCategory || ev?.subcategory);
+
+      // Fallback to sport type/category if no subcategory
+      if (!name) {
+        let raw = ev?.sportEvent?.sportType || ev?.category || ev?.sport || ev?.name || 'Other';
+        if (typeof raw === 'string') {
+          raw = raw.replace(/^SPORT_TYPE_/, '').replace(/_/g, ' ').trim();
+        } else {
+          raw = String(raw);
+        }
+        name = raw || 'Other';
+      }
+
+      map.set(name, (map.get(name) || 0) + 1);
     }
 
     const emojiMap: Record<string, string> = {
-      Football: '🏈',
-      Basketball: '🏀',
       Cricket: '🏏',
-      Soccer: '⚽',
+      Football: '🏈',
+      Nfl: '🏈',
+      Basketball: '🏀',
       Tennis: '🎾',
+      Soccer: '⚽',
       Other: '🎯',
     };
 
