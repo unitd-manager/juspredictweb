@@ -269,7 +269,7 @@ const ClanDetail = () => {
                       <TableRow key={row.userInfo?.userId ?? index} className="border-white/5">
                         <TableCell className="flex flex-col">
                           <span className="font-semibold text-white">{getMemberName(row.userInfo)}</span>
-                          <span className="text-xs text-muted-foreground">{row.userInfo?.userEmail}</span>
+                          {/* <span className="text-xs text-muted-foreground">{row.userInfo?.userEmail}</span> */}
                         </TableCell>
                         <TableCell className="text-right text-white/80">{row.accuracy ?? "-"}</TableCell>
                         <TableCell className="text-right text-emerald-300">{row.earnings ?? "-"}</TableCell>
@@ -303,7 +303,7 @@ const ClanDetail = () => {
                       >
                         <div>
                           <p className="text-sm font-semibold text-white">{getMemberName(member)}</p>
-                          <p className="text-xs text-muted-foreground">{member.userEmail ?? member.userName}</p>
+                          {/* <p className="text-xs text-muted-foreground">{member.userEmail ?? member.userName}</p> */}
                         </div>
                         <div className="flex items-center gap-2">
                           <Badge variant="outline" className="border-white/30 text-white">
