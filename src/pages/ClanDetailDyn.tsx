@@ -272,7 +272,7 @@ const ClanDetail = () => {
                           {/* <span className="text-xs text-muted-foreground">{row.userInfo?.userEmail}</span> */}
                         </TableCell>
                         <TableCell className="text-right text-white/80">{row.accuracy ?? "-"}</TableCell>
-                        <TableCell className="text-right text-emerald-300">{row.earnings ?? "-"}</TableCell>
+                        <TableCell className="text-right text-emerald-300">{Number(row.earnings).toFixed(2) ?? "-"}</TableCell>
                         <TableCell className="text-right text-white/80">{row.predictions ?? 0}</TableCell>
                       </TableRow>
                     ))}
