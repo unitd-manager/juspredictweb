@@ -190,10 +190,16 @@ const ClanDetail = () => {
     <div className="min-h-screen bg-gradient-to-b from-[#050505] via-[#081011] to-[#040706] text-white">
 
       <main className="container mx-auto max-w-6xl px-4 py-10 space-y-8">
-        <Link to="/clan" className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-white">
-          <ArrowLeft className="h-4 w-4" />
-          Back to clans
-        </Link>
+         
+       <section className="relative z-10 mt-16 rounded-3xl border border-white/10 bg-gradient-to-br from-emerald-500/20 to-transparent p-6">
+  <Link
+    to="/clan"
+    className="inline-flex items-center gap-2 text-sm text-emerald-300 hover:text-white"
+  >
+    <ArrowLeft className="h-4 w-4" />
+    Back to clans
+  </Link>
+</section>
 
         <section className="rounded-3xl border border-white/10 bg-gradient-to-br from-emerald-500/10 to-transparent p-6">
           {isLoading ? (

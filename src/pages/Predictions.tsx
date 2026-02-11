@@ -1099,7 +1099,19 @@ const CompletedPredictionsList: React.FC<{ onOpen: (p: any, event: any) => void;
      
     </span>
             const predictionOutcome = String(p?.predictionOutcome || "");
-            const daysAgo = p?.eventStartDate ? Math.floor((Date.now() - new Date(p.eventStartDate).getTime()) / (1000 * 60 * 60 * 24)) : 0;
+            //const daysAgo = p?.eventStartDate ? Math.floor((Date.now() - new Date(p.eventStartDate).getTime()) / (1000 * 60 * 60 * 24)) : 0;
+const daysAgo = (() => {
+  if (!p?.eventStartDate) return 0;
+
+  const eventTime = new Date(p.eventStartDate).getTime();
+  if (isNaN(eventTime)) return 0;
+
+  const diff = Date.now() - eventTime;
+
+  if (diff <= 0) return 0; // Event not started yet
+
+  return Math.floor(diff / (1000 * 60 * 60 * 24));
+})();
 
             const isWin = predictionOutcome === "PREDICTIONOUTCOME_SUCCESS" || earnings > 0;
             const statusLabel = eventStatus === "PREDICTION_EVENT_STATUS_CLOSED" ? "Event Closed" : "Active";

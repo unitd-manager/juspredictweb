@@ -954,16 +954,39 @@ console.log('items live',items);
         
         const eventDes = p?.eventDescription;
         const eventDate = new Date(p?.eventStartDate);
-        const today = new Date();
-        const diffTime = Math.abs(eventDate.getTime() - today.getTime());
-        const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-        const startsIn = diffDays > 0 ? `${diffDays} day${diffDays > 1 ? "s" : ""}` : "Today";
+       // const today = new Date();
+        //const diffTime = Math.abs(eventDate.getTime() - today.getTime());
+        //const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+       // const startsIn = diffDays > 0 ? `${diffDays} day${diffDays > 1 ? "s" : ""}` : "Today";
         const qName = p?.question || p?.questionName || p?.question?.description || "Prediction";
         const outcome = String(p?.predictedOutcome ?? p?.predictionDetails?.selectedPredictionOutcome ?? p?.selectedPredictionOutcome ?? "").trim();
         const pctNum = Number(p?.percentage ?? p?.exitPercentage ?? 0);
         const pctText = isFinite(pctNum) ? `${Math.max(0, Math.min(100, Math.round(pctNum)))}%` : "--%";
         const matched = Number(p?.matchedAmt ?? 0);
         const invest = Number(p?.investmentAmt ?? 0);
+
+            let startsIn="";
+       
+const now = new Date();
+
+const diffMs = eventDate - now;
+
+if (diffMs <= 0) {
+  startsIn = "Started";
+} else {
+  const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
+  const diffHours = Math.floor((diffMs / (1000 * 60 * 60)) % 24);
+  const diffMinutes = Math.floor((diffMs / (1000 * 60)) % 60);
+
+  if (diffDays > 0) {
+    startsIn = `${diffDays} day${diffDays > 1 ? "s" : ""} ${diffHours}h`;
+  } else if (diffHours > 0) {
+    startsIn = `${diffHours}h ${diffMinutes}m`;
+  } else {
+    startsIn = `${diffMinutes}m`;
+  }
+}
+
   const matchedText =
   isFinite(matched) && isFinite(invest) && invest > 0 ? (
     <span className="flex items-center gap-1">
@@ -1148,10 +1171,10 @@ const OpenPredictionsList: React.FC<{ onOpen: (p: any, event: any) => void; sele
         // const title = getEventName(event) || `Event ${eventId}`;
         const eventDes = p?.eventDescription;
         const eventDate = new Date(p?.eventStartDate);
-        const today = new Date();
-        const diffTime = Math.abs(eventDate.getTime() - today.getTime());
-        const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-        const startsIn = diffDays > 0 ? `${diffDays} day${diffDays > 1 ? "s" : ""}` : "Today";
+        //const today = new Date();
+        //const diffTime = Math.abs(eventDate.getTime() - today.getTime());
+        //const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+       // const startsIn = diffDays > 0 ? `${diffDays} day${diffDays > 1 ? "s" : ""}` : "Today";
         const qName = p?.question || p?.questionName || p?.question?.description || "Prediction";
         const status = String(p?.predictionStatus || "");
         const isAccepted = status === "PREDICTION_STATUS_ACCEPTED" || status === "PREDICTION_STATUS_CANCEL_REQUESTED";
@@ -1161,7 +1184,28 @@ const OpenPredictionsList: React.FC<{ onOpen: (p: any, event: any) => void; sele
         const matched = Number(p?.matchedAmt ?? 0);
         const invest = Number(p?.investmentAmt ?? 0);
         const predictedOutcome = String(p?.predictedOutcome ?? p?.predictedOutcome?.predictedOutcome ?? "").trim();
+       let startsIn="";
        
+const now = new Date();
+
+const diffMs = eventDate - now;
+
+if (diffMs <= 0) {
+  startsIn = "Started";
+} else {
+  const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
+  const diffHours = Math.floor((diffMs / (1000 * 60 * 60)) % 24);
+  const diffMinutes = Math.floor((diffMs / (1000 * 60)) % 60);
+
+  if (diffDays > 0) {
+    startsIn = `${diffDays} day${diffDays > 1 ? "s" : ""} ${diffHours}h`;
+  } else if (diffHours > 0) {
+    startsIn = `${diffHours}h ${diffMinutes}m`;
+  } else {
+    startsIn = `${diffMinutes}m`;
+  }
+}
+
         //const matchedText = isFinite(matched) && isFinite(invest) && invest > 0 ? `${matched.toFixed(2)}/${invest.toFixed(2)} is matched` : "--";
           const matchedText =
   isFinite(matched) && isFinite(invest) && invest > 0 ? (
@@ -1415,7 +1459,19 @@ const CompletedPredictionsList: React.FC<{ onOpen: (p: any, event: any) => void;
      
     </span>
             const predictionOutcome = String(p?.predictionOutcome || "");
-            const daysAgo = p?.eventStartDate ? Math.floor((Date.now() - new Date(p.eventStartDate).getTime()) / (1000 * 60 * 60 * 24)) : 0;
+            // const daysAgo = p?.eventStartDate ? Math.floor((Date.now() - new Date(p.eventStartDate).getTime()) / (1000 * 60 * 60 * 24)) : 0;
+const daysAgo = (() => {
+  if (!p?.eventStartDate) return 0;
+
+  const eventTime = new Date(p.eventStartDate).getTime();
+  if (isNaN(eventTime)) return 0;
+
+  const diff = Date.now() - eventTime;
+
+  if (diff <= 0) return 0; // Event not started yet
+
+  return Math.floor(diff / (1000 * 60 * 60 * 24));
+})();
 
             const isWin = predictionOutcome === "PREDICTIONOUTCOME_SUCCESS" || earnings > 0;
             const statusLabel = eventStatus === "PREDICTION_EVENT_STATUS_CLOSED" ? "Event Closed" : "Active";
